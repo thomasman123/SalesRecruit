@@ -1,48 +1,67 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import type { Database } from "@/lib/supabase/database.types"
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+export async function middleware(request: NextRequest) {
+  // Prepare a response that we can mutate cookies on
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
+  // Create a Supabase client that syncs any refreshed cookies back to the browser
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          response.cookies.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          response.cookies.set(name, "", options)
+        },
+      },
+    },
+  )
+
+  // Always attempt to refresh the session.
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // If no session and trying to access protected routes
-  if (!session) {
-    const isProtectedRoute =
-      req.nextUrl.pathname.startsWith("/dashboard") ||
-      req.nextUrl.pathname.startsWith("/recruiter") ||
-      req.nextUrl.pathname.startsWith("/onboarding")
+  // Auth-guard and role routing rules ----------------------------------
+  const pathname = request.nextUrl.pathname
+  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding")
 
-    if (isProtectedRoute) {
-      const redirectUrl = new URL("/login", req.url)
-      return NextResponse.redirect(redirectUrl)
-    }
+  if (!session && isProtected) {
+    const redirectUrl = new URL("/login", request.url)
+    return NextResponse.redirect(redirectUrl)
   }
 
-  // If session exists but trying to access wrong role routes
   if (session) {
-    const { data: userDetails } = await supabase.from("users").select("role").eq("id", session.user.id).single()
+    // Check the user's role from metadata (faster than extra DB query)
+    const role = session.user.user_metadata?.role as string | undefined
 
-    // Redirect recruiters trying to access sales professional routes
-    if (userDetails?.role === "recruiter" && req.nextUrl.pathname.startsWith("/dashboard")) {
-      const redirectUrl = new URL("/recruiter", req.url)
-      return NextResponse.redirect(redirectUrl)
+    if (role === "recruiter" && pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/recruiter", request.url))
     }
 
-    // Redirect sales professionals trying to access recruiter routes
-    if (userDetails?.role === "sales-professional" && req.nextUrl.pathname.startsWith("/recruiter")) {
-      const redirectUrl = new URL("/dashboard", req.url)
-      return NextResponse.redirect(redirectUrl)
+    if (role === "sales-professional" && pathname.startsWith("/recruiter")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
     }
   }
 
-  return res
+  return response
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth/callback).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback).*)",
+  ],
 }
