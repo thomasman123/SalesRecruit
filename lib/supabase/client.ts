@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserClient } from "@supabase/ssr"
 import type { Database } from "./database.types"
 
 // Create a single supabase client for interacting with your database
@@ -10,7 +10,8 @@ export const createSupabaseClient = () => {
     throw new Error("Missing Supabase environment variables")
   }
 
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
+  // Using browser client from @supabase/ssr to ensure auth cookies are set
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
 // Client-side singleton
