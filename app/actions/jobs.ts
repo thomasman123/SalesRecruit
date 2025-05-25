@@ -27,11 +27,8 @@ type JobInput = z.infer<typeof jobSchema>
 
 export async function createJob(form: JobInput) {
   const supabase = createServerSupabaseClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
     throw new Error("Unauthorized")
   }
 
@@ -42,7 +39,7 @@ export async function createJob(form: JobInput) {
 
   const { error, data } = await supabase.from("jobs").insert({
     ...validation.data,
-    recruiter_id: session.user.id,
+    recruiter_id: user.id,
   }).select().single()
 
   if (error) {

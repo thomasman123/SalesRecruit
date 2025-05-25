@@ -44,7 +44,11 @@ export default function NewJobPage() {
 
   const handleSaveAsDraft = async () => {
     try {
-      await createJob({ ...formData, status: "draft" } as any)
+      await createJob({
+        ...formData,
+        status: "draft",
+        video_url: formData.video_url?.trim() ? formData.video_url : null,
+      } as any)
       toast({ title: "Job saved as draft" })
       router.push("/recruiter/jobs")
     } catch (err: any) {
@@ -54,7 +58,11 @@ export default function NewJobPage() {
 
   const handlePublish = async () => {
     try {
-      await createJob({ ...formData, status: "active" } as any)
+      await createJob({
+        ...formData,
+        status: "active",
+        video_url: formData.video_url?.trim() ? formData.video_url : null,
+      } as any)
       toast({ title: "Job published" })
       router.push("/recruiter/jobs")
     } catch (err: any) {
