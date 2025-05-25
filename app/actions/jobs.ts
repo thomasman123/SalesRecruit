@@ -37,6 +37,14 @@ export async function createJob(form: JobInput) {
     throw new Error(validation.error.message)
   }
 
+  // Ensure user exists in public.users (handles existing accounts created before trigger)
+  await supabase.from("users").upsert({
+    id: user.id,
+    email: user.email!,
+    name: user.user_metadata?.full_name ?? user.email!.split("@")[0],
+    role: "recruiter",
+  })
+
   const { error, data } = await supabase.from("jobs").insert({
     ...validation.data,
     recruiter_id: user.id,
@@ -51,48 +59,57 @@ export async function createJob(form: JobInput) {
 
 export async function updateJob(id: number, updates: Partial<JobInput>) {
   const supabase = createServerSupabaseClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error("Unauthorized")
 
-  if (!session) throw new Error("Unauthorized")
-
-  const { error, data } = await supabase.from("jobs").update(updates).eq("id", id).eq("recruiter_id", session.user.id).select().single()
+  const { error, data } = await supabase.from("jobs")
+    .update(updates)
+    .eq("id", id)
+    .eq("recruiter_id", user.id)
+    .select()
+    .single()
   if (error) throw new Error(error.message)
   return data
 }
 
 export async function deleteJob(id: number) {
   const supabase = createServerSupabaseClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) throw new Error("Unauthorized")
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error("Unauthorized")
 
-  const { error } = await supabase.from("jobs").delete().eq("id", id).eq("recruiter_id", session.user.id)
+  const { error } = await supabase.from("jobs")
+    .delete()
+    .eq("id", id)
+    .eq("recruiter_id", user.id)
   if (error) throw new Error(error.message)
 }
 
 export async function duplicateJob(id: number) {
   const supabase = createServerSupabaseClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) throw new Error("Unauthorized")
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error("Unauthorized")
 
-  const { data: existing, error: fetchError } = await supabase.from("jobs").select("*").eq("id", id).single()
+  const { data: existing, error: fetchError } = await supabase
+    .from("jobs")
+    .select("*")
+    .eq("id", id)
+    .single()
   if (fetchError) throw new Error(fetchError.message)
 
   // Remove id and timestamps
   const { id: _oldId, created_at: _c, updated_at: _u, ...rest } = existing as any
-  const { error, data } = await supabase.from("jobs").insert({
-    ...rest,
-    title: `${existing!.title} (Copy)`,
-    status: "draft",
-    recruiter_id: session.user.id,
-    views: 0,
-    applicants_count: 0,
-  }).select().single()
+  const { error, data } = await supabase
+    .from("jobs")
+    .insert({
+      ...rest,
+      title: `${existing!.title} (Copy)`,
+      status: "draft",
+      recruiter_id: user.id,
+      views: 0,
+      applicants_count: 0,
+    })
+    .select()
+    .single()
   if (error) throw new Error(error.message)
   return data
 } 
