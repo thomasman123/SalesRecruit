@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
@@ -12,7 +12,7 @@ import { ArrowRight } from "lucide-react"
 import { PageContainer } from "@/components/layout/page-container"
 import { AppHeader } from "@/components/layout/app-header"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -100,60 +100,76 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <PageContainer>
-      <AppHeader />
-      <div className="container max-w-md mx-auto py-12">
-        <AnimatedCard variant="hover-glow" className="p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">Reset Your Password</h1>
-            <p className="text-gray-400">Enter your new password below</p>
+    <div className="container max-w-md mx-auto py-12">
+      <AnimatedCard variant="hover-glow" className="p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-white mb-2">Reset Your Password</h1>
+          <p className="text-gray-400">Enter your new password below</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-gray-300 text-sm">
+              New Password
+            </Label>
+            <AnimatedInput
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your new password"
+              variant="glow"
+              required
+              minLength={6}
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300 text-sm">
-                New Password
-              </Label>
-              <AnimatedInput
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your new password"
-                variant="glow"
-                required
-                minLength={6}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className="text-gray-300 text-sm">
+              Confirm Password
+            </Label>
+            <AnimatedInput
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your new password"
+              variant="glow"
+              required
+              minLength={6}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-300 text-sm">
-                Confirm Password
-              </Label>
-              <AnimatedInput
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
-                variant="glow"
-                required
-                minLength={6}
-              />
-            </div>
+          <AnimatedButton
+            type="submit"
+            variant="purple"
+            className="w-full"
+            isLoading={isLoading}
+            icon={<ArrowRight className="w-4 h-4" />}
+          >
+            Reset Password
+          </AnimatedButton>
+        </form>
+      </AnimatedCard>
+    </div>
+  )
+}
 
-            <AnimatedButton
-              type="submit"
-              variant="purple"
-              className="w-full"
-              isLoading={isLoading}
-              icon={<ArrowRight className="w-4 h-4" />}
-            >
-              Reset Password
-            </AnimatedButton>
-          </form>
-        </AnimatedCard>
-      </div>
+export default function ResetPasswordPage() {
+  return (
+    <PageContainer>
+      <AppHeader />
+      <Suspense fallback={
+        <div className="container max-w-md mx-auto py-12">
+          <AnimatedCard variant="hover-glow" className="p-8">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-white mb-2">Loading...</h1>
+            </div>
+          </AnimatedCard>
+        </div>
+      }>
+        <ResetPasswordForm />
+      </Suspense>
     </PageContainer>
   )
 } 
