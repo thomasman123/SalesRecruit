@@ -195,7 +195,7 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            <SA className="flex-1 pr-1 -mr-1">
+            <SA className="flex-1 pr-1 -mr-1 min-h-0">
             <div className="space-y-6 pb-6">
               {/* Industries */}
               <div>
