@@ -33,6 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Badge } from "@/components/ui/badge"
+import { useUser } from "@/lib/hooks/use-user"
 
 interface RecruiterLayoutProps {
   children: React.ReactNode
@@ -43,6 +44,7 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const { userData, handleLogout } = useUser()
 
   // Mock unread message count
   const unreadMessageCount = 3
@@ -178,15 +180,16 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-dark-600">
-          <div
+          <button
+            onClick={handleLogout}
             className={cn(
-              "flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300",
+              "flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300 w-full",
               sidebarExpanded ? "justify-start" : "justify-center",
             )}
           >
             <LogOut className="h-5 w-5" />
             {sidebarExpanded && <span className="ml-3">Logout</span>}
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -215,11 +218,13 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center space-x-3 p-1 rounded-lg hover:bg-dark-700 transition-colors duration-300">
                       <Avatar className="h-8 w-8 border border-dark-600">
-                        <AvatarImage src="/placeholder.svg?height=32&width=32&query=abstract profile" />
-                        <AvatarFallback className="bg-purple-500/20 text-purple-400">AC</AvatarFallback>
+                        <AvatarImage src={userData?.avatar_url || "/placeholder.svg?height=32&width=32&query=abstract profile"} />
+                        <AvatarFallback className="bg-purple-500/20 text-purple-400">
+                          {userData?.full_name?.split(" ").map(n => n[0]).join("") || "U"}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="hidden md:block text-left">
-                        <div className="text-sm font-medium text-white">Acme Corp</div>
+                        <div className="text-sm font-medium text-white">{userData?.full_name || "User"}</div>
                         <div className="text-xs text-gray-400">Recruiter</div>
                       </div>
                     </button>
@@ -236,7 +241,10 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
                       <span>Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-dark-600" />
-                    <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300">
+                    <DropdownMenuItem 
+                      className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
+                      onClick={handleLogout}
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Logout</span>
                     </DropdownMenuItem>
