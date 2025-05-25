@@ -5,11 +5,15 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
   const type = requestUrl.searchParams.get("type")
-  const access_token = requestUrl.searchParams.get("access_token")
-  const refresh_token = requestUrl.searchParams.get("refresh_token")
+  
+  // Handle hash-based parameters
+  const hashParams = new URLSearchParams(requestUrl.hash.substring(1))
+  const access_token = requestUrl.searchParams.get("access_token") || hashParams.get("access_token")
+  const refresh_token = requestUrl.searchParams.get("refresh_token") || hashParams.get("refresh_token")
+  const hashType = hashParams.get("type")
 
-  // Password recovery flow
-  if (type === "recovery" && access_token && refresh_token) {
+  // Password recovery flow - handle both query params and hash
+  if ((type === "recovery" || hashType === "recovery") && access_token && refresh_token) {
     const supabase = createServerSupabaseClient()
     await supabase.auth.setSession({ access_token, refresh_token })
 
