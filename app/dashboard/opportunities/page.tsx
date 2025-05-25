@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedInput } from "@/components/ui/animated-input"
@@ -32,133 +32,43 @@ import {
   Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import type { Database } from "@/lib/supabase/database.types"
 
-// Mock data for opportunities
-const mockOpportunities = [
-  {
-    id: 1,
-    companyName: "TechGrowth Solutions",
-    logo: "/placeholder.svg?height=48&width=48&query=tech company logo",
-    offerType: "$5K Executive Coaching Program",
-    leadFlowProvided: true,
-    salesRole: "Closer",
-    callVolume: "15-20",
-    commissionPotential: "$8K-$15K/mo",
-    tags: ["Inbound", "High-Ticket", "Coaching", "Full Team"],
-    industry: "Coaching",
-    priceRange: "$3-10K",
-    leadSource: "Inbound",
-    commissionStructure: "100% Commission",
-    teamSize: "Full team",
-    remoteCompatible: true,
-    status: null,
-    starred: false,
-    new: true,
-    // Detailed info
-    companyOverview:
-      "TechGrowth Solutions is a leading executive coaching firm specializing in helping tech startup founders scale their companies from $1M to $10M ARR.",
-    whatYouSell:
-      "You'll be selling our flagship 12-week executive coaching program that includes 1-on-1 sessions, group masterminds, and access to our proprietary scaling framework. Target buyers are tech founders doing $500K-$3M in revenue.",
-    salesProcess:
-      "One-call close model with warm transfers from our setter team. Average call duration is 45-60 minutes. We use HubSpot CRM with custom pipelines. Full script provided but we encourage personalization.",
-    whatsProvided: [
-      "Pre-qualified warm leads (8-10 daily)",
-      "Full CRM access with automation",
-      "Proven sales script and rebuttals",
-      "Weekly sales training calls",
-      "Dedicated sales manager support",
-      "Commission tracking dashboard",
-    ],
-    notFor:
-      "This role is NOT for salespeople who rely heavily on scripts or those uncomfortable with consultative selling to high-level executives.",
-    commissionBreakdown:
-      "15% commission on all sales. Average deal size $5K = $750 per sale. Top performers closing 2-3 deals/week.",
-    rampTime: "2-3 weeks to first close, 6-8 weeks to full productivity",
-    workingHours: "Flexible hours, but most calls happen 10am-6pm EST",
-    videoIntro: "https://www.loom.com/share/example123",
-  },
-  {
-    id: 2,
-    companyName: "FitPro Academy",
-    logo: "/placeholder.svg?height=48&width=48&query=fitness logo",
-    offerType: "$3K Online Fitness Certification",
-    leadFlowProvided: true,
-    salesRole: "Hybrid",
-    callVolume: "20-25",
-    commissionPotential: "$5K-$10K/mo",
-    tags: ["Outbound", "Mid-Ticket", "Fitness", "Setters in place"],
-    industry: "Fitness",
-    priceRange: "$1-3K",
-    leadSource: "Hybrid",
-    commissionStructure: "Base + Commission",
-    teamSize: "Setters in place",
-    remoteCompatible: true,
-    status: "pending",
-    starred: true,
-    new: false,
-    companyOverview:
-      "FitPro Academy is the premier online certification program for personal trainers looking to build 6-figure online coaching businesses.",
-    whatYouSell:
-      "Our comprehensive certification program that teaches fitness professionals how to build and scale online coaching businesses. Includes business systems, marketing training, and ongoing mentorship.",
-    salesProcess:
-      "Two-call close process. Initial discovery call (30 min) followed by strategy session (45 min). Mix of inbound and outbound leads.",
-    whatsProvided: [
-      "Daily lead flow (mix of warm and cold)",
-      "Complete sales training program",
-      "Base salary + commission structure",
-      "Health benefits after 90 days",
-      "Career advancement opportunities",
-    ],
-    notFor: "Not suitable for those without fitness industry knowledge or passion for health and wellness.",
-    commissionBreakdown: "$2K base + 10% commission. Average 3-4 sales/week = $3-4K commission on top of base.",
-    rampTime: "3-4 weeks to proficiency",
-    workingHours: "9am-5pm PST with some evening calls",
-    videoIntro: null,
-  },
-  {
-    id: 3,
-    companyName: "SaaS Scale Pro",
-    logo: "/placeholder.svg?height=48&width=48&query=saas logo",
-    offerType: "$10K SaaS Growth Accelerator",
-    leadFlowProvided: false,
-    salesRole: "Closer",
-    callVolume: "8-12",
-    commissionPotential: "$10K-$25K/mo",
-    tags: ["Inbound", "High-Ticket", "SaaS", "Solo closer"],
-    industry: "SaaS",
-    priceRange: "$10K+",
-    leadSource: "Inbound",
-    commissionStructure: "100% Commission",
-    teamSize: "Solo closer",
-    remoteCompatible: true,
-    status: "interviewing",
-    starred: true,
-    new: false,
-    companyOverview:
-      "SaaS Scale Pro helps B2B SaaS companies accelerate growth through proven GTM strategies and hands-on implementation.",
-    whatYouSell:
-      "90-day intensive program for SaaS founders to implement scalable growth systems, optimize pricing, and build predictable revenue engines.",
-    salesProcess:
-      "Consultative one-call close with pre-qualified founders. Calls typically run 60-90 minutes with deep discovery and strategic recommendations.",
-    whatsProvided: [
-      "Highly qualified inbound leads",
-      "Comprehensive sales enablement materials",
-      "Direct access to founder for deal support",
-      "Uncapped commission potential",
-    ],
-    notFor:
-      "Not for transactional sellers or those who can't handle complex, strategic conversations with technical founders.",
-    commissionBreakdown: "20% commission on $10K deals = $2K per sale. Top rep doing $50K+/month.",
-    rampTime: "4-6 weeks due to technical complexity",
-    workingHours: "Flexible, most calls 11am-7pm EST",
-    videoIntro: "https://www.loom.com/share/example456",
-  },
-]
+type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
-type Opportunity = (typeof mockOpportunities)[0]
+interface Opportunity {
+  id: number
+  companyName: string
+  logo: string
+  offerType: string
+  leadFlowProvided: boolean
+  salesRole: string
+  callVolume: string | null
+  commissionPotential: string | null
+  tags: string[]
+  industry: string
+  priceRange: string
+  leadSource: string
+  commissionStructure: string
+  teamSize: string
+  remoteCompatible: boolean
+  status: string | null
+  starred: boolean
+  new: boolean
+  companyOverview: string | null
+  whatYouSell: string | null
+  salesProcess: string | null
+  whatsProvided: string[] | null
+  notFor: string | null
+  commissionBreakdown: string | null
+  rampTime: string | null
+  workingHours: string | null
+  videoIntro: string | null
+}
 
 export default function OpportunitiesPage() {
-  const [opportunities, setOpportunities] = useState(mockOpportunities)
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("newest")
@@ -173,6 +83,51 @@ export default function OpportunitiesPage() {
     teamSizes: [] as string[],
     remoteCompatible: false,
   })
+
+  useEffect(() => {
+    async function loadJobs() {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.from("jobs").select("*").eq("status", "active").order("created_at", { ascending: false })
+      if (error) {
+        console.error("Error loading jobs", error)
+        return
+      }
+
+      const mapped: Opportunity[] = (data as Job[]).map((j) => ({
+        id: j.id,
+        companyName: (j.company_overview?.split(" ")[0] ?? "Company"),
+        logo: j.video_url ?? "/placeholder.svg?height=48&width=48&query=company logo",
+        offerType: j.title,
+        leadFlowProvided: j.lead_source !== "Outbound",
+        salesRole: j.team_size?.includes("Setter") ? "Hybrid" : "Closer",
+        callVolume: null,
+        commissionPotential: j.price_range,
+        tags: [j.industry, j.lead_source, j.commission_structure].filter(Boolean) as string[],
+        industry: j.industry,
+        priceRange: j.price_range,
+        leadSource: j.lead_source,
+        commissionStructure: j.commission_structure,
+        teamSize: j.team_size,
+        remoteCompatible: j.remote_compatible,
+        status: null,
+        starred: false,
+        new: true,
+        companyOverview: j.company_overview,
+        whatYouSell: j.what_you_sell,
+        salesProcess: j.sales_process,
+        whatsProvided: j.whats_provided,
+        notFor: j.not_for,
+        commissionBreakdown: j.commission_breakdown,
+        rampTime: j.ramp_time,
+        workingHours: j.working_hours,
+        videoIntro: j.video_url,
+      }))
+
+      setOpportunities(mapped)
+    }
+
+    loadJobs()
+  }, [])
 
   const handleStarToggle = (id: number) => {
     setOpportunities((prev) => prev.map((opp) => (opp.id === id ? { ...opp, starred: !opp.starred } : opp)))
@@ -728,7 +683,7 @@ export default function OpportunitiesPage() {
                       What's Provided
                     </h3>
                     <ul className="space-y-2">
-                      {selectedOpportunity.whatsProvided.map((item, index) => (
+                      {selectedOpportunity.whatsProvided?.map((item, index) => (
                         <li key={index} className="flex items-start text-sm text-gray-300">
                           <CheckCircle className="w-4 h-4 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
                           <span>{item}</span>

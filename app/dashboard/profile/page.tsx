@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedInput } from "@/components/ui/animated-input"
@@ -11,73 +11,151 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Save, Briefcase, Target, Wrench, Brain, Video, Upload } from "lucide-react"
 import Link from "next/link"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ProfilePage() {
   const [formData, setFormData] = useState({
     // Personal Info
-    firstName: "John",
-    lastName: "Smith",
-    email: "john.smith@example.com",
-    location: "New York, NY",
-    bio: "Senior sales professional with 8+ years of experience in SaaS and high-ticket coaching sales.",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    location: "",
+    bio: "",
+    avatarUrl: "",
 
     // Section 1: Background and Performance
-    highestTicket:
-      "I closed a $35,000 executive coaching program targeting C-suite leaders in tech startups. The program focused on leadership development and scaling strategies.",
-    bestMonth:
-      "July 2023 - Generated $180K in revenue from 110 calls with a 38% close rate. Success came from refining my qualification process and focusing on pain points rather than features.",
-    exactRole:
-      "Senior Closer at TechGrowth Solutions. I handled warm transfers from setters, conducted discovery calls, and closed high-ticket coaching and consulting packages.",
-    leadDriedUp:
-      "I implemented a referral system with past clients offering commission for successful referrals. I also created targeted LinkedIn content to attract inbound leads and revived cold leads with a new value proposition.",
-    commissionExperience:
-      "Yes, for 2.5 years at StartupMentors. It taught me extreme ownership of my pipeline, disciplined follow-up processes, and how to manage cash flow during slower months by building reserves during strong periods.",
+    highestTicket: "",
+    bestMonth: "",
+    exactRole: "",
+    leadDriedUp: "",
+    commissionExperience: "",
 
     // Section 2: Sales Style and Offer Alignment
-    salesProcess:
-      "1) Warm greeting and rapport building (2-3 min)\n2) Set expectations for the call (1 min)\n3) Deep discovery questions focused on current situation, desired outcome, and obstacles (15-20 min)\n4) Transition by summarizing pain points and confirming accuracy (2 min)\n5) Present solution as bridge between current and desired state (5 min)\n6) Handle objections with empathy and specific examples (5-10 min)\n7) Close with clear next steps and payment process (5 min)",
-    thinkAboutIt:
-      "I understand completely. Most of my successful clients initially felt the same way. Can I ask - what specifically do you need to think about? Is it the investment, the timing, or something else? [Listen carefully] Based on what you've shared about [specific pain point], waiting another [timeframe] could cost you [specific consequence]. What would make this an easier decision for you today?",
-    intangibleSales:
-      "Yes, I sold executive mindset coaching. I positioned it by quantifying the cost of indecision and poor leadership - turnover costs, missed opportunities, stress-related productivity loss. I used specific client success stories with measurable outcomes like 'reduced executive turnover by 35%' and 'increased team productivity by 28%' to make the intangible tangible.",
-    dislikedClients:
-      "I struggle with clients who expect overnight results without putting in work. Specifically, small business owners who want enterprise-level growth but resist implementing necessary systems or investing appropriate resources. These engagements often lead to misaligned expectations and frustration on both sides.",
-    disagreedTechnique:
-      "I strongly disagree with the 'always be closing' mentality that treats every interaction as a closing opportunity. This creates unnecessary pressure and damages trust. I believe in always providing value and earning the right to close through genuine understanding of client needs. This builds stronger relationships and higher lifetime value.",
+    salesProcess: "",
+    thinkAboutIt: "",
+    intangibleSales: "",
+    dislikedClients: "",
+    disagreedTechnique: "",
 
     // Section 3: Tools and Self-Management
-    crmExperience:
-      "HubSpot, Salesforce, and Close.io. Daily workflow: Morning pipeline review, tagging leads by stage, setting follow-up tasks with specific dates/times, detailed call notes including objections and personal details, and creating custom fields to track lead source effectiveness.",
-    dailyRoutine:
-      "6:30AM: Exercise and mindset work\n8:00AM: Review pipeline and prioritize day\n8:30AM: Research upcoming calls\n9:00AM-12:00PM: Scheduled calls\n12:00PM-1:00PM: Lunch and quick break\n1:00PM-2:00PM: Follow-ups and admin\n2:00PM-4:30PM: Afternoon calls\n4:30PM-5:30PM: CRM updates and next day prep",
-    noShowProcess:
-      "1) Wait 5 minutes on the line\n2) Call them immediately\n3) If no answer, leave voicemail expressing concern\n4) Send text message within 2 minutes\n5) Follow up with email offering reschedule options\n6) Add task in CRM for follow-up call next day\n7) If still no response, follow up 2 more times over 7 days before tagging as cold",
-    callCapacity:
-      "8-10 quality calls per day. This allows 30 minutes of prep before each call, 45-60 minutes for the call itself, and 15-20 minutes for thorough follow-up and CRM updates. More than this leads to decreased performance as I can't properly prepare or follow up, which impacts conversion rates.",
+    crmExperience: "",
+    dailyRoutine: "",
+    noShowProcess: "",
+    callCapacity: "",
 
     // Section 4: Drive and Mindset
-    whySales:
-      "Sales gives me three things I deeply value: financial freedom to support my family, intellectual challenge of solving complex problems, and measurable impact on businesses and people. I'm driven by the direct relationship between effort and results, and the constant growth required to succeed.",
-    slumpResponse:
-      "Q1 2022, I went 2/25 on closes after previously averaging 35%. I analyzed call recordings and identified I was rushing discovery and making assumptions. I created a new discovery framework with specific questions, practiced active listening techniques, and had my manager review calls. Within 3 weeks, I was back to 30%+ close rates.",
-    leadershipStyle:
-      "I perform best with leaders who provide clear expectations and regular, direct feedback. I prefer weekly 1:1s with specific metrics review and actionable feedback rather than vague direction. I value autonomy in execution but appreciate guidance on strategy and regular check-ins on progress.",
-    underperformResponse:
-      "My sales director told me my discovery process wasn't deep enough, leading to weak proposals. Instead of defending myself, I asked for specific examples, shadowed top performers, and created a new discovery framework. I asked for weekly reviews of my calls for a month until the issue was resolved. My close rate improved by 15% within 6 weeks.",
-    currentImprovement:
-      "I'm working on improving my questioning techniques to uncover unstated objections earlier in the sales process. I'm reading 'Never Split the Difference', practicing labeling and mirroring techniques, and recording my calls to review how effectively I'm implementing these approaches.",
+    whySales: "",
+    slumpResponse: "",
+    leadershipStyle: "",
+    underperformResponse: "",
+    currentImprovement: "",
 
     // Section 5: Video Intro
-    videoUrl: "https://www.loom.com/share/example12345",
+    videoUrl: "",
   })
+
+  const { toast } = useToast()
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) throw error
+        if (user) {
+          setFormData((prev) => ({
+            ...prev,
+            firstName: user.user_metadata?.first_name || "",
+            lastName: user.user_metadata?.last_name || "",
+            email: user.email || "",
+            phone: user.user_metadata?.phone || "",
+            location: user.user_metadata?.location || "",
+            bio: user.user_metadata?.bio || "",
+            avatarUrl: user.user_metadata?.avatar_url || "",
+            // keep existing extended fields if previously saved
+            ...user.user_metadata,
+          }))
+        }
+      } catch (err: any) {
+        console.error(err)
+        toast({ title: "Failed to load profile", description: err.message, variant: "destructive" })
+      }
+    }
+    fetchProfile()
+  }, [toast])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = () => {
-    console.log("Saving profile data:", formData)
-    // Handle save logic here
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const supabase = getSupabaseClient()
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: false })
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+      setFormData((prev) => ({ ...prev, avatarUrl: data.publicUrl }))
+    } catch (err: any) {
+      console.error(err)
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      const supabase = getSupabaseClient()
+
+      // Update auth user (email / password change requires secure reauth, skipping password here)
+      const updates: any = {
+        data: {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          avatar_url: formData.avatarUrl,
+          // keep extended metadata
+          highestTicket: formData.highestTicket,
+          bestMonth: formData.bestMonth,
+          exactRole: formData.exactRole,
+          leadDriedUp: formData.leadDriedUp,
+          commissionExperience: formData.commissionExperience,
+          salesProcess: formData.salesProcess,
+          thinkAboutIt: formData.thinkAboutIt,
+          intangibleSales: formData.intangibleSales,
+          dislikedClients: formData.dislikedClients,
+          disagreedTechnique: formData.disagreedTechnique,
+          crmExperience: formData.crmExperience,
+          dailyRoutine: formData.dailyRoutine,
+          noShowProcess: formData.noShowProcess,
+          callCapacity: formData.callCapacity,
+          whySales: formData.whySales,
+          slumpResponse: formData.slumpResponse,
+          leadershipStyle: formData.leadershipStyle,
+          underperformResponse: formData.underperformResponse,
+          currentImprovement: formData.currentImprovement,
+        },
+      }
+
+      if (formData.email) {
+        updates.email = formData.email
+      }
+
+      const { error } = await supabase.auth.updateUser(updates)
+      if (error) throw error
+
+      toast({ title: "Profile updated", description: "Your profile has been saved successfully." })
+    } catch (err: any) {
+      toast({ title: "Save failed", description: err.message, variant: "destructive" })
+    }
   }
 
   return (
@@ -99,13 +177,13 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="flex flex-col items-center">
               <Avatar className="h-24 w-24 border-2 border-purple-500/30">
-                <AvatarImage src="/placeholder.svg?height=96&width=96&query=abstract profile" />
-                <AvatarFallback className="bg-purple-500/20 text-purple-400 text-2xl">JS</AvatarFallback>
+                <AvatarImage src={formData.avatarUrl || "/placeholder.svg?height=96&width=96&query=abstract profile"} />
+                <AvatarFallback className="bg-purple-500/20 text-purple-400 text-2xl">{`${formData.firstName?.[0] || ""}${formData.lastName?.[0] || ""}`}</AvatarFallback>
               </Avatar>
-              <AnimatedButton variant="outline" className="mt-4 text-sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Change Photo
-              </AnimatedButton>
+              <label className="mt-4 text-sm cursor-pointer flex items-center gap-2 text-purple-400 hover:text-purple-300">
+                <Upload className="h-4 w-4" /> Change Photo
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
 
             <div className="flex-1 space-y-4">
@@ -143,6 +221,19 @@ export default function ProfilePage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
+                  variant="glow"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-300 text-sm">
+                  Phone
+                </Label>
+                <AnimatedInput
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
                   variant="glow"
                 />
               </div>
