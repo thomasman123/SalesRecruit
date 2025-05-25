@@ -21,8 +21,52 @@ import {
 import Link from "next/link"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
 
 export default function RecruiterDashboardPage() {
+  const [stats, setStats] = useState({ jobs: 0, applicants: 0, views: 0, interviews: 0 })
+  const [recentApplicants, setRecentApplicants] = useState<any[]>([])
+  const [recentJobs, setRecentJobs] = useState<any[]>([])
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+
+  useEffect(() => {
+    async function load() {
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const [{ count: activeJobs }, { data: jobRows }] = await Promise.all([
+        supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('recruiter_id', user.id).eq('status', 'active'),
+        supabase.from('jobs').select('id, views').eq('recruiter_id', user.id)
+      ])
+
+      const viewsTotal = jobRows?.reduce((t, r) => t + (r.views || 0), 0) ?? 0
+
+      const jobIds = jobRows?.map(r => r.id) ?? []
+
+      const [applicantRes, interviewRes, recentApplicantsRes, recentJobsRes] = await Promise.all([
+        supabase.from('applicants').select('id', { count: 'exact', head: true }).in('job_id', jobIds),
+        supabase.from('applicants').select('id', { count: 'exact', head: true }).in('job_id', jobIds).eq('status', 'interviewing'),
+        supabase.from('applicants').select('name,email,avatar_url,job_id,created_at').in('job_id', jobIds).order('created_at', { ascending: false }).limit(4),
+        supabase.from('jobs').select('*').eq('recruiter_id', user.id).order('created_at', { ascending: false }).limit(3)
+      ])
+
+      setStats({
+        jobs: activeJobs ?? 0,
+        applicants: applicantRes.count ?? 0,
+        views: viewsTotal,
+        interviews: interviewRes.count ?? 0,
+      })
+
+      setRecentApplicants(recentApplicantsRes.data ?? [])
+      setRecentJobs(recentJobsRes.data ?? [])
+
+      // recent messages placeholder until table ready
+    }
+    load()
+  }, [])
+
   return (
     <div className="container mx-auto max-w-7xl">
       <FadeIn delay={100}>
@@ -46,7 +90,7 @@ export default function RecruiterDashboardPage() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Active Jobs</p>
                 <h3 className="text-2xl font-bold text-white">
-                  <span className="font-mono">3</span>
+                  <span className="font-mono">{stats.jobs}</span>
                 </h3>
                 <p className="text-xs text-green-400 mt-1 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -66,7 +110,7 @@ export default function RecruiterDashboardPage() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Total Applicants</p>
                 <h3 className="text-2xl font-bold text-white">
-                  <span className="font-mono">24</span>
+                  <span className="font-mono">{stats.applicants}</span>
                 </h3>
                 <p className="text-xs text-green-400 mt-1 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -86,7 +130,7 @@ export default function RecruiterDashboardPage() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Job Views</p>
                 <h3 className="text-2xl font-bold text-white">
-                  <span className="font-mono">142</span>
+                  <span className="font-mono">{stats.views}</span>
                 </h3>
                 <p className="text-xs text-green-400 mt-1 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -106,7 +150,7 @@ export default function RecruiterDashboardPage() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Interviews</p>
                 <h3 className="text-2xl font-bold text-white">
-                  <span className="font-mono">7</span>
+                  <span className="font-mono">{stats.interviews}</span>
                 </h3>
                 <p className="text-xs text-purple-400 mt-1 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
@@ -159,43 +203,14 @@ export default function RecruiterDashboardPage() {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    name: "John Smith",
-                    role: "TechGrowth Solutions - Closer",
-                    time: "2 hours ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 1",
-                    status: "new",
-                  },
-                  {
-                    name: "Sarah Johnson",
-                    role: "FitPro Academy - Hybrid",
-                    time: "5 hours ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 2",
-                    status: "reviewing",
-                  },
-                  {
-                    name: "Michael Brown",
-                    role: "SaaS Scale Pro - Closer",
-                    time: "1 day ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 3",
-                    status: "interviewing",
-                  },
-                  {
-                    name: "Emily Davis",
-                    role: "TechGrowth Solutions - Closer",
-                    time: "2 days ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 4",
-                    status: "hired",
-                  },
-                ].map((applicant, index) => (
+                {recentApplicants.map((applicant, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-4 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors duration-300 cursor-pointer"
                   >
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-10 w-10 border border-dark-600">
-                        <AvatarImage src={applicant.avatar || "/placeholder.svg"} />
+                        <AvatarImage src={applicant.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400">
                           {applicant.name
                             .split(" ")
@@ -205,7 +220,7 @@ export default function RecruiterDashboardPage() {
                       </Avatar>
                       <div>
                         <h3 className="text-white font-medium">{applicant.name}</h3>
-                        <p className="text-gray-400 text-sm">{applicant.role}</p>
+                        <p className="text-gray-400 text-sm">{applicant.job_id}</p>
                       </div>
                     </div>
                     <div className="flex items-center">
@@ -229,7 +244,7 @@ export default function RecruiterDashboardPage() {
                               ? "Interviewing"
                               : "Hired"}
                       </div>
-                      <span className="text-gray-500 text-xs">{applicant.time}</span>
+                      <span className="text-gray-500 text-xs">{applicant.created_at}</span>
                     </div>
                   </div>
                 ))}
@@ -250,29 +265,7 @@ export default function RecruiterDashboardPage() {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    title: "Senior Closer - Executive Coaching",
-                    applicants: 12,
-                    views: 78,
-                    posted: "5 days ago",
-                    status: "active",
-                  },
-                  {
-                    title: "Sales Development Rep - SaaS",
-                    applicants: 8,
-                    views: 45,
-                    posted: "1 week ago",
-                    status: "active",
-                  },
-                  {
-                    title: "Hybrid Sales Role - Fitness",
-                    applicants: 4,
-                    views: 19,
-                    posted: "2 days ago",
-                    status: "active",
-                  },
-                ].map((job, index) => (
+                {recentJobs.map((job, index) => (
                   <div
                     key={index}
                     className="p-4 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors duration-300 cursor-pointer"
@@ -301,7 +294,7 @@ export default function RecruiterDashboardPage() {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-1 text-purple-400" />
-                        <span>{job.posted}</span>
+                        <span>{job.created_at}</span>
                       </div>
                     </div>
                   </div>
@@ -321,29 +314,7 @@ export default function RecruiterDashboardPage() {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    name: "John Smith",
-                    message: "Thanks for considering my application. I'm available for an interview anytime next week.",
-                    time: "1 hour ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 1",
-                    unread: true,
-                  },
-                  {
-                    name: "Sarah Johnson",
-                    message: "I have a few questions about the compensation structure for the hybrid role.",
-                    time: "3 hours ago",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 2",
-                    unread: true,
-                  },
-                  {
-                    name: "Michael Brown",
-                    message: "Just sent over my portfolio of past sales results as requested.",
-                    time: "Yesterday",
-                    avatar: "/placeholder.svg?height=40&width=40&query=person 3",
-                    unread: false,
-                  },
-                ].map((message, index) => (
+                {recentMessages.map((message, index) => (
                   <div
                     key={index}
                     className={cn(
@@ -353,7 +324,7 @@ export default function RecruiterDashboardPage() {
                   >
                     <div className="flex items-start space-x-4">
                       <Avatar className="h-10 w-10 border border-dark-600">
-                        <AvatarImage src={message.avatar || "/placeholder.svg"} />
+                        <AvatarImage src={message.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400">
                           {message.name
                             .split(" ")
@@ -364,7 +335,7 @@ export default function RecruiterDashboardPage() {
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-white font-medium">{message.name}</h3>
-                          <span className="text-gray-500 text-xs">{message.time}</span>
+                          <span className="text-gray-500 text-xs">{message.created_at}</span>
                         </div>
                         <p className="text-gray-400 text-sm line-clamp-2">{message.message}</p>
                       </div>
@@ -390,52 +361,7 @@ export default function RecruiterDashboardPage() {
             </div>
 
             <div className="space-y-4">
-              {[
-                {
-                  name: "John Smith",
-                  role: "Senior Closer - Executive Coaching",
-                  time: "Today, 2:00 PM",
-                  avatar: "/placeholder.svg?height=40&width=40&query=person 1",
-                },
-                {
-                  name: "Sarah Johnson",
-                  role: "Hybrid Sales Role - Fitness",
-                  time: "Tomorrow, 11:00 AM",
-                  avatar: "/placeholder.svg?height=40&width=40&query=person 2",
-                },
-                {
-                  name: "Michael Brown",
-                  role: "Sales Development Rep - SaaS",
-                  time: "May 27, 3:30 PM",
-                  avatar: "/placeholder.svg?height=40&width=40&query=person 3",
-                },
-              ].map((interview, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors duration-300 cursor-pointer"
-                >
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10 border border-dark-600">
-                      <AvatarImage src={interview.avatar || "/placeholder.svg"} />
-                      <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                        {interview.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-white font-medium">{interview.name}</h3>
-                      <p className="text-gray-400 text-sm">{interview.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                      {interview.time}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {/* Placeholder for upcoming interviews */}
             </div>
           </AnimatedCard>
 

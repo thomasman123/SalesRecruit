@@ -12,9 +12,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, Upload, Building2, DollarSign, Briefcase } from "lucide-react"
 import Link from "next/link"
+import { createJob } from "@/app/actions/jobs"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function NewJobPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
@@ -39,14 +42,24 @@ export default function NewJobPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSaveAsDraft = () => {
-    console.log("Saving as draft:", formData)
-    router.push("/recruiter/jobs")
+  const handleSaveAsDraft = async () => {
+    try {
+      await createJob({ ...formData, status: "draft" } as any)
+      toast({ title: "Job saved as draft" })
+      router.push("/recruiter/jobs")
+    } catch (err: any) {
+      toast({ title: "Failed", description: err.message, variant: "destructive" })
+    }
   }
 
-  const handlePublish = () => {
-    console.log("Publishing job:", { ...formData, status: "active" })
-    router.push("/recruiter/jobs")
+  const handlePublish = async () => {
+    try {
+      await createJob({ ...formData, status: "active" } as any)
+      toast({ title: "Job published" })
+      router.push("/recruiter/jobs")
+    } catch (err: any) {
+      toast({ title: "Failed", description: err.message, variant: "destructive" })
+    }
   }
 
   return (
@@ -379,11 +392,11 @@ export default function NewJobPage() {
 
       <FadeIn delay={500}>
         <div className="flex justify-between mb-16">
-          <AnimatedButton variant="outline" animation="scale" onClick={handleSaveAsDraft}>
+          <AnimatedButton variant="outline" onClick={handleSaveAsDraft}>
             <Save className="w-4 h-4 mr-2" />
             Save as Draft
           </AnimatedButton>
-          <AnimatedButton variant="purple" animation="glow" onClick={handlePublish}>
+          <AnimatedButton variant="purple" onClick={handlePublish}>
             Publish Job
           </AnimatedButton>
         </div>
