@@ -177,10 +177,10 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4">
+    <div className="flex h-[calc(100vh-4rem)] gap-4 max-w-7xl mx-auto px-4 overflow-hidden">
       {/* Left Panel - Filters */}
       <FadeIn delay={100}>
-        <div className={cn("transition-all duration-300", showFilters ? "w-64" : "w-0 overflow-hidden")}>
+        <div className={cn("transition-all duration-300", showFilters ? "w-72" : "w-0 overflow-hidden")}>
           <AnimatedCard variant="hover-glow" className="h-full p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white flex items-center">
@@ -500,7 +500,7 @@ export default function OpportunitiesPage() {
 
           {/* Opportunities List */}
           <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-4">
+            <div className="grid gap-4 pr-4 md:grid-cols-2 xl:grid-cols-2">
               {opportunities.map((opportunity) => (
                 <AnimatedCard
                   key={opportunity.id}
@@ -595,7 +595,6 @@ export default function OpportunitiesPage() {
                     variant="purple"
                     size="sm"
                     className="w-full"
-                    animation="scale"
                     icon={<ChevronRight className="w-4 h-4" />}
                   >
                     View Role
@@ -741,7 +740,6 @@ export default function OpportunitiesPage() {
                 <AnimatedButton
                   variant="purple"
                   className="w-full"
-                  animation="glow"
                   onClick={() => handleApply(selectedOpportunity)}
                   disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
                 >

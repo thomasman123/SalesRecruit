@@ -113,11 +113,13 @@ export default function OnboardingPage() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
 
-      // OPTIONAL: Save onboarding responses; ensure table exists first
-      // await supabase.from('onboarding_responses').insert({ user_id: user?.id, responses: formData })
-
-      // Mark user as onboarded in auth metadata
-      const { error } = await supabase.auth.updateUser({ data: { onboarded: true } })
+      // Persist onboarding responses into auth metadata
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          onboarded: true,
+          ...formData,
+        },
+      })
       if (error) throw error
 
       router.push('/dashboard')
