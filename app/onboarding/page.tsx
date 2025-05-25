@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress"
 import { ArrowRight, ArrowLeft, Briefcase, Target, Wrench, Brain, Video, CheckCircle, Upload } from "lucide-react"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { getSupabaseClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
 
 const TOTAL_SECTIONS = 5
 
@@ -51,12 +52,48 @@ export default function OnboardingPage() {
     videoUrl: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const sectionValidators: Record<number, () => boolean> = {
+    1: () => {
+      const { highestTicket, bestMonth, exactRole, leadDriedUp, commissionExperience } = formData
+      return [highestTicket, bestMonth, exactRole, leadDriedUp, commissionExperience].every((t) => t.trim().length >= 30)
+    },
+    2: () => {
+      const { salesProcess, thinkAboutIt, intangibleSales, dislikedClients, disagreedTechnique } = formData
+      return [salesProcess, thinkAboutIt, intangibleSales, dislikedClients, disagreedTechnique].every((t) => t.trim().length >= 30)
+    },
+    3: () => {
+      const { crmExperience, dailyRoutine, noShowProcess, callCapacity } = formData
+      return [crmExperience, dailyRoutine, noShowProcess, callCapacity].every((t) => t.trim().length >= 20)
+    },
+    4: () => {
+      const { whySales, slumpResponse, leadershipStyle, underperformResponse, currentImprovement } = formData
+      return [whySales, slumpResponse, leadershipStyle, underperformResponse, currentImprovement].every((t) => t.trim().length >= 30)
+    },
+    5: () => {
+      return formData.videoUrl.trim().length > 10
+    },
+  }
+
+  const validateCurrent = (): boolean => {
+    const valid = sectionValidators[currentSection]()
+    if (!valid) {
+      toast({
+        title: "Incomplete section",
+        description: "Please answer all questions in this section with sufficient detail before continuing.",
+        variant: "destructive",
+      })
+    }
+    return valid
+  }
+
   const handleNext = () => {
+    if (!validateCurrent()) return
     if (currentSection < TOTAL_SECTIONS) {
       setCurrentSection((prev) => prev + 1)
     }
@@ -69,6 +106,7 @@ export default function OnboardingPage() {
   }
 
   const handleSubmit = async () => {
+    if (!validateCurrent()) return
     setIsSubmitting(true)
     try {
       const supabase = getSupabaseClient()
