@@ -7,9 +7,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createServerSupabaseClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const {
+      data: { session },
+    } = await supabase.auth.exchangeCodeForSession(code)
+
+    const role = session?.user?.user_metadata?.role
+    const redirectPath = role === "recruiter" ? "/recruiter" : "/dashboard"
+
+    return NextResponse.redirect(new URL(redirectPath, requestUrl.origin))
   }
 
-  // URL to redirect to after sign in process completes
   return NextResponse.redirect(requestUrl.origin)
 }

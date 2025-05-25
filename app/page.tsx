@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, Target, ArrowRight, Zap, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
 
 // New design system components
 import { PageContainer } from "@/components/layout/page-container"
@@ -34,23 +36,103 @@ export default function HomePage() {
     password: "",
   })
 
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Signup data:", signupData)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
-    // Check if user is a recruiter or sales professional
-    if (signupData.role === "recruiter") {
-      // Recruiters go straight to dashboard
-      router.push("/recruiter")
-    } else if (signupData.role === "sales-professional") {
-      // Sales professionals go through onboarding
-      router.push("/onboarding")
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const supabase = getSupabaseClient()
+
+      const { data, error } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            first_name: signupData.firstName,
+            last_name: signupData.lastName,
+            role: signupData.role,
+            full_name: `${signupData.firstName} ${signupData.lastName}`,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) throw error
+
+      if (data.user) {
+        toast({
+          title: "Verification email sent",
+          description: "Please check your email to verify your account before logging in.",
+        })
+
+        // Clear form
+        setSignupData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          role: "",
+        })
+      }
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "Please check your information and try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Login data:", loginData)
+    setIsLoading(true)
+
+    try {
+      const supabase = getSupabaseClient()
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      })
+
+      if (error) throw error
+
+      if (!data.user?.email_confirmed_at) {
+        toast({
+          title: "Email not verified",
+          description: "Please check your email and verify your account before logging in.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Determine user role from metadata
+      const role = data.user?.user_metadata?.role
+
+      if (role === "recruiter") {
+        router.push("/recruiter")
+      } else {
+        router.push("/dashboard")
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -157,8 +239,9 @@ export default function HomePage() {
                           animation="glow"
                           icon={<ArrowRight className="w-4 h-4" />}
                           className="w-full mt-6"
+                          disabled={isLoading}
                         >
-                          Sign in
+                          {isLoading ? "Signing in..." : "Sign in"}
                         </AnimatedButton>
                       </form>
                     </CardContent>
@@ -259,8 +342,9 @@ export default function HomePage() {
                           animation="glow"
                           icon={<ArrowRight className="w-4 h-4" />}
                           className="w-full mt-6"
+                          disabled={isLoading}
                         >
-                          Create account
+                          {isLoading ? "Creating account..." : "Create account"}
                         </AnimatedButton>
                       </form>
                     </CardContent>
