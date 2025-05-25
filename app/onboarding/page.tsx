@@ -168,7 +168,7 @@ export default function OnboardingPage() {
           <FadeIn delay={0}>
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-white mb-4">
-                Welcome to Sales<span className="font-mono text-purple-400">Recruit</span>
+                Welcome to Helios<span className="font-mono text-purple-400"> Recruit</span>
               </h1>
               <p className="text-gray-400 text-lg">Complete your profile to access opportunities</p>
             </div>

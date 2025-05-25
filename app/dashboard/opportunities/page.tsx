@@ -195,7 +195,7 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            <SA className="flex-1 pr-1">
+            <SA className="flex-1 pr-1 -mr-1">
             <div className="space-y-6 pb-6">
               {/* Industries */}
               <div>
@@ -404,8 +404,11 @@ export default function OpportunitiesPage() {
                   </Label>
                 </div>
               </div>
+            </div>
+            </SA>
 
-              {/* Clear Filters */}
+            {/* Clear Filters (sticky bottom) */}
+            <div className="pt-4">
               <AnimatedButton
                 variant="ghost"
                 className="w-full text-sm"
@@ -423,7 +426,6 @@ export default function OpportunitiesPage() {
                 Clear All Filters
               </AnimatedButton>
             </div>
-            </SA>
           </AnimatedCard>
         </div>
       </FadeIn>
@@ -756,7 +758,7 @@ export default function OpportunitiesPage() {
                           : "Apply Now"}
                 </AnimatedButton>
                 {!selectedOpportunity.status && (
-                  <p className="text-xs text-gray-400 text-center mt-2">Quick apply with your SalesRecruit profile</p>
+                  <p className="text-xs text-gray-400 text-center mt-2">Quick apply with your Helios Recruit profile</p>
                 )}
               </div>
             </AnimatedCard>

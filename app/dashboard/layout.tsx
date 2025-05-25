@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Users className="h-5 w-5 text-white" />
                 </div>
                 <span className="font-semibold text-white">
-                  Sales<span className="font-mono text-purple-400">Recruit</span>
+                  Helios<span className="font-mono text-purple-400"> Recruit</span>
                 </span>
               </div>
             )}

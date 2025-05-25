@@ -22,7 +22,7 @@ export function AppHeader({
             <Target className="h-5 w-5 text-white" />
           </div>
           <h1 className="text-xl font-semibold text-white group-hover:text-purple-400 transition-colors duration-300">
-            Sales<span className="font-mono text-purple-400">Recruit</span>
+            Helios<span className="font-mono text-purple-400"> Recruit</span>
           </h1>
         </div>
 

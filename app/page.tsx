@@ -461,7 +461,7 @@ export default function HomePage() {
               <Target className="h-4 w-4 text-white" />
             </div>
             <span className="font-semibold text-white group-hover:text-purple-400 transition-colors duration-300">
-              Sales<span className="font-mono text-purple-400">Recruit</span>
+              Helios<span className="font-mono text-purple-400"> Recruit</span>
             </span>
           </div>
 

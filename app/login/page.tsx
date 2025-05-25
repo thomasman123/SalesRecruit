@@ -138,7 +138,7 @@ export default function LoginPage() {
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white">
-              Sales<span className="font-mono text-purple-400">Recruit</span>
+              Helios<span className="font-mono text-purple-400"> Recruit</span>
             </h1>
             <p className="text-gray-400 mt-2">Connect sales talent with opportunity</p>
           </div>
