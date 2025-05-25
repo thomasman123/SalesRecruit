@@ -42,5 +42,5 @@ export function AnimatedIcon({
     xl: "w-12 h-12",
   }
 
-  return <div className={cn(sizes[size], colors[color], variants[variant], className)}>{children}</div>
+  return <div className={cn("flex items-center justify-center", sizes[size], colors[color], variants[variant], className)}>{children}</div>
 }
