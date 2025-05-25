@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
     // Enforce onboarding for sales professionals
     if (role === "sales-professional") {
       // If not onboarded, force to onboarding page (except if already there)
-      if (!onboarded && !pathname.startsWith("/onboarding")) {
+      if (!onboarded && !pathname.startsWith("/onboarding") && !pathname.startsWith("/reset-password")) {
         return NextResponse.redirect(new URL("/onboarding", request.url))
       }
 
