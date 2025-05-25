@@ -47,6 +47,7 @@ export async function middleware(request: NextRequest) {
   if (session) {
     // Check the user's role from metadata (faster than extra DB query)
     const role = session.user.user_metadata?.role as string | undefined
+    const onboarded = session.user.user_metadata?.onboarded as boolean | undefined
 
     if (role === "recruiter" && pathname.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/recruiter", request.url))
@@ -54,6 +55,24 @@ export async function middleware(request: NextRequest) {
 
     if (role === "sales-professional" && pathname.startsWith("/recruiter")) {
       return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+
+    // Enforce onboarding for sales professionals
+    if (role === "sales-professional") {
+      // If not onboarded, force to onboarding page (except if already there)
+      if (!onboarded && !pathname.startsWith("/onboarding")) {
+        return NextResponse.redirect(new URL("/onboarding", request.url))
+      }
+
+      // If onboarded and trying to access onboarding page again, redirect to dashboard
+      if (onboarded && pathname.startsWith("/onboarding")) {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
+    }
+
+    // Redirect based on role from root path
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL(role === 'recruiter' ? '/recruiter' : '/dashboard', request.url))
     }
   }
 

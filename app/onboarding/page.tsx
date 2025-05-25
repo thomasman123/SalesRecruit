@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { ArrowRight, ArrowLeft, Briefcase, Target, Wrench, Brain, Video, CheckCircle, Upload } from "lucide-react"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
+import { getSupabaseClient } from "@/lib/supabase/client"
 
 const TOTAL_SECTIONS = 5
 
@@ -49,6 +50,7 @@ export default function OnboardingPage() {
     // Section 5: Video Intro
     videoUrl: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -67,10 +69,25 @@ export default function OnboardingPage() {
   }
 
   const handleSubmit = async () => {
-    // Handle form submission
-    console.log("Submitting onboarding data:", formData)
-    // After successful submission, redirect to dashboard
-    router.push("/dashboard")
+    setIsSubmitting(true)
+    try {
+      const supabase = getSupabaseClient()
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // OPTIONAL: Save onboarding responses; ensure table exists first
+      // await supabase.from('onboarding_responses').insert({ user_id: user?.id, responses: formData })
+
+      // Mark user as onboarded in auth metadata
+      const { error } = await supabase.auth.updateUser({ data: { onboarded: true } })
+      if (error) throw error
+
+      router.push('/dashboard')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const sections = [
@@ -537,7 +554,6 @@ export default function OnboardingPage() {
                 {currentSection < TOTAL_SECTIONS ? (
                   <AnimatedButton
                     variant="purple"
-                    animation="slide"
                     onClick={handleNext}
                     icon={<ArrowRight className="w-4 h-4" />}
                   >
@@ -546,8 +562,8 @@ export default function OnboardingPage() {
                 ) : (
                   <AnimatedButton
                     variant="purple"
-                    animation="glow"
                     onClick={handleSubmit}
+                    isLoading={isSubmitting}
                     icon={<CheckCircle className="w-4 h-4" />}
                   >
                     Complete Onboarding
