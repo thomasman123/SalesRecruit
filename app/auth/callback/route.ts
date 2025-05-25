@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     const supabase = createServerSupabaseClient()
     await supabase.auth.setSession({ access_token, refresh_token })
 
-    return Response.redirect(new URL("/reset-password", requestUrl.origin))
+    // Redirect to reset password page with the tokens
+    const resetPasswordUrl = new URL("/reset-password", requestUrl.origin)
+    resetPasswordUrl.searchParams.set("access_token", access_token)
+    resetPasswordUrl.searchParams.set("refresh_token", refresh_token)
+    return Response.redirect(resetPasswordUrl)
   }
 
   if (code) {

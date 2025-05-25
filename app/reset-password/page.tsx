@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
-
+import React, { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
-import { useRouter } from "next/navigation"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedInput } from "@/components/ui/animated-input"
@@ -17,14 +16,57 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isValidToken, setIsValidToken] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const access_token = searchParams.get("access_token")
+    const refresh_token = searchParams.get("refresh_token")
+
+    if (!access_token || !refresh_token) {
+      toast({
+        title: "Invalid reset link",
+        description: "This password reset link is invalid or has expired.",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
+    // Set the session with the tokens
+    const supabase = getSupabaseClient()
+    supabase.auth.setSession({ access_token, refresh_token })
+      .then(() => {
+        setIsValidToken(true)
+      })
+      .catch((error) => {
+        console.error("Error setting session:", error)
+        toast({
+          title: "Invalid reset link",
+          description: "This password reset link is invalid or has expired.",
+          variant: "destructive",
+        })
+        router.push("/login")
+      })
+  }, [searchParams, router, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password !== confirmPassword) {
       toast({
         title: "Passwords do not match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive",
       })
       return
@@ -33,7 +75,8 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
     try {
       const supabase = getSupabaseClient()
-      const { data, error } = await supabase.auth.updateUser({ password })
+      const { error } = await supabase.auth.updateUser({ password })
+      
       if (error) throw error
 
       toast({
@@ -52,50 +95,65 @@ export default function ResetPasswordPage() {
     }
   }
 
+  if (!isValidToken) {
+    return null
+  }
+
   return (
     <PageContainer>
       <AppHeader />
-      <section className="py-24 px-6 flex justify-center">
-        <AnimatedCard variant="hover-glow" className="max-w-md w-full">
-          <form onSubmit={handleSubmit} className="p-8 space-y-4">
-            <h2 className="text-xl font-semibold text-white mb-4">Reset your password</h2>
+      <div className="container max-w-md mx-auto py-12">
+        <AnimatedCard variant="hover-glow" className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white mb-2">Reset Your Password</h1>
+            <p className="text-gray-400">Enter your new password below</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="new-password">New password</Label>
+              <Label htmlFor="password" className="text-gray-300 text-sm">
+                New Password
+              </Label>
               <AnimatedInput
-                id="new-password"
+                id="password"
                 type="password"
-                placeholder="Enter new password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your new password"
                 variant="glow"
                 required
+                minLength={6}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
+              <Label htmlFor="confirmPassword" className="text-gray-300 text-sm">
+                Confirm Password
+              </Label>
               <AnimatedInput
-                id="confirm-password"
+                id="confirmPassword"
                 type="password"
-                placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your new password"
                 variant="glow"
                 required
+                minLength={6}
               />
             </div>
+
             <AnimatedButton
               type="submit"
               variant="purple"
-              animation="glow"
+              className="w-full"
+              isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
-              className="w-full mt-6"
-              disabled={isLoading}
             >
-              {isLoading ? "Updating..." : "Update password"}
+              Reset Password
             </AnimatedButton>
           </form>
         </AnimatedCard>
-      </section>
+      </div>
     </PageContainer>
   )
 } 

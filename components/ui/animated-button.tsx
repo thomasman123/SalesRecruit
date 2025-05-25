@@ -1,60 +1,68 @@
 "use client"
 
-import type React from "react"
-
-import { Button, type ButtonProps } from "@/components/ui/button"
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
-import { forwardRef } from "react"
+import { Loader2 } from "lucide-react"
 
-interface AnimatedButtonProps extends ButtonProps {
-  variant?: "default" | "purple" | "ghost" | "outline"
-  animation?: "scale" | "glow" | "slide" | "none"
-  icon?: React.ReactNode
-}
-
-const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
-  ({ className, variant = "default", animation = "scale", icon, children, ...props }, ref) => {
-    const variants = {
-      default: "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700",
-      purple: "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700",
-      ghost: "bg-transparent text-gray-300 hover:text-white hover:bg-dark-700",
-      outline: "border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white",
-    }
-
-    const animations = {
-      scale: "transition-all duration-300 hover:scale-105 group",
-      glow: "transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40",
-      slide: "transition-all duration-300 group",
-      none: "transition-all duration-300",
-    }
-
-    return (
-      <Button
-        ref={ref}
-        className={cn(
-          variants[variant],
-          animations[animation],
-          animation === "glow" && "shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {icon && (
-          <span
-            className={cn(
-              "ml-2",
-              animation === "slide" && "group-hover:translate-x-1 transition-transform duration-300",
-            )}
-          >
-            {icon}
-          </span>
-        )}
-      </Button>
-    )
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-500 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-purple-500 text-white hover:bg-purple-600",
+        destructive: "bg-red-500 text-white hover:bg-red-600",
+        outline: "border border-dark-600 text-gray-300 hover:bg-dark-700 hover:text-white",
+        secondary: "bg-dark-700 text-white hover:bg-dark-600",
+        ghost: "text-gray-300 hover:bg-dark-700 hover:text-white",
+        link: "text-purple-500 underline-offset-4 hover:underline",
+        purple: "bg-purple-500 text-white hover:bg-purple-600 shadow-lg shadow-purple-500/25",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
   },
 )
 
+export interface AnimatedButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  icon?: React.ReactNode
+  isLoading?: boolean
+}
+
+const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
+  ({ className, variant, size, asChild = false, icon, isLoading, children, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        disabled={isLoading}
+        {...props}
+      >
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            {icon && <span className="mr-2">{icon}</span>}
+            {children}
+          </>
+        )}
+      </Comp>
+    )
+  },
+)
 AnimatedButton.displayName = "AnimatedButton"
 
-export { AnimatedButton }
+export { AnimatedButton, buttonVariants }
