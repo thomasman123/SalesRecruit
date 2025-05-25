@@ -65,7 +65,7 @@ export default function HomePage() {
       if (data.user) {
         toast({
           title: "Verification email sent",
-          description: "Please check your email to verify your account before logging in.",
+          description: "Please check your email to verify your account before logging in..",
         })
 
         // Clear form
