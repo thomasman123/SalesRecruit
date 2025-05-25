@@ -8,7 +8,7 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea as SA } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -180,8 +180,8 @@ export default function OpportunitiesPage() {
     <div className="flex h-[calc(100vh-4rem)] gap-4 max-w-7xl mx-auto px-4 overflow-hidden">
       {/* Left Panel - Filters */}
       <FadeIn delay={100}>
-        <div className={cn("transition-all duration-300", showFilters ? "w-72" : "w-0 overflow-hidden")}>
-          <AnimatedCard variant="hover-glow" className="h-full p-6 overflow-y-auto">
+        <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-72" : "w-0 overflow-hidden")}>
+          <AnimatedCard variant="hover-glow" className="h-full p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white flex items-center">
                 <Filter className="w-4 h-4 mr-2 text-purple-400" />
@@ -195,7 +195,8 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            <div className="space-y-6">
+            <SA className="flex-1 pr-1">
+            <div className="space-y-6 pb-6">
               {/* Industries */}
               <div>
                 <Label className="text-white mb-3 block text-sm font-medium">Industries</Label>
@@ -422,6 +423,7 @@ export default function OpportunitiesPage() {
                 Clear All Filters
               </AnimatedButton>
             </div>
+            </SA>
           </AnimatedCard>
         </div>
       </FadeIn>
@@ -499,7 +501,7 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Opportunities List */}
-          <ScrollArea className="flex-1">
+          <SA className="flex-1">
             <div className="grid gap-4 pr-4 md:grid-cols-2 xl:grid-cols-2">
               {opportunities.map((opportunity) => (
                 <AnimatedCard
@@ -602,7 +604,7 @@ export default function OpportunitiesPage() {
                 </AnimatedCard>
               ))}
             </div>
-          </ScrollArea>
+          </SA>
         </div>
       </FadeIn>
 
@@ -611,7 +613,7 @@ export default function OpportunitiesPage() {
         <div className={cn("transition-all duration-300", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
           {selectedOpportunity && (
             <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col">
-              <ScrollArea className="flex-1">
+              <SA className="flex-1">
                 <div className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-6">
@@ -733,7 +735,7 @@ export default function OpportunitiesPage() {
                     <p className="text-gray-300 text-sm">{selectedOpportunity.workingHours}</p>
                   </div>
                 </div>
-              </ScrollArea>
+              </SA>
 
               {/* Apply Button */}
               <div className="p-6 border-t border-dark-600">
