@@ -169,6 +169,63 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
 
+        {/* Bottom user section */}
+        <div className="p-4 border-t border-dark-600 space-y-4">
+          {/* Notifications */}
+          <button className={cn(
+            "w-full flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300",
+            sidebarExpanded ? "justify-start" : "justify-center",
+          )}>
+            <Bell className="h-5 w-5" />
+            {sidebarExpanded && <span className="ml-3">Notifications</span>}
+          </button>
+
+          {/* Profile dropdown trigger */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={cn(
+                "w-full flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300",
+                sidebarExpanded ? "justify-start" : "justify-center",
+              )}>
+                <Avatar className="h-8 w-8 border border-dark-600">
+                  <AvatarImage src={userData?.avatar_url || "/placeholder.svg?height=32&width=32&query=abstract profile"} />
+                  <AvatarFallback className="bg-purple-500/20 text-purple-400">
+                    {userData?.full_name?.split(" ").map(n => n[0]).join("") || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {sidebarExpanded && (
+                  <div className="ml-3 text-left">
+                    <div className="text-sm font-medium text-white truncate" style={{maxWidth:'8rem'}}>{userData?.full_name || "User"}</div>
+                    <div className="text-xs text-gray-400">Sales Professional</div>
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-dark-600" />
+              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <Link href="/dashboard/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-dark-600" />
+              <DropdownMenuItem 
+                className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+        </div>
+
+        {/* Logout */}
         <div className="p-4 border-t border-dark-600">
           <button
             onClick={handleLogout}

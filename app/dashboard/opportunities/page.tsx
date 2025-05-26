@@ -1275,8 +1275,8 @@ export default function OpportunitiesPage() {
         <div 
           style={{ 
             position: 'fixed',
-            top: '4rem',
-            left: '16rem',
+            top: 0,
+            left: 0,
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -1297,7 +1297,7 @@ export default function OpportunitiesPage() {
             style={{ 
               width: '100%',
               maxWidth: '60rem',
-              maxHeight: 'calc(100vh - 10rem)',
+              maxHeight: 'calc(100vh - 2rem)',
               backgroundColor: 'rgba(0, 0, 0, 0.9)', 
               border: '1px solid rgba(255, 255, 255, 0.15)', 
               borderRadius: '0.75rem', 
