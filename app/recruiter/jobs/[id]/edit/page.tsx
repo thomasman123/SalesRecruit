@@ -13,14 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save, Upload, Building2, DollarSign, Briefcase, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { toast } from "@/components/ui/use-toast"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { getSupabaseClient } from "@/lib/supabase/client"
 import { updateJob } from "@/app/actions/jobs"
 
 export default function EditJobPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
 
   const [formData, setFormData] = useState({
     id: 0,
