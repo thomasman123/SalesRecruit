@@ -38,12 +38,15 @@ export async function createJob(form: JobInput) {
   }
 
   // Ensure user exists in public.users (handles existing accounts created before trigger)
-  await supabase.from("users").upsert({
+  const { error: upsertError } = await supabase.from("users").upsert({
     id: user.id,
     email: user.email!,
     name: user.user_metadata?.full_name ?? user.email!.split("@")[0],
     role: "recruiter",
   })
+  if (upsertError) {
+    throw new Error(upsertError.message)
+  }
 
   const { error, data } = await supabase.from("jobs").insert({
     ...validation.data,
