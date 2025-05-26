@@ -45,7 +45,7 @@ function ResetPasswordForm() {
         console.error("Error setting session:", error)
         toast({
           title: "Invalid reset link",
-          description: "This password reset link is invalid or has expired.",
+          description: "This password reset link is invalid or has expired..",
           variant: "destructive",
         })
         router.push("/login")
