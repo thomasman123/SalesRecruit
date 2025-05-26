@@ -1276,7 +1276,7 @@ export default function OpportunitiesPage() {
           style={{ 
             position: 'fixed',
             top: '8rem',
-            left: 0,
+            left: '16rem',
             right: 0,
             bottom: '1rem',
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
