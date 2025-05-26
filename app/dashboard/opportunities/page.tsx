@@ -255,7 +255,7 @@ export default function OpportunitiesPage() {
       {/* Left Panel - Filters */}
       <FadeIn delay={100}>
         <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-80" : "w-0 overflow-hidden")}>
-          <AnimatedCard variant="hover-glow" className="h-full flex flex-col bg-dark-800/50 border-dark-600">
+          <div className="h-full flex flex-col bg-dark-800/50 border border-dark-600 rounded-lg">
             <div className="flex items-center justify-between p-6 border-b border-dark-600 flex-shrink-0">
               <h2 className="text-xl font-semibold text-white flex items-center">
                 <Filter className="w-5 h-5 mr-3 text-purple-400" />
@@ -269,7 +269,7 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-8">
                 {/* Industries */}
                 <div>
@@ -500,7 +500,7 @@ export default function OpportunitiesPage() {
                 Clear All Filters
               </AnimatedButton>
             </div>
-          </AnimatedCard>
+          </div>
         </div>
       </FadeIn>
 
@@ -577,7 +577,7 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Opportunities List */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto">
             <div className="grid gap-6 pr-4 md:grid-cols-1 xl:grid-cols-2 pb-6">
               {opportunities.map((opportunity) => (
                 <AnimatedCard
@@ -689,8 +689,8 @@ export default function OpportunitiesPage() {
       <FadeIn delay={300}>
         <div className={cn("transition-all duration-300 flex-shrink-0", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
           {selectedOpportunity && (
-            <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col bg-dark-800/50 border-dark-600">
-              <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="h-full overflow-hidden flex flex-col bg-dark-800/50 border border-dark-600 rounded-lg">
+              <div className="flex-1 overflow-y-auto">
                 <div className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-8">
@@ -837,7 +837,7 @@ export default function OpportunitiesPage() {
                   <p className="text-xs text-gray-400 text-center mt-3">Quick apply with your Helios Recruit profile</p>
                 )}
               </div>
-            </AnimatedCard>
+            </div>
           )}
         </div>
       </FadeIn>
