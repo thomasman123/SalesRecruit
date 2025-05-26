@@ -63,7 +63,7 @@ export default function ApplicantsPage() {
         // Fetch applicants for this job
         const { data, error } = await supabase
           .from("applicants")
-          .select("*, user:users!left(id, name, avatar_url, email)")
+          .select("*")
           .eq("job_id", jobId)
         if (error) throw error
         setApplicants(data || [])
