@@ -251,12 +251,12 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4 max-w-7xl mx-auto px-4 overflow-hidden">
+    <div className="flex h-[calc(100vh-8rem)] gap-4 max-w-7xl mx-auto px-4 overflow-hidden">
       {/* Left Panel - Filters */}
       <FadeIn delay={100}>
         <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-72" : "w-0 overflow-hidden")}>
           <AnimatedCard variant="hover-glow" className="h-full p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <h2 className="text-lg font-semibold text-white flex items-center">
                 <Filter className="w-4 h-4 mr-2 text-purple-400" />
                 Filters
@@ -482,7 +482,7 @@ export default function OpportunitiesPage() {
             </SA>
 
             {/* Clear Filters (sticky bottom) */}
-            <div className="pt-4">
+            <div className="pt-4 flex-shrink-0">
               <AnimatedButton
                 variant="ghost"
                 className="w-full text-sm"
@@ -506,9 +506,9 @@ export default function OpportunitiesPage() {
 
       {/* Middle Panel - Opportunity Cards */}
       <FadeIn delay={200}>
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Search and Sort Bar */}
-          <div className="mb-4 space-y-4">
+          <div className="mb-4 space-y-4 flex-shrink-0">
             <div className="flex gap-4">
               {!showFilters && (
                 <AnimatedButton variant="outline" size="sm" onClick={() => setShowFilters(true)} className="md:hidden">
@@ -577,7 +577,7 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Opportunities List */}
-          <SA className="flex-1">
+          <SA className="flex-1 min-h-0">
             <div className="grid gap-4 pr-4 md:grid-cols-2 xl:grid-cols-2">
               {opportunities.map((opportunity) => (
                 <AnimatedCard
@@ -686,10 +686,10 @@ export default function OpportunitiesPage() {
 
       {/* Right Panel - Role Details */}
       <FadeIn delay={300}>
-        <div className={cn("transition-all duration-300", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
+        <div className={cn("transition-all duration-300 flex-shrink-0", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
           {selectedOpportunity && (
             <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col">
-              <SA className="flex-1">
+              <SA className="flex-1 min-h-0">
                 <div className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-6">
@@ -814,7 +814,7 @@ export default function OpportunitiesPage() {
               </SA>
 
               {/* Apply Button */}
-              <div className="p-6 border-t border-dark-600">
+              <div className="p-6 border-t border-dark-600 flex-shrink-0">
                 <AnimatedButton
                   variant="purple"
                   className="w-full"

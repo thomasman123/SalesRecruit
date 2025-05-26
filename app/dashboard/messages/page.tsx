@@ -175,94 +175,101 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)]">
+    <div className="h-[calc(100vh-8rem)] overflow-hidden">
       <div className="grid grid-cols-12 gap-4 h-full">
         {/* Left Panel */}
-        <div className="col-span-4 border-r border-dark-600 pr-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
+        <div className="col-span-4 border-r border-dark-600 pr-4 flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <h2 className="text-2xl font-bold text-white">Messages</h2>
           </div>
 
-          <div className="space-y-2">
-            {conversations.length > 0 ? (
-              conversations.map((conversation) => (
-                <Card
-                  key={conversation.id}
-                  className={`p-4 cursor-pointer hover:bg-dark-700 transition-colors bg-dark-800 border-dark-600 ${
-                    selectedConversation === conversation.id ? 'bg-dark-700 border-purple-500/50' : ''
-                  }`}
-                  onClick={() => setSelectedConversation(conversation.id)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="border border-dark-600">
-                      <AvatarImage src={conversation.participant.avatar_url || ''} />
-                      <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                        {conversation.participant.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-white">{conversation.job.title}</p>
-                      <p className="text-sm text-gray-400 truncate">
-                        {conversation.participant.name}
-                      </p>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="space-y-2">
+              {conversations.length > 0 ? (
+                conversations.map((conversation) => (
+                  <Card
+                    key={conversation.id}
+                    className={`p-4 cursor-pointer hover:bg-dark-700 transition-colors bg-dark-800 border-dark-600 flex-shrink-0 ${
+                      selectedConversation === conversation.id ? 'bg-dark-700 border-purple-500/50' : ''
+                    }`}
+                    onClick={() => setSelectedConversation(conversation.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="border border-dark-600">
+                        <AvatarImage src={conversation.participant.avatar_url || ''} />
+                        <AvatarFallback className="bg-purple-500/20 text-purple-400">
+                          {conversation.participant.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate text-white">{conversation.job.title}</p>
+                        <p className="text-sm text-gray-400 truncate">
+                          {conversation.participant.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(conversation.last_message_timestamp), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                        {conversation.unread_count > 0 && (
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-500 rounded-full">
+                            {conversation.unread_count}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        {formatDistanceToNow(new Date(conversation.last_message_timestamp), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                      {conversation.unread_count > 0 && (
-                        <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-500 rounded-full">
-                          {conversation.unread_count}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
-                <p className="text-gray-400">
-                  You don't have any conversations with recruiters yet
-                </p>
-              </div>
-            )}
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
+                  <p className="text-gray-400">
+                    You don't have any conversations with recruiters yet
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Right Panel - Messages Area */}
-        <div className="col-span-8 flex flex-col h-full">
+        <div className="col-span-8 flex flex-col h-full min-h-0">
           {selectedConversation ? (
             <>
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4 p-4 bg-dark-800 rounded-lg border border-dark-600">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.sender_type === 'applicant' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
+              {/* Messages Container */}
+              <div className="flex-1 overflow-y-auto min-h-0 mb-4 bg-dark-800 rounded-lg border border-dark-600">
+                <div className="p-4 space-y-4">
+                  {messages.map((message) => (
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        message.sender_type === 'applicant'
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-dark-700 text-white border border-dark-600'
+                      key={message.id}
+                      className={`flex ${
+                        message.sender_type === 'applicant' ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      <p>{message.content}</p>
-                      <p className="text-xs mt-1 opacity-70">
-                        {formatDistanceToNow(new Date(message.timestamp), {
-                          addSuffix: true,
-                        })}
-                      </p>
+                      <div
+                        className={`max-w-[70%] rounded-lg p-3 ${
+                          message.sender_type === 'applicant'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-dark-700 text-white border border-dark-600'
+                        }`}
+                      >
+                        <p>{message.content}</p>
+                        <p className="text-xs mt-1 opacity-70">
+                          {formatDistanceToNow(new Date(message.timestamp), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-              <div className="flex space-x-2">
+              
+              {/* Input Area */}
+              <div className="flex space-x-2 flex-shrink-0">
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
