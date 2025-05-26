@@ -41,18 +41,38 @@ export default function MessagesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         router.push('/login');
         return;
       }
-      const { data: userRow } = await supabase.from('users').select('role').eq('id', user.id).single();
+
+      const { user } = session;
+      const { data: userRow, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Failed to fetch user role', error);
+        return;
+      }
+
       if (userRow) {
         setRole(userRow.role as 'recruiter' | 'sales-professional');
       }
+
+      // Keep role updated if auth state changes
+      supabase.auth.onAuthStateChange((_event, newSession) => {
+        if (!newSession) {
+          router.push('/login');
+        }
+      });
     };
-    fetchUserRole();
+
+    init();
   }, []);
 
   // When role is resolved fetch conversations
