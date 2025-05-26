@@ -251,241 +251,241 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-4 max-w-7xl mx-auto px-4 overflow-hidden">
+    <div className="flex h-[calc(100vh-8rem)] gap-6 max-w-7xl mx-auto px-6 overflow-hidden">
       {/* Left Panel - Filters */}
       <FadeIn delay={100}>
-        <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-72" : "w-0 overflow-hidden")}>
-          <AnimatedCard variant="hover-glow" className="h-full p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-6 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-white flex items-center">
-                <Filter className="w-4 h-4 mr-2 text-purple-400" />
+        <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-80" : "w-0 overflow-hidden")}>
+          <AnimatedCard variant="hover-glow" className="h-full flex flex-col bg-dark-800/50 border-dark-600">
+            <div className="flex items-center justify-between p-6 border-b border-dark-600 flex-shrink-0">
+              <h2 className="text-xl font-semibold text-white flex items-center">
+                <Filter className="w-5 h-5 mr-3 text-purple-400" />
                 Filters
               </h2>
               <button
                 onClick={() => setShowFilters(false)}
-                className="md:hidden text-gray-400 hover:text-white transition-colors"
+                className="md:hidden text-gray-400 hover:text-white transition-colors p-1 rounded"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <SA className="flex-1 pr-1 -mr-1 min-h-0">
-            <div className="space-y-6 pb-6">
-              {/* Industries */}
-              <div>
-                <Label className="text-white mb-3 block text-sm font-medium">Industries</Label>
-                <div className="space-y-2">
-                  {filterOptions.industries.map((industry) => (
-                    <div key={industry} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={industry}
-                        checked={filters.industries.includes(industry)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              industries: [...prev.industries, industry],
-                            }))
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              industries: prev.industries.filter((i) => i !== industry),
-                            }))
-                          }
-                        }}
-                        className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                      <Label
-                        htmlFor={industry}
-                        className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors"
-                      >
-                        {industry}
-                      </Label>
-                    </div>
-                  ))}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="p-6 space-y-8">
+                {/* Industries */}
+                <div>
+                  <Label className="text-white mb-4 block text-base font-semibold">Industries</Label>
+                  <div className="space-y-3">
+                    {filterOptions.industries.map((industry) => (
+                      <div key={industry} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={industry}
+                          checked={filters.industries.includes(industry)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                industries: [...prev.industries, industry],
+                              }))
+                            } else {
+                              setFilters((prev) => ({
+                                ...prev,
+                                industries: prev.industries.filter((i) => i !== industry),
+                              }))
+                            }
+                          }}
+                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                        />
+                        <Label
+                          htmlFor={industry}
+                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                        >
+                          {industry}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="bg-dark-600" />
+                <Separator className="bg-dark-600" />
 
-              {/* Price Range */}
-              <div>
-                <Label className="text-white mb-3 block text-sm font-medium">Offer Price Range</Label>
-                <div className="space-y-2">
-                  {filterOptions.priceRanges.map((range) => (
-                    <div key={range} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={range}
-                        checked={filters.priceRanges.includes(range)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              priceRanges: [...prev.priceRanges, range],
-                            }))
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              priceRanges: prev.priceRanges.filter((r) => r !== range),
-                            }))
-                          }
-                        }}
-                        className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                      <Label
-                        htmlFor={range}
-                        className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors"
-                      >
-                        {range}
-                      </Label>
-                    </div>
-                  ))}
+                {/* Price Range */}
+                <div>
+                  <Label className="text-white mb-4 block text-base font-semibold">Offer Price Range</Label>
+                  <div className="space-y-3">
+                    {filterOptions.priceRanges.map((range) => (
+                      <div key={range} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={range}
+                          checked={filters.priceRanges.includes(range)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                priceRanges: [...prev.priceRanges, range],
+                              }))
+                            } else {
+                              setFilters((prev) => ({
+                                ...prev,
+                                priceRanges: prev.priceRanges.filter((r) => r !== range),
+                              }))
+                            }
+                          }}
+                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                        />
+                        <Label
+                          htmlFor={range}
+                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                        >
+                          {range}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="bg-dark-600" />
+                <Separator className="bg-dark-600" />
 
-              {/* Lead Source */}
-              <div>
-                <Label className="text-white mb-3 block text-sm font-medium">Lead Source</Label>
-                <div className="space-y-2">
-                  {filterOptions.leadSources.map((source) => (
-                    <div key={source} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={source}
-                        checked={filters.leadSources.includes(source)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              leadSources: [...prev.leadSources, source],
-                            }))
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              leadSources: prev.leadSources.filter((s) => s !== source),
-                            }))
-                          }
-                        }}
-                        className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                      <Label
-                        htmlFor={source}
-                        className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors"
-                      >
-                        {source}
-                      </Label>
-                    </div>
-                  ))}
+                {/* Lead Source */}
+                <div>
+                  <Label className="text-white mb-4 block text-base font-semibold">Lead Source</Label>
+                  <div className="space-y-3">
+                    {filterOptions.leadSources.map((source) => (
+                      <div key={source} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={source}
+                          checked={filters.leadSources.includes(source)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                leadSources: [...prev.leadSources, source],
+                              }))
+                            } else {
+                              setFilters((prev) => ({
+                                ...prev,
+                                leadSources: prev.leadSources.filter((s) => s !== source),
+                              }))
+                            }
+                          }}
+                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                        />
+                        <Label
+                          htmlFor={source}
+                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                        >
+                          {source}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="bg-dark-600" />
+                <Separator className="bg-dark-600" />
 
-              {/* Commission Structure */}
-              <div>
-                <Label className="text-white mb-3 block text-sm font-medium">Commission Structure</Label>
-                <div className="space-y-2">
-                  {filterOptions.commissionStructures.map((structure) => (
-                    <div key={structure} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={structure}
-                        checked={filters.commissionStructures.includes(structure)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              commissionStructures: [...prev.commissionStructures, structure],
-                            }))
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              commissionStructures: prev.commissionStructures.filter((s) => s !== structure),
-                            }))
-                          }
-                        }}
-                        className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                      <Label
-                        htmlFor={structure}
-                        className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors text-xs"
-                      >
-                        {structure}
-                      </Label>
-                    </div>
-                  ))}
+                {/* Commission Structure */}
+                <div>
+                  <Label className="text-white mb-4 block text-base font-semibold">Commission Structure</Label>
+                  <div className="space-y-3">
+                    {filterOptions.commissionStructures.map((structure) => (
+                      <div key={structure} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={structure}
+                          checked={filters.commissionStructures.includes(structure)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                commissionStructures: [...prev.commissionStructures, structure],
+                              }))
+                            } else {
+                              setFilters((prev) => ({
+                                ...prev,
+                                commissionStructures: prev.commissionStructures.filter((s) => s !== structure),
+                              }))
+                            }
+                          }}
+                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                        />
+                        <Label
+                          htmlFor={structure}
+                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1 leading-relaxed"
+                        >
+                          {structure}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="bg-dark-600" />
+                <Separator className="bg-dark-600" />
 
-              {/* Team Size */}
-              <div>
-                <Label className="text-white mb-3 block text-sm font-medium">Team Size / Sales Infra</Label>
-                <div className="space-y-2">
-                  {filterOptions.teamSizes.map((size) => (
-                    <div key={size} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={size}
-                        checked={filters.teamSizes.includes(size)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilters((prev) => ({
-                              ...prev,
-                              teamSizes: [...prev.teamSizes, size],
-                            }))
-                          } else {
-                            setFilters((prev) => ({
-                              ...prev,
-                              teamSizes: prev.teamSizes.filter((s) => s !== size),
-                            }))
-                          }
-                        }}
-                        className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                      <Label
-                        htmlFor={size}
-                        className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors"
-                      >
-                        {size}
-                      </Label>
-                    </div>
-                  ))}
+                {/* Team Size */}
+                <div>
+                  <Label className="text-white mb-4 block text-base font-semibold">Team Size / Sales Infra</Label>
+                  <div className="space-y-3">
+                    {filterOptions.teamSizes.map((size) => (
+                      <div key={size} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={size}
+                          checked={filters.teamSizes.includes(size)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                teamSizes: [...prev.teamSizes, size],
+                              }))
+                            } else {
+                              setFilters((prev) => ({
+                                ...prev,
+                                teamSizes: prev.teamSizes.filter((s) => s !== size),
+                              }))
+                            }
+                          }}
+                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                        />
+                        <Label
+                          htmlFor={size}
+                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                        >
+                          {size}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="bg-dark-600" />
+                <Separator className="bg-dark-600" />
 
-              {/* Remote Compatible */}
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remote"
-                    checked={filters.remoteCompatible}
-                    onCheckedChange={(checked) => {
-                      setFilters((prev) => ({
-                        ...prev,
-                        remoteCompatible: checked as boolean,
-                      }))
-                    }}
-                    className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                  />
-                  <Label
-                    htmlFor="remote"
-                    className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors"
-                  >
-                    Remote Time Zone Compatible
-                  </Label>
+                {/* Remote Compatible */}
+                <div>
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="remote"
+                      checked={filters.remoteCompatible}
+                      onCheckedChange={(checked) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          remoteCompatible: checked as boolean,
+                        }))
+                      }}
+                      className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                    />
+                    <Label
+                      htmlFor="remote"
+                      className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                    >
+                      Remote Time Zone Compatible
+                    </Label>
+                  </div>
                 </div>
               </div>
             </div>
-            </SA>
 
             {/* Clear Filters (sticky bottom) */}
-            <div className="pt-4 flex-shrink-0">
+            <div className="p-6 border-t border-dark-600 flex-shrink-0">
               <AnimatedButton
                 variant="ghost"
-                className="w-full text-sm"
+                className="w-full text-sm hover:bg-dark-700"
                 onClick={() => {
                   setFilters({
                     industries: [],
@@ -508,7 +508,7 @@ export default function OpportunitiesPage() {
       <FadeIn delay={200}>
         <div className="flex-1 flex flex-col min-w-0">
           {/* Search and Sort Bar */}
-          <div className="mb-4 space-y-4 flex-shrink-0">
+          <div className="mb-6 space-y-4 flex-shrink-0">
             <div className="flex gap-4">
               {!showFilters && (
                 <AnimatedButton variant="outline" size="sm" onClick={() => setShowFilters(true)} className="md:hidden">
@@ -522,12 +522,12 @@ export default function OpportunitiesPage() {
                   placeholder="Search opportunities..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12"
                   variant="glow"
                 />
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40 border-dark-600 bg-dark-700 text-white">
+                <SelectTrigger className="w-48 h-12 border-dark-600 bg-dark-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-dark-700 border-dark-600">
@@ -562,13 +562,13 @@ export default function OpportunitiesPage() {
                   <Badge
                     key={filter}
                     variant="secondary"
-                    className="bg-purple-500/20 text-purple-400 border-purple-500/30"
+                    className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1"
                   >
                     {filter}
                   </Badge>
                 ))}
                 {filters.remoteCompatible && (
-                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
                     Remote Compatible
                   </Badge>
                 )}
@@ -577,41 +577,42 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Opportunities List */}
-          <SA className="flex-1 min-h-0">
-            <div className="grid gap-4 pr-4 md:grid-cols-2 xl:grid-cols-2">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="grid gap-6 pr-4 md:grid-cols-1 xl:grid-cols-2 pb-6">
               {opportunities.map((opportunity) => (
                 <AnimatedCard
                   key={opportunity.id}
                   variant="interactive"
                   className={cn(
-                    "p-6 cursor-pointer",
-                    selectedOpportunity?.id === opportunity.id && "border-purple-500/50",
+                    "p-6 cursor-pointer bg-dark-800/50 border-dark-600 hover:border-purple-500/50 transition-all duration-300",
+                    selectedOpportunity?.id === opportunity.id && "border-purple-500/50 bg-dark-700/50",
                   )}
                   onClick={() => setSelectedOpportunity(opportunity)}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start space-x-4 flex-1">
                       <img
                         src={opportunity.logo || "/placeholder.svg"}
                         alt={opportunity.companyName}
-                        className="w-12 h-12 rounded-lg object-cover"
+                        className="w-14 h-14 rounded-lg object-cover border border-dark-600"
                       />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-white">{opportunity.companyName}</h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-white truncate">{opportunity.companyName}</h3>
                           {opportunity.new && (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">NEW</Badge>
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs px-2 py-1">NEW</Badge>
                           )}
                           {opportunity.status && (
                             <Badge
-                              className={cn("text-xs flex items-center gap-1", getStatusColor(opportunity.status))}
+                              className={cn("text-xs flex items-center gap-1 px-2 py-1", getStatusColor(opportunity.status))}
                             >
                               {getStatusIcon(opportunity.status)}
                               {opportunity.status}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-purple-400 font-medium">{opportunity.offerType}</p>
+                        <p className="text-purple-400 font-medium text-base mb-1">{opportunity.offerType}</p>
+                        <p className="text-gray-400 text-sm">{opportunity.industry}</p>
                       </div>
                     </div>
                     <button
@@ -620,7 +621,7 @@ export default function OpportunitiesPage() {
                         handleStarToggle(opportunity.id)
                       }}
                       className={cn(
-                        "p-2 rounded-lg transition-all duration-300",
+                        "p-2 rounded-lg transition-all duration-300 flex-shrink-0",
                         opportunity.starred
                           ? "text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20"
                           : "text-gray-400 hover:text-yellow-400 hover:bg-dark-700",
@@ -630,57 +631,57 @@ export default function OpportunitiesPage() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
                     <div className="flex items-center text-gray-400">
-                      <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{opportunity.salesRole}</span>
+                      <Briefcase className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">{opportunity.salesRole}</span>
                     </div>
                     <div className="flex items-center text-gray-400">
-                      <Phone className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{opportunity.callVolume} calls/week</span>
+                      <DollarSign className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
+                      <span className="font-mono truncate">{opportunity.commissionPotential}</span>
                     </div>
                     <div className="flex items-center text-gray-400">
-                      <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
-                      <span className="font-mono">{opportunity.commissionPotential}</span>
+                      <Zap className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
                     </div>
                     <div className="flex items-center text-gray-400">
-                      <Zap className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <Users className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{opportunity.teamSize}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <MapPin className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
+                      <MapPin className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {opportunity.tags.map((tag) => (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {opportunity.tags.slice(0, 3).map((tag) => (
                       <Badge
                         key={tag}
                         variant="secondary"
-                        className="bg-dark-700 text-gray-300 border-dark-600 text-xs"
+                        className="bg-dark-700 text-gray-300 border-dark-600 text-xs px-2 py-1"
                       >
                         {tag}
                       </Badge>
                     ))}
+                    {opportunity.tags.length > 3 && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-dark-700 text-gray-400 border-dark-600 text-xs px-2 py-1"
+                      >
+                        +{opportunity.tags.length - 3} more
+                      </Badge>
+                    )}
                   </div>
 
                   <AnimatedButton
                     variant="purple"
                     size="sm"
-                    className="w-full"
+                    className="w-full h-10"
                     icon={<ChevronRight className="w-4 h-4" />}
                   >
-                    View Role
+                    View Role Details
                   </AnimatedButton>
                 </AnimatedCard>
               ))}
             </div>
-          </SA>
+          </div>
         </div>
       </FadeIn>
 
@@ -688,25 +689,26 @@ export default function OpportunitiesPage() {
       <FadeIn delay={300}>
         <div className={cn("transition-all duration-300 flex-shrink-0", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
           {selectedOpportunity && (
-            <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col">
-              <SA className="flex-1 min-h-0">
+            <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col bg-dark-800/50 border-dark-600">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="p-6">
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-start space-x-4">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-start space-x-4 flex-1 min-w-0">
                       <img
                         src={selectedOpportunity.logo || "/placeholder.svg"}
                         alt={selectedOpportunity.companyName}
-                        className="w-16 h-16 rounded-lg object-cover"
+                        className="w-16 h-16 rounded-lg object-cover border border-dark-600 flex-shrink-0"
                       />
-                      <div>
-                        <h2 className="text-xl font-bold text-white">{selectedOpportunity.companyName}</h2>
-                        <p className="text-purple-400">{selectedOpportunity.offerType}</p>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-xl font-bold text-white mb-1 truncate">{selectedOpportunity.companyName}</h2>
+                        <p className="text-purple-400 text-base mb-1 truncate">{selectedOpportunity.offerType}</p>
+                        <p className="text-gray-400 text-sm">{selectedOpportunity.industry}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => setSelectedOpportunity(null)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors"
+                      className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors flex-shrink-0"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -714,8 +716,8 @@ export default function OpportunitiesPage() {
 
                   {/* Video Intro */}
                   {selectedOpportunity.videoIntro && (
-                    <div className="mb-6">
-                      <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center group cursor-pointer hover:bg-dark-600 transition-colors">
+                    <div className="mb-8">
+                      <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center group cursor-pointer hover:bg-dark-600 transition-colors border border-dark-600">
                         <div className="text-center">
                           <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-500/30 transition-colors">
                             <Play className="w-6 h-6 text-purple-400" />
@@ -727,43 +729,43 @@ export default function OpportunitiesPage() {
                   )}
 
                   {/* Company Overview */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <Building2 className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Building2 className="w-5 h-5 mr-3 text-purple-400" />
                       Company Overview
                     </h3>
                     <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.companyOverview}</p>
                   </div>
 
                   {/* What You'll Be Selling */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <Target className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Target className="w-5 h-5 mr-3 text-purple-400" />
                       What You'll Be Selling
                     </h3>
                     <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.whatYouSell}</p>
                   </div>
 
                   {/* Sales Process */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-3 text-purple-400" />
                       Sales Process
                     </h3>
                     <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.salesProcess}</p>
                   </div>
 
                   {/* What's Provided */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <CheckCircle className="w-5 h-5 mr-3 text-purple-400" />
                       What's Provided
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {selectedOpportunity.whatsProvided?.map((item, index) => (
                         <li key={index} className="flex items-start text-sm text-gray-300">
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
+                          <CheckCircle className="w-4 h-4 mr-3 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span className="leading-relaxed">{item}</span>
                         </li>
                       ))}
                     </ul>
@@ -771,9 +773,9 @@ export default function OpportunitiesPage() {
 
                   {/* Who This Role Is NOT For */}
                   {selectedOpportunity.notFor && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-2 text-red-400" />
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <AlertCircle className="w-5 h-5 mr-3 text-red-400" />
                         Who This Role Is NOT For
                       </h3>
                       <p className="text-gray-300 text-sm leading-relaxed bg-red-500/10 border border-red-500/20 rounded-lg p-4">
@@ -783,9 +785,9 @@ export default function OpportunitiesPage() {
                   )}
 
                   {/* Commission Breakdown */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <DollarSign className="w-5 h-5 mr-3 text-purple-400" />
                       Commission Breakdown
                     </h3>
                     <p className="text-gray-300 text-sm leading-relaxed font-mono bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
@@ -794,30 +796,30 @@ export default function OpportunitiesPage() {
                   </div>
 
                   {/* Expected Ramp Time */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-3 text-purple-400" />
                       Expected Ramp Time
                     </h3>
-                    <p className="text-gray-300 text-sm">{selectedOpportunity.rampTime}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.rampTime}</p>
                   </div>
 
                   {/* Working Hours */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                      <Clock className="w-4 h-4 mr-2 text-purple-400" />
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Clock className="w-5 h-5 mr-3 text-purple-400" />
                       Working Hours
                     </h3>
-                    <p className="text-gray-300 text-sm">{selectedOpportunity.workingHours}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.workingHours}</p>
                   </div>
                 </div>
-              </SA>
+              </div>
 
               {/* Apply Button */}
               <div className="p-6 border-t border-dark-600 flex-shrink-0">
                 <AnimatedButton
                   variant="purple"
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold"
                   onClick={() => handleApply(selectedOpportunity)}
                   disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
                 >
@@ -832,7 +834,7 @@ export default function OpportunitiesPage() {
                           : "Apply Now"}
                 </AnimatedButton>
                 {!selectedOpportunity.status && (
-                  <p className="text-xs text-gray-400 text-center mt-2">Quick apply with your Helios Recruit profile</p>
+                  <p className="text-xs text-gray-400 text-center mt-3">Quick apply with your Helios Recruit profile</p>
                 )}
               </div>
             </AnimatedCard>
