@@ -831,7 +831,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -861,7 +861,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -891,7 +891,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -921,7 +921,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -951,7 +951,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -980,7 +980,7 @@ export default function OpportunitiesPage() {
                     borderRadius: '0.5rem', 
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(6px) saturate(0.8)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -1434,7 +1434,7 @@ export default function OpportunitiesPage() {
                       border: '1px solid rgba(168, 85, 247, 0.3)', 
                       borderRadius: '0.75rem', 
                       padding: '1rem',
-                      backdropFilter: 'blur(8px)'
+                      backdropFilter: 'blur(6px) saturate(0.8)'
                     }}>
                       <p style={{ color: '#cccccc', fontSize: '0.875rem', fontFamily: 'monospace', margin: 0, fontWeight: '600', lineHeight: '1.5' }}>{selectedOpportunity.commissionBreakdown}</p>
                     </div>
