@@ -60,7 +60,15 @@ export default function ApplicantsPage() {
     const fetchApplicants = async () => {
       setLoading(true)
       try {
-        // Fetch applicants for this job
+        // Ensure we have the current authenticated user loaded first
+        const { data: userData } = await supabase.auth.getUser()
+        if (!userData?.user) {
+          // Not logged in (shouldn't happen on recruiter page), abort
+          setApplicants([])
+          return
+        }
+
+        // Fetch applicants for this job (RLS now has auth context)
         const { data, error } = await supabase
           .from("applicants")
           .select("*")
