@@ -75,15 +75,19 @@ export default function MessagesPage() {
   }, [selectedConversation]);
 
   const fetchConversations = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('conversations')
       .select(`
         id,
-        participant:users!conversations_applicant_user_id_fkey(name, avatar_url),
+        participant:users!conversations_recruiter_id_fkey(name, avatar_url),
         job:jobs(title),
         last_message_timestamp,
         unread_count
       `)
+      .eq('applicant_user_id', user.id)
       .order('last_message_timestamp', { ascending: false });
 
     if (error) {
@@ -143,7 +147,7 @@ export default function MessagesPage() {
       .insert({
         conversation_id: selectedConversation,
         sender_id: user.id,
-        sender_type: 'recruiter',
+        sender_type: 'applicant',
         content: newMessage.trim(),
       });
 
@@ -211,12 +215,12 @@ export default function MessagesPage() {
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.sender_type === 'recruiter' ? 'justify-end' : 'justify-start'
+                      message.sender_type === 'applicant' ? 'justify-end' : 'justify-start'
                     }`}
                   >
                     <div
                       className={`max-w-[70%] rounded-lg p-3 ${
-                        message.sender_type === 'recruiter'
+                        message.sender_type === 'applicant'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100'
                       }`}
