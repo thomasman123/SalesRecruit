@@ -346,7 +346,7 @@ export default function ApplicantsPage() {
         <FadeIn delay={300}>
           <div className="flex-1">
             {selectedApplicant ? (
-              <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col">
+              <AnimatedCard variant="hover-glow" className="h-full min-h-0 overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-dark-600">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
