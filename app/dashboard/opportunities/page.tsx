@@ -1275,15 +1275,15 @@ export default function OpportunitiesPage() {
         <div 
           style={{ 
             position: 'fixed',
-            top: '8rem',
+            top: '4rem',
             left: '16rem',
             right: 0,
-            bottom: '1rem',
+            bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(8px)',
             zIndex: 2000,
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'center',
             padding: '1rem'
           }}
