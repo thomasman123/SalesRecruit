@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
@@ -41,149 +41,50 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-
-// Mock data for applicants
-const mockApplicants = [
-  {
-    id: 1,
-    name: "John Smith",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 1",
-    location: "New York, NY",
-    appliedDate: "2 days ago",
-    status: "new",
-    starred: true,
-    experience: "8+ years in SaaS sales",
-    highestTicket: "$35,000 executive coaching program",
-    salesStyle: "Consultative, value-based selling",
-    tools: "HubSpot, Salesforce, Close.io",
-    videoUrl: "https://www.loom.com/share/example123",
-    notes: "Strong candidate with excellent closing skills. Follow up about availability.",
-    jobId: 1,
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 2",
-    location: "Austin, TX",
-    appliedDate: "5 days ago",
-    status: "reviewing",
-    starred: false,
-    experience: "5 years in fitness industry sales",
-    highestTicket: "$12,000 annual coaching package",
-    salesStyle: "Relationship-based, empathetic approach",
-    tools: "Pipedrive, Zoom, Calendly",
-    videoUrl: "https://www.loom.com/share/example456",
-    notes: "",
-    jobId: 1,
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 3",
-    location: "San Francisco, CA",
-    appliedDate: "1 week ago",
-    status: "interviewing",
-    starred: true,
-    experience: "10+ years in tech sales",
-    highestTicket: "$50,000 enterprise SaaS contract",
-    salesStyle: "Solution selling, technical expertise",
-    tools: "Salesforce, Outreach, Gong",
-    videoUrl: "https://www.loom.com/share/example789",
-    notes: "Scheduled interview for May 27th at 3:30 PM. Prepare technical questions.",
-    jobId: 1,
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 4",
-    location: "Chicago, IL",
-    appliedDate: "2 weeks ago",
-    status: "hired",
-    starred: false,
-    experience: "7 years in coaching sales",
-    highestTicket: "$25,000 executive program",
-    salesStyle: "Consultative, needs-based approach",
-    tools: "HubSpot, Zoom, Slack",
-    videoUrl: "https://www.loom.com/share/example101",
-    notes: "Hired on May 15th. Starting June 1st. Send onboarding materials.",
-    jobId: 1,
-  },
-  {
-    id: 5,
-    name: "David Wilson",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 5",
-    location: "Denver, CO",
-    appliedDate: "3 days ago",
-    status: "new",
-    starred: false,
-    experience: "4 years in real estate sales",
-    highestTicket: "$1.2M property",
-    salesStyle: "High-energy, persistent follow-up",
-    tools: "Zillow CRM, BombBomb, Calendly",
-    videoUrl: "https://www.loom.com/share/example202",
-    notes: "",
-    jobId: 1,
-  },
-  {
-    id: 6,
-    name: "Jennifer Lee",
-    avatar: "/placeholder.svg?height=40&width=40&query=person 6",
-    location: "Miami, FL",
-    appliedDate: "1 week ago",
-    status: "rejected",
-    starred: false,
-    experience: "3 years in SaaS sales",
-    highestTicket: "$15,000 annual contract",
-    salesStyle: "Feature-focused, technical",
-    tools: "Salesforce, Outreach",
-    videoUrl: "https://www.loom.com/share/example303",
-    notes: "Not enough experience with high-ticket sales. Rejected after initial review.",
-    jobId: 1,
-  },
-]
-
-// Mock job data
-const mockJobs = [
-  {
-    id: 1,
-    title: "Senior Closer - Executive Coaching",
-    status: "active",
-    applicants: 6,
-    views: 78,
-    posted: "5 days ago",
-    expires: "25 days left",
-    industry: "Coaching",
-    priceRange: "$3-10K",
-    leadSource: "Inbound",
-    commissionStructure: "100% Commission",
-    teamSize: "Full team",
-  },
-]
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function ApplicantsPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = Number(params.id)
-  const [applicants, setApplicants] = useState(mockApplicants)
-  const [selectedApplicant, setSelectedApplicant] = useState<(typeof mockApplicants)[0] | null>(null)
+  const supabase = createClientComponentClient()
+  const [applicants, setApplicants] = useState<any[]>([])
+  const [selectedApplicant, setSelectedApplicant] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [notes, setNotes] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      setLoading(true)
+      try {
+        // Fetch applicants for this job
+        const { data, error } = await supabase
+          .from("applicants")
+          .select("*, user:users(id, full_name, avatar_url, location)")
+          .eq("job_id", jobId)
+        if (error) throw error
+        setApplicants(data || [])
+      } catch (err: any) {
+        setError(err.message || "Failed to load applicants")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchApplicants()
+  }, [jobId, supabase])
 
   const filteredApplicants = applicants.filter((applicant) => {
-    // Filter by search query
-    if (searchQuery && !applicant.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false
-    }
-
-    // Filter by tab
+    const name = applicant.user?.full_name || ""
+    if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase())) return false
     if (activeTab === "new" && applicant.status !== "new") return false
     if (activeTab === "reviewing" && applicant.status !== "reviewing") return false
     if (activeTab === "interviewing" && applicant.status !== "interviewing") return false
     if (activeTab === "hired" && applicant.status !== "hired") return false
     if (activeTab === "rejected" && applicant.status !== "rejected") return false
     if (activeTab === "starred" && !applicant.starred) return false
-
     return true
   })
 
@@ -261,7 +162,7 @@ export default function ApplicantsPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Applicants</h1>
-            <p className="text-gray-400">{mockJobs[0].title}</p>
+            <p className="text-gray-400">{applicants[0]?.job?.title}</p>
           </div>
         </div>
       </FadeIn>
@@ -346,16 +247,16 @@ export default function ApplicantsPage() {
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3">
                             <Avatar className="h-10 w-10 border border-dark-600">
-                              <AvatarImage src={applicant.avatar || "/placeholder.svg"} />
+                              <AvatarImage src={applicant.user?.avatar_url || "/placeholder.svg"} />
                               <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                                {applicant.name
+                                {applicant.user?.full_name
                                   .split(" ")
-                                  .map((n) => n[0])
+                                  .map((n: string) => n[0])
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h3 className="text-white font-medium">{applicant.name}</h3>
+                              <h3 className="text-white font-medium">{applicant.user?.full_name}</h3>
                               <div className="flex items-center text-xs text-gray-400 mt-1">
                                 <Clock className="w-3 h-3 mr-1" />
                                 <span>Applied {applicant.appliedDate}</span>
@@ -380,7 +281,7 @@ export default function ApplicantsPage() {
                         <div className="mt-2 flex items-center justify-between">
                           <div className="flex items-center text-xs text-gray-400">
                             <User className="w-3 h-3 mr-1" />
-                            <span>{applicant.location}</span>
+                            <span>{applicant.user?.location}</span>
                           </div>
                           {getStatusBadge(applicant.status)}
                         </div>
@@ -414,30 +315,30 @@ export default function ApplicantsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16 border-2 border-dark-600">
-                        <AvatarImage src={selectedApplicant.avatar || "/placeholder.svg"} />
+                        <AvatarImage src={selectedApplicant.user?.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
-                          {selectedApplicant.name
+                          {selectedApplicant.user?.full_name
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.name}</h2>
+                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.full_name}</h2>
                           {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current" />}
                         </div>
-                        <p className="text-gray-400">{selectedApplicant.location}</p>
+                        <p className="text-gray-400">{selectedApplicant.user?.location}</p>
                         <div className="flex items-center mt-2">{getStatusBadge(selectedApplicant.status)}</div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <AnimatedButton variant="outline" size="sm" animation="scale">
+                      <AnimatedButton variant="outline" size="sm">
                         <Mail className="w-4 h-4 mr-2" />
                         Email
                       </AnimatedButton>
-                      <Link href={`/recruiter/messages/${selectedApplicant.id}`}>
-                        <AnimatedButton variant="outline" size="sm" animation="scale">
+                      <Link href={`/dashboard/messages?user=${selectedApplicant.user?.id}`}>
+                        <AnimatedButton variant="outline" size="sm">
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Message
                         </AnimatedButton>
@@ -615,7 +516,7 @@ export default function ApplicantsPage() {
                           className="w-full bg-dark-700 border border-dark-600 rounded-lg p-3 text-white placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 min-h-[100px] resize-none"
                         />
                         <div className="flex justify-end mt-2">
-                          <AnimatedButton variant="outline" size="sm" animation="scale" onClick={handleSaveNotes}>
+                          <AnimatedButton variant="outline" size="sm" onClick={handleSaveNotes}>
                             Save Notes
                           </AnimatedButton>
                         </div>
@@ -628,22 +529,20 @@ export default function ApplicantsPage() {
                   <div className="flex justify-between">
                     <AnimatedButton
                       variant="outline"
-                      animation="scale"
                       onClick={() => handleStatusChange(selectedApplicant.id, "rejected")}
                     >
                       <XCircle className="w-4 h-4 mr-2 text-red-400" />
                       Reject
                     </AnimatedButton>
                     <div className="space-x-2">
-                      <Link href={`/recruiter/messages/${selectedApplicant.id}`}>
-                        <AnimatedButton variant="outline" animation="scale">
+                      <Link href={`/dashboard/messages?user=${selectedApplicant.user?.id}`}>
+                        <AnimatedButton variant="outline">
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Message
                         </AnimatedButton>
                       </Link>
                       <AnimatedButton
                         variant="purple"
-                        animation="glow"
                         onClick={() => handleStatusChange(selectedApplicant.id, "hired")}
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />

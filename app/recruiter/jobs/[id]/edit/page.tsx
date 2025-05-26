@@ -52,7 +52,8 @@ export default function EditJobPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-          router.push("/login")
+          setError("Please log in to edit jobs")
+          setLoading(false)
           return
         }
 
@@ -100,7 +101,7 @@ export default function EditJobPage() {
     }
 
     fetchJob()
-  }, [jobId, router, supabase])
+  }, [jobId, supabase])
 
   const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -108,6 +109,16 @@ export default function EditJobPage() {
 
   const handleSave = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Please log in to save changes",
+          variant: "destructive",
+        })
+        return
+      }
+
       await updateJob(formData.id, {
         ...formData,
         video_url: formData.video_url?.trim() ? formData.video_url : null,
@@ -130,6 +141,16 @@ export default function EditJobPage() {
 
   const handleStatusChange = async (status: 'draft' | 'active' | 'paused' | 'closed') => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Please log in to change job status",
+          variant: "destructive",
+        })
+        return
+      }
+
       await updateJob(formData.id, { status })
       setFormData((prev) => ({ ...prev, status }))
 
