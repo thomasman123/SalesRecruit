@@ -187,7 +187,7 @@ export default function ApplicantsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl">
+    <div className="container mx-auto max-w-7xl h-full">
       <FadeIn delay={100}>
         <div className="flex items-center mb-8">
           <Link
@@ -203,11 +203,11 @@ export default function ApplicantsPage() {
         </div>
       </FadeIn>
 
-      <div className="flex h-[calc(100vh-12rem)] gap-4">
+      <div className="flex gap-4 min-h-0">
         {/* Left Panel - Applicant List */}
         <FadeIn delay={200}>
-          <div className="w-96">
-            <div className="mb-4">
+          <div className="w-96 flex flex-col">
+            <div className="mb-4 flex-shrink-0">
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -264,8 +264,8 @@ export default function ApplicantsPage() {
               </Tabs>
             </div>
 
-            <AnimatedCard variant="hover-glow" className="h-[calc(100vh-20rem)]">
-              <ScrollArea className="h-full">
+            <AnimatedCard variant="hover-glow" className="flex-1 min-h-0">
+              <ScrollArea className="h-[calc(100vh-24rem)]">
                 <div className="p-2">
                   {filteredApplicants.length > 0 ? (
                     filteredApplicants.map((applicant) => (
@@ -344,10 +344,10 @@ export default function ApplicantsPage() {
 
         {/* Right Panel - Applicant Details */}
         <FadeIn delay={300}>
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             {selectedApplicant ? (
-              <AnimatedCard variant="hover-glow" className="h-full min-h-0 overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-dark-600">
+              <AnimatedCard variant="hover-glow" className="h-[calc(100vh-12rem)] min-h-0 overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-dark-600 flex-shrink-0">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16 border-2 border-dark-600">
@@ -459,8 +459,8 @@ export default function ApplicantsPage() {
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1 p-6">
-                  <div className="space-y-6">
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="p-6 space-y-6">
                     {/* Video Introduction */}
                     {selectedApplicant.videoUrl && (
                       <div>
@@ -561,7 +561,7 @@ export default function ApplicantsPage() {
                   </div>
                 </ScrollArea>
 
-                <div className="p-6 border-t border-dark-600">
+                <div className="p-6 border-t border-dark-600 flex-shrink-0">
                   <div className="flex justify-between">
                     <AnimatedButton
                       variant="outline"
@@ -589,7 +589,7 @@ export default function ApplicantsPage() {
                 </div>
               </AnimatedCard>
             ) : (
-              <AnimatedCard variant="hover-glow" className="h-full flex items-center justify-center">
+              <AnimatedCard variant="hover-glow" className="h-[calc(100vh-12rem)] flex items-center justify-center">
                 <div className="text-center p-12">
                   <Users className="h-16 w-16 text-gray-500 mx-auto mb-6" />
                   <h2 className="text-2xl font-bold text-white mb-4">Select an Applicant</h2>
