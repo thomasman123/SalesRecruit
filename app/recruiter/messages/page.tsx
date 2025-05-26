@@ -263,21 +263,36 @@ export default function RecruiterMessagesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear input immediately
+
+    // Add message to local state immediately for instant feedback
+    const tempMessage: Message = {
+      id: Date.now(), // Temporary ID
+      content: messageContent,
+      sender_type: 'recruiter',
+      timestamp: new Date().toISOString(),
+      read: true,
+    };
+    setMessages((current) => [...current, tempMessage]);
+
     const { error } = await supabase
       .from('messages')
       .insert({
         conversation_id: selectedConversation,
         sender_id: user.id,
         sender_type: 'recruiter',
-        content: newMessage.trim(),
+        content: messageContent,
       });
 
     if (error) {
       console.error('Error sending message:', error);
+      // Remove the temporary message on error
+      setMessages((current) => current.filter(msg => msg.id !== tempMessage.id));
+      setNewMessage(messageContent); // Restore the message content
       return;
     }
 
-    setNewMessage('');
     fetchConversations();
   };
 
@@ -460,9 +475,7 @@ export default function RecruiterMessagesPage() {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate text-white">{conversation.participant.name}</p>
-                        <p className="text-sm text-gray-400 truncate">
-                          {conversation.job.title}
-                        </p>
+                        <p className="text-sm text-gray-400 truncate">{conversation.job.title}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-gray-500">
