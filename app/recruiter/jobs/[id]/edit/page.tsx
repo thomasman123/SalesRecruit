@@ -12,79 +12,87 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, Upload, Building2, DollarSign, Briefcase, AlertTriangle } from "lucide-react"
 import Link from "next/link"
-import { mockJobs } from "@/lib/mock-data"
 import { toast } from "@/components/ui/use-toast"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { updateJob } from "@/app/actions/jobs"
 
 export default function EditJobPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
+  const supabase = createClientComponentClient()
 
   const [formData, setFormData] = useState({
     id: 0,
     title: "",
     industry: "",
-    priceRange: "",
-    leadSource: "",
-    commissionStructure: "",
-    teamSize: "",
-    remoteCompatible: true,
-    companyOverview: "",
-    whatYouSell: "",
-    salesProcess: "",
-    whatsProvided: "",
-    notFor: "",
-    commissionBreakdown: "",
-    rampTime: "",
-    workingHours: "",
-    videoUrl: "",
-    status: "draft",
-    applicants: 0,
-    views: 0,
-    posted: "",
-    expires: "",
+    price_range: "",
+    lead_source: "",
+    commission_structure: "",
+    team_size: "",
+    remote_compatible: true,
+    company_overview: "",
+    what_you_sell: "",
+    sales_process: "",
+    whats_provided: [] as string[],
+    not_for: "",
+    commission_breakdown: "",
+    ramp_time: "",
+    working_hours: "",
+    video_url: "",
+    status: "draft" as 'draft' | 'active' | 'paused' | 'closed',
   })
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    // Fetch job data
-    const fetchJob = () => {
+    const fetchJob = async () => {
       setLoading(true)
       try {
-        const job = mockJobs.find((job) => job.id === Number.parseInt(jobId))
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push("/login")
+          return
+        }
 
-        if (job) {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("id", jobId)
+          .eq("recruiter_id", user.id)
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        if (data) {
           setFormData({
-            id: job.id,
-            title: job.title,
-            industry: job.industry,
-            priceRange: job.priceRange,
-            leadSource: job.leadSource,
-            commissionStructure: job.commissionStructure,
-            teamSize: job.teamSize,
-            remoteCompatible: job.remoteCompatible,
-            companyOverview: job.companyOverview || "",
-            whatYouSell: job.whatYouSell || "",
-            salesProcess: job.salesProcess || "",
-            whatsProvided: job.whatsProvided ? job.whatsProvided.join("\n") : "",
-            notFor: job.notFor || "",
-            commissionBreakdown: job.commissionBreakdown || "",
-            rampTime: job.rampTime || "",
-            workingHours: job.workingHours || "",
-            videoUrl: job.videoUrl || "",
-            status: job.status,
-            applicants: job.applicants,
-            views: job.views,
-            posted: job.posted,
-            expires: job.expires,
+            id: data.id,
+            title: data.title,
+            industry: data.industry,
+            price_range: data.price_range,
+            lead_source: data.lead_source,
+            commission_structure: data.commission_structure,
+            team_size: data.team_size,
+            remote_compatible: data.remote_compatible,
+            company_overview: data.company_overview || "",
+            what_you_sell: data.what_you_sell || "",
+            sales_process: data.sales_process || "",
+            whats_provided: data.whats_provided || [],
+            not_for: data.not_for || "",
+            commission_breakdown: data.commission_breakdown || "",
+            ramp_time: data.ramp_time || "",
+            working_hours: data.working_hours || "",
+            video_url: data.video_url || "",
+            status: data.status,
           })
         } else {
           setError("Job not found")
         }
-      } catch (err) {
-        setError("Failed to load job data")
+      } catch (err: any) {
+        setError(err.message || "Failed to load job data")
         console.error(err)
       } finally {
         setLoading(false)
@@ -92,35 +100,50 @@ export default function EditJobPage() {
     }
 
     fetchJob()
-  }, [jobId])
+  }, [jobId, router, supabase])
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = () => {
-    // In a real app, this would be an API call to update the job
-    console.log("Saving job:", formData)
+  const handleSave = async () => {
+    try {
+      await updateJob(formData.id, {
+        ...formData,
+        video_url: formData.video_url?.trim() ? formData.video_url : null,
+      })
 
-    // Show success toast
-    toast({
-      title: "Job updated",
-      description: "Your job has been successfully updated.",
-      variant: "default",
-    })
+      toast({
+        title: "Job updated",
+        description: "Your job has been successfully updated.",
+      })
 
-    // Redirect back to jobs page
-    router.push("/recruiter/jobs")
+      router.push("/recruiter/jobs")
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleStatusChange = (status: string) => {
-    setFormData((prev) => ({ ...prev, status }))
+  const handleStatusChange = async (status: 'draft' | 'active' | 'paused' | 'closed') => {
+    try {
+      await updateJob(formData.id, { status })
+      setFormData((prev) => ({ ...prev, status }))
 
-    toast({
-      title: `Job ${status === "active" ? "activated" : status === "paused" ? "paused" : "moved to draft"}`,
-      description: `The job status has been updated to ${status}.`,
-      variant: "default",
-    })
+      toast({
+        title: `Job ${status === "active" ? "activated" : status === "paused" ? "paused" : "moved to draft"}`,
+        description: `The job status has been updated to ${status}.`,
+      })
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
+    }
   }
 
   if (loading) {
@@ -254,10 +277,10 @@ export default function EditJobPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priceRange" className="text-white">
+                <Label htmlFor="price_range" className="text-white">
                   Offer Price Range
                 </Label>
-                <Select value={formData.priceRange} onValueChange={(value) => handleInputChange("priceRange", value)}>
+                <Select value={formData.price_range} onValueChange={(value) => handleInputChange("price_range", value)}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select price range" />
                   </SelectTrigger>
@@ -276,10 +299,10 @@ export default function EditJobPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="leadSource" className="text-white">
+                <Label htmlFor="lead_source" className="text-white">
                   Lead Source
                 </Label>
-                <Select value={formData.leadSource} onValueChange={(value) => handleInputChange("leadSource", value)}>
+                <Select value={formData.lead_source} onValueChange={(value) => handleInputChange("lead_source", value)}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select lead source" />
                   </SelectTrigger>
@@ -298,12 +321,12 @@ export default function EditJobPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="commissionStructure" className="text-white">
+                <Label htmlFor="commission_structure" className="text-white">
                   Commission Structure
                 </Label>
                 <Select
-                  value={formData.commissionStructure}
-                  onValueChange={(value) => handleInputChange("commissionStructure", value)}
+                  value={formData.commission_structure}
+                  onValueChange={(value) => handleInputChange("commission_structure", value)}
                 >
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select commission structure" />
@@ -323,10 +346,10 @@ export default function EditJobPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="teamSize" className="text-white">
+                <Label htmlFor="team_size" className="text-white">
                   Team Size / Sales Infra
                 </Label>
-                <Select value={formData.teamSize} onValueChange={(value) => handleInputChange("teamSize", value)}>
+                <Select value={formData.team_size} onValueChange={(value) => handleInputChange("team_size", value)}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select team size" />
                   </SelectTrigger>
@@ -349,8 +372,8 @@ export default function EditJobPage() {
                 <div className="flex items-center space-x-2 mt-2">
                   <Checkbox
                     id="remote"
-                    checked={formData.remoteCompatible}
-                    onCheckedChange={(checked) => handleInputChange("remoteCompatible", !!checked)}
+                    checked={formData.remote_compatible}
+                    onCheckedChange={(checked) => handleInputChange("remote_compatible", !!checked)}
                     className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
                   />
                   <Label
@@ -375,65 +398,65 @@ export default function EditJobPage() {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="companyOverview" className="text-white">
+              <Label htmlFor="company_overview" className="text-white">
                 Company Overview
               </Label>
               <Textarea
-                id="companyOverview"
-                value={formData.companyOverview}
-                onChange={(e) => handleInputChange("companyOverview", e.target.value)}
+                id="company_overview"
+                value={formData.company_overview}
+                onChange={(e) => handleInputChange("company_overview", e.target.value)}
                 placeholder="Describe your company, mission, and what makes it unique..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="whatYouSell" className="text-white">
+              <Label htmlFor="what_you_sell" className="text-white">
                 What You'll Be Selling (specific outcome + buyer)
               </Label>
               <Textarea
-                id="whatYouSell"
-                value={formData.whatYouSell}
-                onChange={(e) => handleInputChange("whatYouSell", e.target.value)}
+                id="what_you_sell"
+                value={formData.what_you_sell}
+                onChange={(e) => handleInputChange("what_you_sell", e.target.value)}
                 placeholder="Describe the product/service, target audience, and value proposition..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="salesProcess" className="text-white">
+              <Label htmlFor="sales_process" className="text-white">
                 Sales Process (1-call close? Setters? CRM used?)
               </Label>
               <Textarea
-                id="salesProcess"
-                value={formData.salesProcess}
-                onChange={(e) => handleInputChange("salesProcess", e.target.value)}
+                id="sales_process"
+                value={formData.sales_process}
+                onChange={(e) => handleInputChange("sales_process", e.target.value)}
                 placeholder="Describe your sales process, tools used, and typical sales cycle..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="whatsProvided" className="text-white">
+              <Label htmlFor="whats_provided" className="text-white">
                 What's Provided (leads, CRM, script, training, etc.)
               </Label>
               <Textarea
-                id="whatsProvided"
-                value={formData.whatsProvided}
-                onChange={(e) => handleInputChange("whatsProvided", e.target.value)}
+                id="whats_provided"
+                value={formData.whats_provided.join("\n")}
+                onChange={(e) => handleInputChange("whats_provided", e.target.value.split("\n").filter(Boolean))}
                 placeholder="List all resources, tools, and support provided to the sales rep..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notFor" className="text-white">
+              <Label htmlFor="not_for" className="text-white">
                 Who This Role Is NOT For (optional red-flag filter)
               </Label>
               <Textarea
-                id="notFor"
-                value={formData.notFor}
-                onChange={(e) => handleInputChange("notFor", e.target.value)}
+                id="not_for"
+                value={formData.not_for}
+                onChange={(e) => handleInputChange("not_for", e.target.value)}
                 placeholder="Describe who would NOT be a good fit for this role..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
@@ -451,52 +474,52 @@ export default function EditJobPage() {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="commissionBreakdown" className="text-white">
+              <Label htmlFor="commission_breakdown" className="text-white">
                 Commission Breakdown
               </Label>
               <Textarea
-                id="commissionBreakdown"
-                value={formData.commissionBreakdown}
-                onChange={(e) => handleInputChange("commissionBreakdown", e.target.value)}
+                id="commission_breakdown"
+                value={formData.commission_breakdown}
+                onChange={(e) => handleInputChange("commission_breakdown", e.target.value)}
                 placeholder="Detail the commission structure, average earnings, and examples of top performer earnings..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="rampTime" className="text-white">
+              <Label htmlFor="ramp_time" className="text-white">
                 Expected Ramp Time
               </Label>
               <AnimatedInput
-                id="rampTime"
-                value={formData.rampTime}
-                onChange={(e) => handleInputChange("rampTime", e.target.value)}
+                id="ramp_time"
+                value={formData.ramp_time}
+                onChange={(e) => handleInputChange("ramp_time", e.target.value)}
                 placeholder="e.g., 2-3 weeks to first close, 6-8 weeks to full productivity"
                 variant="glow"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workingHours" className="text-white">
+              <Label htmlFor="working_hours" className="text-white">
                 Working Hours (Time Zone)
               </Label>
               <AnimatedInput
-                id="workingHours"
-                value={formData.workingHours}
-                onChange={(e) => handleInputChange("workingHours", e.target.value)}
+                id="working_hours"
+                value={formData.working_hours}
+                onChange={(e) => handleInputChange("working_hours", e.target.value)}
                 placeholder="e.g., Flexible hours, but most calls happen 10am-6pm EST"
                 variant="glow"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="videoUrl" className="text-white">
+              <Label htmlFor="video_url" className="text-white">
                 Video Intro from Business Owner (optional but recommended)
               </Label>
               <AnimatedInput
-                id="videoUrl"
-                value={formData.videoUrl}
-                onChange={(e) => handleInputChange("videoUrl", e.target.value)}
+                id="video_url"
+                value={formData.video_url}
+                onChange={(e) => handleInputChange("video_url", e.target.value)}
                 placeholder="e.g., https://www.loom.com/share/your-video-id"
                 variant="glow"
               />
@@ -517,11 +540,11 @@ export default function EditJobPage() {
       <FadeIn delay={500}>
         <div className="flex justify-between mb-16">
           <Link href="/recruiter/jobs">
-            <AnimatedButton variant="outline" animation="scale">
+            <AnimatedButton variant="outline">
               Cancel
             </AnimatedButton>
           </Link>
-          <AnimatedButton variant="purple" animation="glow" onClick={handleSave}>
+          <AnimatedButton variant="purple" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Save Changes
           </AnimatedButton>
