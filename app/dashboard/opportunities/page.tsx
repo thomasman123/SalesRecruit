@@ -145,6 +145,20 @@ export default function OpportunitiesPage() {
         toast({ title: "Not logged in", description: "Please log in to apply.", variant: "destructive" });
         return;
       }
+
+      // Ensure user exists in public.users (handles existing accounts created before trigger)
+      const { error: upsertError } = await supabase.from("users").upsert({
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name ?? user.email!.split("@")[0],
+        role: user.user_metadata?.role ?? "sales-professional",
+      });
+      if (upsertError) {
+        console.error("Error ensuring user exists:", upsertError);
+        toast({ title: "User setup failed", description: "Could not set up user profile.", variant: "destructive" });
+        return;
+      }
+
       // Check if already applied
       const { data: existing, error: checkError } = await supabase
         .from("applicants")
