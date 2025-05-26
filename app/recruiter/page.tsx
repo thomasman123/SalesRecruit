@@ -307,10 +307,12 @@ export default function RecruiterDashboardPage() {
             <AnimatedCard variant="hover-glow" className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Recent Messages</h2>
-                <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
-                  View All Messages
-                  <ChevronRight className="ml-1 w-4 h-4" />
-                </AnimatedButton>
+                <Link href="/recruiter/messages">
+                  <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
+                    View All Messages
+                    <ChevronRight className="ml-1 w-4 h-4" />
+                  </AnimatedButton>
+                </Link>
               </div>
 
               <div className="space-y-4">
@@ -387,7 +389,7 @@ export default function RecruiterDashboardPage() {
                 </AnimatedCard>
               </Link>
 
-              <Link href="/messages">
+              <Link href="/recruiter/messages">
                 <AnimatedCard variant="interactive" className="p-4 group">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mr-4 group-hover:bg-purple-500/20 transition-all duration-300">

@@ -375,7 +375,7 @@ export default function ApplicantsPage() {
                         <Mail className="w-4 h-4 mr-2" />
                         Email
                       </AnimatedButton>
-                      <Link href={`/dashboard/messages?user=${selectedApplicant.user?.id}`}>
+                      <Link href={`/recruiter/messages?user=${selectedApplicant.user?.id}`}>
                         <AnimatedButton variant="outline" size="sm">
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Message
@@ -573,7 +573,7 @@ export default function ApplicantsPage() {
                       Reject
                     </AnimatedButton>
                     <div className="space-x-2">
-                      <Link href={`/dashboard/messages?user=${selectedApplicant.user?.id}`}>
+                      <Link href={`/recruiter/messages?user=${selectedApplicant.user?.id}`}>
                         <AnimatedButton variant="outline">
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Message
