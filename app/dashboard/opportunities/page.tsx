@@ -1270,54 +1270,65 @@ export default function OpportunitiesPage() {
         </div>
       </div>
 
-      {/* Right Panel - Role Details */}
+      {/* Full-Page Role Details Modal */}
       {selectedOpportunity && (
-        <div style={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.95)',
-          backdropFilter: 'blur(20px)',
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem'
-        }}>
-          <div style={{ 
-            width: '100%',
-            maxWidth: '64rem',
-            height: '100%',
-            maxHeight: '90vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-            border: '1px solid rgba(255, 255, 255, 0.1)', 
-            borderRadius: '1.5rem', 
-            display: 'flex', 
-            flexDirection: 'column',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-            overflow: 'hidden'
-          }}>
+        <div 
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            backdropFilter: 'blur(20px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+          onClick={(e) => {
+            // Close modal when clicking backdrop
+            if (e.target === e.currentTarget) {
+              setSelectedOpportunity(null);
+            }
+          }}
+        >
+          <div 
+            style={{ 
+              width: '100%',
+              maxWidth: '72rem',
+              height: '100%',
+              maxHeight: '95vh',
+              backgroundColor: 'rgba(0, 0, 0, 0.95)', 
+              border: '1px solid rgba(255, 255, 255, 0.2)', 
+              borderRadius: '1rem', 
+              display: 'flex', 
+              flexDirection: 'column',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div style={{ 
-              padding: '2rem', 
+              padding: '1.5rem 2rem', 
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
               display: 'flex', 
-              alignItems: 'flex-start', 
+              alignItems: 'center', 
               justifyContent: 'space-between',
               background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%)',
               flexShrink: 0
             }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                 <img
                   src={selectedOpportunity.logo || "/placeholder.svg"}
                   alt={selectedOpportunity.companyName}
                   style={{ 
-                    width: '5rem', 
-                    height: '5rem', 
-                    borderRadius: '1rem', 
+                    width: '4rem', 
+                    height: '4rem', 
+                    borderRadius: '0.75rem', 
                     objectFit: 'cover', 
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
@@ -1325,25 +1336,28 @@ export default function OpportunitiesPage() {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{ 
-                    fontSize: '2rem', 
+                    fontSize: '1.5rem', 
                     fontWeight: '700', 
                     color: '#ffffff', 
-                    margin: '0 0 0.75rem 0'
+                    margin: '0 0 0.5rem 0'
                   }}>{selectedOpportunity.companyName}</h2>
-                  <p style={{ color: '#c084fc', margin: '0 0 0.5rem 0', fontWeight: '600', fontSize: '1.25rem' }}>{selectedOpportunity.offerType}</p>
-                  <p style={{ color: '#888888', fontSize: '1rem', margin: 0, fontWeight: '500' }}>{selectedOpportunity.industry}</p>
+                  <p style={{ color: '#c084fc', margin: '0 0 0.25rem 0', fontWeight: '600', fontSize: '1rem' }}>{selectedOpportunity.offerType}</p>
+                  <p style={{ color: '#888888', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{selectedOpportunity.industry}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedOpportunity(null)}
                 style={{ 
-                  padding: '0.75rem', 
+                  padding: '0.5rem', 
                   color: '#888888', 
                   backgroundColor: 'rgba(255, 255, 255, 0.05)', 
                   border: 'none', 
-                  borderRadius: '0.75rem',
+                  borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.color = '#ffffff';
@@ -1354,56 +1368,61 @@ export default function OpportunitiesPage() {
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                 }}
               >
-                <X style={{ width: '1.5rem', height: '1.5rem' }} />
+                <X style={{ width: '1.25rem', height: '1.25rem' }} />
               </button>
             </div>
 
             {/* Scrollable Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '3rem' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: window.innerWidth > 1024 ? '1fr 1fr' : '1fr', 
+                gap: '2rem',
+                maxWidth: '100%'
+              }}>
                 {/* Left Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                   {/* Company Overview */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <Building2 style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <Building2 style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       Company Overview
                     </h3>
-                    <p style={{ color: '#cccccc', fontSize: '1rem', lineHeight: '1.7', margin: 0, fontWeight: '500' }}>{selectedOpportunity.companyOverview}</p>
+                    <p style={{ color: '#cccccc', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.companyOverview}</p>
                   </div>
 
                   {/* What You'll Be Selling */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <Target style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <Target style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       What You'll Be Selling
                     </h3>
-                    <p style={{ color: '#cccccc', fontSize: '1rem', lineHeight: '1.7', margin: 0, fontWeight: '500' }}>{selectedOpportunity.whatYouSell}</p>
+                    <p style={{ color: '#cccccc', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.whatYouSell}</p>
                   </div>
 
                   {/* Sales Process */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <TrendingUp style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <TrendingUp style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       Sales Process
                     </h3>
-                    <p style={{ color: '#cccccc', fontSize: '1rem', lineHeight: '1.7', margin: 0, fontWeight: '500' }}>{selectedOpportunity.salesProcess}</p>
+                    <p style={{ color: '#cccccc', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.salesProcess}</p>
                   </div>
                 </div>
 
                 {/* Right Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                   {/* What's Provided */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <CheckCircle style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <CheckCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       What's Provided
                     </h3>
-                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {selectedOpportunity.whatsProvided?.map((item, index) => (
-                        <li key={index} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '1rem', color: '#cccccc', fontWeight: '500' }}>
-                          <CheckCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem', color: '#4ade80', marginTop: '0.125rem', flexShrink: 0 }} />
-                          <span style={{ lineHeight: '1.6' }}>{item}</span>
+                        <li key={index} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>
+                          <CheckCircle style={{ width: '1rem', height: '1rem', marginRight: '0.75rem', color: '#4ade80', marginTop: '0.125rem', flexShrink: 0 }} />
+                          <span style={{ lineHeight: '1.5' }}>{item}</span>
                         </li>
                       ))}
                     </ul>
@@ -1411,58 +1430,58 @@ export default function OpportunitiesPage() {
 
                   {/* Commission Breakdown */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <DollarSign style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <DollarSign style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       Commission Breakdown
                     </h3>
                     <div style={{ 
                       backgroundColor: 'rgba(168, 85, 247, 0.1)', 
                       border: '1px solid rgba(168, 85, 247, 0.3)', 
-                      borderRadius: '1rem', 
-                      padding: '1.5rem',
+                      borderRadius: '0.75rem', 
+                      padding: '1rem',
                       backdropFilter: 'blur(8px)'
                     }}>
-                      <p style={{ color: '#cccccc', fontSize: '1rem', fontFamily: 'monospace', margin: 0, fontWeight: '600', lineHeight: '1.6' }}>{selectedOpportunity.commissionBreakdown}</p>
+                      <p style={{ color: '#cccccc', fontSize: '0.875rem', fontFamily: 'monospace', margin: 0, fontWeight: '600', lineHeight: '1.5' }}>{selectedOpportunity.commissionBreakdown}</p>
                     </div>
                   </div>
 
                   {/* Expected Ramp Time */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <TrendingUp style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <TrendingUp style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       Expected Ramp Time
                     </h3>
-                    <p style={{ color: '#cccccc', fontSize: '1rem', margin: 0, fontWeight: '500', lineHeight: '1.6' }}>{selectedOpportunity.rampTime}</p>
+                    <p style={{ color: '#cccccc', fontSize: '0.875rem', margin: 0, fontWeight: '500', lineHeight: '1.5' }}>{selectedOpportunity.rampTime}</p>
                   </div>
 
                   {/* Working Hours */}
                   <div>
-                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.25rem', display: 'flex', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
-                      <Clock style={{ width: '1.5rem', height: '1.5rem', marginRight: '1rem', color: '#a855f7' }} />
+                    <h3 style={{ color: '#ffffff', fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                      <Clock style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                       Working Hours
                     </h3>
-                    <p style={{ color: '#cccccc', fontSize: '1rem', margin: 0, fontWeight: '500', lineHeight: '1.6' }}>{selectedOpportunity.workingHours}</p>
+                    <p style={{ color: '#cccccc', fontSize: '0.875rem', margin: 0, fontWeight: '500', lineHeight: '1.5' }}>{selectedOpportunity.workingHours}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Apply Button */}
-            <div style={{ padding: '2rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
+            <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
               <button
                 onClick={() => handleApply(selectedOpportunity)}
                 disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
                 style={{
                   width: '100%',
-                  padding: '1.25rem 2rem',
+                  padding: '1rem 1.5rem',
                   background: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" 
                     ? 'rgba(255, 255, 255, 0.1)' 
                     : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  borderRadius: '1rem',
+                  borderRadius: '0.75rem',
                   fontWeight: '700',
-                  fontSize: '1.125rem',
+                  fontSize: '1rem',
                   cursor: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" 
@@ -1495,7 +1514,7 @@ export default function OpportunitiesPage() {
                         : "Apply Now"}
               </button>
               {!selectedOpportunity.status && (
-                <p style={{ fontSize: '0.875rem', color: '#888888', textAlign: 'center', margin: '1rem 0 0 0', fontWeight: '500' }}>Quick apply with your Helios profile</p>
+                <p style={{ fontSize: '0.75rem', color: '#888888', textAlign: 'center', margin: '0.75rem 0 0 0', fontWeight: '500' }}>Quick apply with your Helios profile</p>
               )}
             </div>
           </div>
