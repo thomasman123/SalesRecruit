@@ -72,9 +72,9 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
     },
     {
       name: "Messages",
-      href: "/recruiter/messages",
+      href: "/messages",
       icon: <MessageSquare className="h-5 w-5" />,
-      current: pathname === "/recruiter/messages" || pathname.startsWith("/recruiter/messages/"),
+      current: pathname === "/messages" || pathname.startsWith("/messages/"),
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
     },
     {

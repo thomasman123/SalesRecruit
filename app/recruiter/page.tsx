@@ -387,7 +387,7 @@ export default function RecruiterDashboardPage() {
                 </AnimatedCard>
               </Link>
 
-              <Link href="/recruiter/messages">
+              <Link href="/messages">
                 <AnimatedCard variant="interactive" className="p-4 group">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mr-4 group-hover:bg-purple-500/20 transition-all duration-300">
