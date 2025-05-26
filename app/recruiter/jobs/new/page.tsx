@@ -52,7 +52,11 @@ export default function NewJobPage() {
       toast({ title: "Job saved as draft" })
       router.push("/recruiter/jobs")
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" })
+      toast({
+        title: err.message.length < 60 ? err.message : "Failed to create job",
+        description: err.message.length >= 60 ? err.message : undefined,
+        variant: "destructive",
+      })
     }
   }
 
@@ -66,7 +70,11 @@ export default function NewJobPage() {
       toast({ title: "Job published" })
       router.push("/recruiter/jobs")
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" })
+      toast({
+        title: err.message.length < 60 ? err.message : "Failed to create job",
+        description: err.message.length >= 60 ? err.message : undefined,
+        variant: "destructive",
+      })
     }
   }
 

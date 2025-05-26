@@ -32,22 +32,22 @@ export async function middleware(request: NextRequest) {
 
   // Always attempt to refresh the session.
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Auth-guard and role routing rules ----------------------------------
   const pathname = request.nextUrl.pathname
   const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding")
 
-  if (!session && isProtected) {
+  if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (session) {
+  if (user) {
     // Check the user's role from metadata (faster than extra DB query)
-    const role = session.user.user_metadata?.role as string | undefined
-    const onboarded = session.user.user_metadata?.onboarded as boolean | undefined
+    const role = user.user_metadata?.role as string | undefined
+    const onboarded = user.user_metadata?.onboarded as boolean | undefined
 
     if (role === "recruiter" && pathname.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/recruiter", request.url))
