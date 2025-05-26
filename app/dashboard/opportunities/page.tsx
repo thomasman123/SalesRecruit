@@ -186,6 +186,7 @@ export default function OpportunitiesPage() {
         job_id: number;
         status: string;
         starred: boolean;
+        user_id: string;
       } = {
         name: (meta.full_name as string) || user.email || "",
         email: user.email || "",
@@ -199,6 +200,7 @@ export default function OpportunitiesPage() {
         job_id: opportunity.id,
         status: "new",
         starred: false,
+        user_id: user.id,
       };
       const { error: insertError } = await supabase.from("applicants").insert(insertData);
       if (insertError) throw insertError;

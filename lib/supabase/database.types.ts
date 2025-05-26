@@ -52,6 +52,7 @@ export type Database = {
           status: string
           tools: string
           updated_at: string
+          user_id: string | null
           video_url: string | null
         }
         Insert: {
@@ -71,6 +72,7 @@ export type Database = {
           status: string
           tools: string
           updated_at?: string
+          user_id?: string | null
           video_url?: string | null
         }
         Update: {
@@ -90,6 +92,7 @@ export type Database = {
           status?: string
           tools?: string
           updated_at?: string
+          user_id?: string | null
           video_url?: string | null
         }
         Relationships: [
@@ -98,6 +101,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applicants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

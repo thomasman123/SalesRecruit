@@ -63,7 +63,7 @@ export default function ApplicantsPage() {
         // Fetch applicants for this job
         const { data, error } = await supabase
           .from("applicants")
-          .select("*, user:users(id, full_name, avatar_url, location)")
+          .select("*, user:users!applicants_user_id_fkey(id, name, avatar_url, email)")
           .eq("job_id", jobId)
         if (error) throw error
         setApplicants(data || [])
@@ -77,7 +77,7 @@ export default function ApplicantsPage() {
   }, [jobId, supabase])
 
   const filteredApplicants = applicants.filter((applicant) => {
-    const name = applicant.user?.full_name || ""
+    const name = applicant.user?.name || ""
     if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase())) return false
     if (activeTab === "new" && applicant.status !== "new") return false
     if (activeTab === "reviewing" && applicant.status !== "reviewing") return false
@@ -88,23 +88,59 @@ export default function ApplicantsPage() {
     return true
   })
 
-  const handleStarToggle = (id: number) => {
-    setApplicants((prev) =>
-      prev.map((applicant) => (applicant.id === id ? { ...applicant, starred: !applicant.starred } : applicant)),
-    )
-  }
-
-  const handleStatusChange = (id: number, status: string) => {
-    setApplicants((prev) =>
-      prev.map((applicant) => (applicant.id === id ? { ...applicant, status: status as any } : applicant)),
-    )
-  }
-
-  const handleSaveNotes = () => {
-    if (selectedApplicant) {
+  const handleStarToggle = async (id: number) => {
+    try {
+      const applicant = applicants.find(a => a.id === id)
+      if (!applicant) return
+      
+      const { error } = await supabase
+        .from("applicants")
+        .update({ starred: !applicant.starred })
+        .eq("id", id)
+      
+      if (error) throw error
+      
       setApplicants((prev) =>
-        prev.map((applicant) => (applicant.id === selectedApplicant.id ? { ...applicant, notes } : applicant)),
+        prev.map((applicant) => (applicant.id === id ? { ...applicant, starred: !applicant.starred } : applicant)),
       )
+    } catch (err: any) {
+      console.error("Failed to update starred status:", err)
+    }
+  }
+
+  const handleStatusChange = async (id: number, status: string) => {
+    try {
+      const { error } = await supabase
+        .from("applicants")
+        .update({ status })
+        .eq("id", id)
+      
+      if (error) throw error
+      
+      setApplicants((prev) =>
+        prev.map((applicant) => (applicant.id === id ? { ...applicant, status: status as any } : applicant)),
+      )
+    } catch (err: any) {
+      console.error("Failed to update status:", err)
+    }
+  }
+
+  const handleSaveNotes = async () => {
+    if (selectedApplicant) {
+      try {
+        const { error } = await supabase
+          .from("applicants")
+          .update({ notes })
+          .eq("id", selectedApplicant.id)
+        
+        if (error) throw error
+        
+        setApplicants((prev) =>
+          prev.map((applicant) => (applicant.id === selectedApplicant.id ? { ...applicant, notes } : applicant)),
+        )
+      } catch (err: any) {
+        console.error("Failed to save notes:", err)
+      }
     }
   }
 
@@ -249,14 +285,14 @@ export default function ApplicantsPage() {
                             <Avatar className="h-10 w-10 border border-dark-600">
                               <AvatarImage src={applicant.user?.avatar_url || "/placeholder.svg"} />
                               <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                                {applicant.user?.full_name
+                                {applicant.user?.name
                                   .split(" ")
                                   .map((n: string) => n[0])
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h3 className="text-white font-medium">{applicant.user?.full_name}</h3>
+                              <h3 className="text-white font-medium">{applicant.user?.name}</h3>
                               <div className="flex items-center text-xs text-gray-400 mt-1">
                                 <Clock className="w-3 h-3 mr-1" />
                                 <span>Applied {applicant.appliedDate}</span>
@@ -281,7 +317,7 @@ export default function ApplicantsPage() {
                         <div className="mt-2 flex items-center justify-between">
                           <div className="flex items-center text-xs text-gray-400">
                             <User className="w-3 h-3 mr-1" />
-                            <span>{applicant.user?.location}</span>
+                            <span>{applicant.location}</span>
                           </div>
                           {getStatusBadge(applicant.status)}
                         </div>
@@ -317,7 +353,7 @@ export default function ApplicantsPage() {
                       <Avatar className="h-16 w-16 border-2 border-dark-600">
                         <AvatarImage src={selectedApplicant.user?.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
-                          {selectedApplicant.user?.full_name
+                          {selectedApplicant.user?.name
                             .split(" ")
                             .map((n: string) => n[0])
                             .join("")}
@@ -325,10 +361,10 @@ export default function ApplicantsPage() {
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.full_name}</h2>
+                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.name}</h2>
                           {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current" />}
                         </div>
-                        <p className="text-gray-400">{selectedApplicant.user?.location}</p>
+                        <p className="text-gray-400">{selectedApplicant.location}</p>
                         <div className="flex items-center mt-2">{getStatusBadge(selectedApplicant.status)}</div>
                       </div>
                     </div>
