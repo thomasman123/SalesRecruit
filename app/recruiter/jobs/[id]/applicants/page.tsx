@@ -187,7 +187,7 @@ export default function ApplicantsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl h-full">
+    <div className="container mx-auto max-w-7xl h-full overflow-hidden">
       <FadeIn delay={100}>
         <div className="flex items-center mb-8">
           <Link
@@ -196,17 +196,17 @@ export default function ApplicantsPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-bold text-white mb-2">Applicants</h1>
-            <p className="text-gray-400">{applicants[0]?.job?.title}</p>
+            <p className="text-gray-400 truncate">{applicants[0]?.job?.title}</p>
           </div>
         </div>
       </FadeIn>
 
-      <div className="flex gap-4 min-h-0">
+      <div className="flex gap-4 min-h-0 overflow-hidden">
         {/* Left Panel - Applicant List */}
         <FadeIn delay={200}>
-          <div className="w-96 flex flex-col">
+          <div className="w-96 flex flex-col flex-shrink-0">
             <div className="mb-4 flex-shrink-0">
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -281,8 +281,8 @@ export default function ApplicantsPage() {
                         }}
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <Avatar className="h-10 w-10 border border-dark-600">
+                          <div className="flex items-start space-x-3 min-w-0 flex-1">
+                            <Avatar className="h-10 w-10 border border-dark-600 flex-shrink-0">
                               <AvatarImage src={applicant.user?.avatar_url ?? applicant.avatar_url ?? "/placeholder.svg"} />
                               <AvatarFallback className="bg-purple-500/20 text-purple-400">
                                 {(applicant.user?.name ?? applicant.name)
@@ -291,11 +291,11 @@ export default function ApplicantsPage() {
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <h3 className="text-white font-medium">{applicant.user?.name ?? applicant.name}</h3>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
                               <div className="flex items-center text-xs text-gray-400 mt-1">
-                                <Clock className="w-3 h-3 mr-1" />
-                                <span>Applied {applicant.appliedDate}</span>
+                                <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                                <span className="truncate">Applied {applicant.appliedDate}</span>
                               </div>
                             </div>
                           </div>
@@ -305,7 +305,7 @@ export default function ApplicantsPage() {
                               handleStarToggle(applicant.id)
                             }}
                             className={cn(
-                              "p-1 rounded-lg transition-all duration-300",
+                              "p-1 rounded-lg transition-all duration-300 flex-shrink-0",
                               applicant.starred
                                 ? "text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20"
                                 : "text-gray-400 hover:text-yellow-400 hover:bg-dark-700",
@@ -315,11 +315,13 @@ export default function ApplicantsPage() {
                           </button>
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center text-xs text-gray-400">
-                            <User className="w-3 h-3 mr-1" />
-                            <span>{applicant.location}</span>
+                          <div className="flex items-center text-xs text-gray-400 min-w-0 flex-1">
+                            <User className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">{applicant.location}</span>
                           </div>
-                          {getStatusBadge(applicant.status)}
+                          <div className="flex-shrink-0 ml-2">
+                            {getStatusBadge(applicant.status)}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -344,13 +346,13 @@ export default function ApplicantsPage() {
 
         {/* Right Panel - Applicant Details */}
         <FadeIn delay={300}>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-w-0">
             {selectedApplicant ? (
               <AnimatedCard variant="hover-glow" className="h-[calc(100vh-12rem)] min-h-0 overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-dark-600 flex-shrink-0">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-16 w-16 border-2 border-dark-600">
+                    <div className="flex items-center space-x-4 min-w-0 flex-1">
+                      <Avatar className="h-16 w-16 border-2 border-dark-600 flex-shrink-0">
                         <AvatarImage src={selectedApplicant.user?.avatar_url ?? selectedApplicant.avatar_url ?? "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
                           {(selectedApplicant.user?.name ?? selectedApplicant.name)
@@ -359,16 +361,16 @@ export default function ApplicantsPage() {
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
-                          {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current" />}
+                          <h2 className="text-2xl font-bold text-white truncate">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
+                          {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current flex-shrink-0" />}
                         </div>
-                        <p className="text-gray-400">{selectedApplicant.location}</p>
+                        <p className="text-gray-400 truncate">{selectedApplicant.location}</p>
                         <div className="flex items-center mt-2">{getStatusBadge(selectedApplicant.status)}</div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-shrink-0">
                       <AnimatedButton variant="outline" size="sm">
                         <Mail className="w-4 h-4 mr-2" />
                         Email
@@ -440,21 +442,21 @@ export default function ApplicantsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="flex items-center text-sm text-gray-400">
-                      <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{selectedApplicant.experience}</span>
+                    <div className="flex items-center text-sm text-gray-400 min-w-0">
+                      <Briefcase className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">{selectedApplicant.experience}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>Highest ticket: {selectedApplicant.highestTicket}</span>
+                    <div className="flex items-center text-sm text-gray-400 min-w-0">
+                      <DollarSign className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">Highest ticket: {selectedApplicant.highestTicket}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <Target className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>Style: {selectedApplicant.salesStyle}</span>
+                    <div className="flex items-center text-sm text-gray-400 min-w-0">
+                      <Target className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">Style: {selectedApplicant.salesStyle}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <Wrench className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>Tools: {selectedApplicant.tools}</span>
+                    <div className="flex items-center text-sm text-gray-400 min-w-0">
+                      <Wrench className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                      <span className="truncate">Tools: {selectedApplicant.tools}</span>
                     </div>
                   </div>
                 </div>
@@ -486,7 +488,7 @@ export default function ApplicantsPage() {
                         Background and Performance
                       </h3>
                       <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed">
+                        <p className="text-gray-300 text-sm leading-relaxed break-words">
                           {selectedApplicant.experience}. Highest ticket sale was {selectedApplicant.highestTicket}.
                           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
                           labore et dolore magna aliqua.
@@ -501,7 +503,7 @@ export default function ApplicantsPage() {
                         Sales Style and Approach
                       </h3>
                       <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed">
+                        <p className="text-gray-300 text-sm leading-relaxed break-words">
                           {selectedApplicant.salesStyle}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
                           do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
                           nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
@@ -516,7 +518,7 @@ export default function ApplicantsPage() {
                         Tools and Self-Management
                       </h3>
                       <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed">
+                        <p className="text-gray-300 text-sm leading-relaxed break-words">
                           Proficient with {selectedApplicant.tools}. Lorem ipsum dolor sit amet, consectetur adipiscing
                           elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                         </p>
@@ -530,7 +532,7 @@ export default function ApplicantsPage() {
                         Drive and Mindset
                       </h3>
                       <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed">
+                        <p className="text-gray-300 text-sm leading-relaxed break-words">
                           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
                           labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                           laboris nisi ut aliquip ex ea commodo consequat.
