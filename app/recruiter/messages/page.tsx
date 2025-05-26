@@ -322,273 +322,526 @@ export default function RecruiterMessagesPage() {
 
   if (view === 'profile' && selectedApplicant) {
     return (
-      <div className="h-[calc(100vh-8rem)]">
-        <div className="mb-4">
-          <Button
-            variant="ghost"
+      <div style={{ height: 'calc(100vh - 8rem)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ marginBottom: '1rem', flexShrink: 0 }}>
+          <button
             onClick={() => setView('applicants')}
-            className="mb-4 text-gray-400 hover:text-white"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'transparent',
+              color: '#9ca3af',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.color = '#9ca3af';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft style={{ width: '1rem', height: '1rem' }} />
             Back to Applicants
-          </Button>
+          </button>
         </div>
 
-        <Card className="p-6 h-[calc(100vh-12rem)] overflow-y-auto bg-dark-800 border-dark-600">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16 border border-dark-600">
-                <AvatarImage src={selectedApplicant.avatar_url || ''} />
-                <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                  {selectedApplicant.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
+        <div style={{ 
+          flex: 1, 
+          padding: '1.5rem', 
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+          border: '1px solid rgba(255, 255, 255, 0.1)', 
+          borderRadius: '0.5rem',
+          overflowY: 'auto',
+          minHeight: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                borderRadius: '0.5rem',
+                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#c084fc',
+                fontWeight: '600',
+                fontSize: '1.5rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                {selectedApplicant.avatar_url ? (
+                  <img 
+                    src={selectedApplicant.avatar_url} 
+                    alt={selectedApplicant.name}
+                    style={{ width: '100%', height: '100%', borderRadius: '0.5rem', objectFit: 'cover' }}
+                  />
+                ) : (
+                  selectedApplicant.name.split(' ').map(n => n[0]).join('')
+                )}
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">{selectedApplicant.name}</h1>
-                <p className="text-gray-400">{selectedApplicant.location}</p>
-                <p className="text-sm text-gray-500">Applied for: {selectedApplicant.job.title}</p>
+                <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#ffffff', margin: 0, marginBottom: '0.25rem' }}>{selectedApplicant.name}</h1>
+                <p style={{ color: '#9ca3af', margin: 0, marginBottom: '0.25rem' }}>{selectedApplicant.location}</p>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>Applied for: {selectedApplicant.job.title}</p>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <Button
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
                 onClick={() => startConversation(selectedApplicant)}
-                className="flex items-center bg-purple-500 hover:bg-purple-600"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#a855f7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
+                <MessageSquare style={{ width: '1rem', height: '1rem' }} />
                 Message
-              </Button>
+              </button>
               {getStatusBadge(selectedApplicant.status)}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="flex items-center text-sm text-gray-400">
-              <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', color: '#9ca3af' }}>
+              <Briefcase style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
               <span>{selectedApplicant.experience}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', color: '#9ca3af' }}>
+              <DollarSign style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
               <span>Highest ticket: {selectedApplicant.highest_ticket}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <Target className="w-4 h-4 mr-2 text-purple-400" />
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', color: '#9ca3af' }}>
+              <Target style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
               <span>Style: {selectedApplicant.sales_style}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <Wrench className="w-4 h-4 mr-2 text-purple-400" />
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', color: '#9ca3af' }}>
+              <Wrench style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
               <span>Tools: {selectedApplicant.tools}</span>
             </div>
           </div>
 
           {selectedApplicant.video_url && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3 flex items-center text-white">
-                <Video className="w-5 h-5 mr-2 text-purple-400" />
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', color: '#ffffff', margin: 0 }}>
+                <Video style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', color: '#c084fc' }} />
                 Video Introduction
               </h3>
-              <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Play className="w-6 h-6 text-purple-400" />
+              <div style={{ 
+                aspectRatio: '16/9', 
+                backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                borderRadius: '0.5rem', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    width: '3rem', 
+                    height: '3rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)', 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    margin: '0 auto 0.5rem auto' 
+                  }}>
+                    <Play style={{ width: '1.5rem', height: '1.5rem', color: '#c084fc' }} />
                   </div>
-                  <p className="text-sm text-gray-400">Watch video introduction</p>
+                  <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: 0 }}>Watch video introduction</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Experience</h3>
-              <p className="text-gray-300">{selectedApplicant.experience}</p>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem', color: '#ffffff', margin: 0 }}>Experience</h3>
+              <p style={{ color: '#cccccc', margin: 0 }}>{selectedApplicant.experience}</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Sales Style</h3>
-              <p className="text-gray-300">{selectedApplicant.sales_style}</p>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem', color: '#ffffff', margin: 0 }}>Sales Style</h3>
+              <p style={{ color: '#cccccc', margin: 0 }}>{selectedApplicant.sales_style}</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2 text-white">Tools & Skills</h3>
-              <p className="text-gray-300">{selectedApplicant.tools}</p>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem', color: '#ffffff', margin: 0 }}>Tools & Skills</h3>
+              <p style={{ color: '#cccccc', margin: 0 }}>{selectedApplicant.tools}</p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)]">
-      <div className="grid grid-cols-12 gap-4 h-full">
-        {/* Left Panel */}
-        <div className="col-span-4 border-r border-dark-600 pr-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white">Messages</h2>
-            <div className="flex space-x-2">
-              <Button
-                variant={view === 'conversations' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setView('conversations')}
-                className={view === 'conversations' ? 'bg-purple-500 hover:bg-purple-600' : 'border-dark-600 text-gray-400 hover:text-white hover:bg-dark-700'}
-              >
-                Chats
-              </Button>
-              <Button
-                variant={view === 'applicants' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setView('applicants')}
-                className={view === 'applicants' ? 'bg-purple-500 hover:bg-purple-600' : 'border-dark-600 text-gray-400 hover:text-white hover:bg-dark-700'}
-              >
-                Candidates
-              </Button>
-            </div>
-          </div>
-
-          {view === 'applicants' && (
-            <div className="mb-4">
-              <Input
-                type="text"
-                placeholder="Search candidates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-dark-700 border-dark-600 text-white placeholder:text-gray-500"
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {view === 'conversations' ? (
-              conversations.length > 0 ? (
-                conversations.map((conversation) => (
-                  <Card
-                    key={conversation.id}
-                    className={`p-4 cursor-pointer hover:bg-dark-700 transition-colors bg-dark-800 border-dark-600 ${
-                      selectedConversation === conversation.id ? 'bg-dark-700 border-purple-500/50' : ''
-                    }`}
-                    onClick={() => setSelectedConversation(conversation.id)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="border border-dark-600">
-                        <AvatarImage src={conversation.participant.avatar_url || ''} />
-                        <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                          {conversation.participant.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate text-white">{conversation.participant.name}</p>
-                        <p className="text-sm text-gray-400 truncate">{conversation.job.title}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(conversation.last_message_timestamp), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                        {conversation.unread_count > 0 && (
-                          <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-500 rounded-full">
-                            {conversation.unread_count}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
-                  <p className="text-gray-400 mb-4">
-                    Start messaging candidates by clicking on 'Candidates' tab
-                  </p>
-                  <Button onClick={() => setView('applicants')} className="bg-purple-500 hover:bg-purple-600">
-                    View Candidates
-                  </Button>
-                </div>
-              )
-            ) : (
-              // Applicants view
-              filteredApplicants.length > 0 ? (
-                filteredApplicants.map((applicant) => (
-                  <Card
-                    key={applicant.id}
-                    className="p-4 cursor-pointer hover:bg-dark-700 transition-colors bg-dark-800 border-dark-600"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="border border-dark-600">
-                        <AvatarImage src={applicant.avatar_url || ''} />
-                        <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                          {applicant.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate text-white">{applicant.name}</p>
-                        <p className="text-sm text-gray-400 truncate">{applicant.job.title}</p>
-                        <p className="text-xs text-gray-500">{applicant.location}</p>
-                      </div>
-                      <div className="flex flex-col space-y-1">
-                        {getStatusBadge(applicant.status)}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedApplicant(applicant);
-                          setView('profile');
-                        }}
-                        className="flex-1 border-dark-600 text-gray-400 hover:text-white hover:bg-dark-700"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Profile
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => startConversation(applicant)}
-                        className="flex-1 bg-purple-500 hover:bg-purple-600"
-                      >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        Message
-                      </Button>
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <User className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No candidates found</h3>
-                  <p className="text-gray-400">
-                    {searchQuery 
-                      ? "No candidates match your search criteria"
-                      : "You don't have any candidates yet"
-                    }
-                  </p>
-                </div>
-              )
-            )}
+    <div style={{ height: 'calc(100vh - 8rem)', display: 'flex', gap: '1rem', overflow: 'hidden' }}>
+      {/* Left Panel */}
+      <div style={{ width: '20rem', flexShrink: 0, borderRight: '1px solid rgba(255, 255, 255, 0.1)', paddingRight: '1rem', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#ffffff', margin: 0 }}>Messages</h2>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setView('conversations')}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                borderRadius: '0.375rem',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                backgroundColor: view === 'conversations' ? '#a855f7' : 'transparent',
+                color: view === 'conversations' ? '#ffffff' : '#9ca3af',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: view === 'conversations' ? '#a855f7' : 'rgba(255, 255, 255, 0.1)'
+              }}
+              onMouseOver={(e) => {
+                if (view !== 'conversations') {
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (view !== 'conversations') {
+                  e.currentTarget.style.color = '#9ca3af';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Chats
+            </button>
+            <button
+              onClick={() => setView('applicants')}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                borderRadius: '0.375rem',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                backgroundColor: view === 'applicants' ? '#a855f7' : 'transparent',
+                color: view === 'applicants' ? '#ffffff' : '#9ca3af',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: view === 'applicants' ? '#a855f7' : 'rgba(255, 255, 255, 0.1)'
+              }}
+              onMouseOver={(e) => {
+                if (view !== 'applicants') {
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (view !== 'applicants') {
+                  e.currentTarget.style.color = '#9ca3af';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Candidates
+            </button>
           </div>
         </div>
 
-        {/* Right Panel - Messages Area */}
-        <div className="col-span-8 flex flex-col h-full">
-          {selectedConversation ? (
-            <>
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4 p-4 bg-dark-800 rounded-lg border border-dark-600">
+        {view === 'applicants' && (
+          <div style={{ marginBottom: '1rem', flexShrink: 0 }}>
+            <input
+              type="text"
+              placeholder="Search candidates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '0.375rem',
+                color: '#ffffff',
+                fontSize: '0.875rem'
+              }}
+            />
+          </div>
+        )}
+
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 0 }}>
+          {view === 'conversations' ? (
+            conversations.length > 0 ? (
+              conversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  onClick={() => setSelectedConversation(conversation.id)}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedConversation === conversation.id ? 'rgba(168, 85, 247, 0.1)' : 'rgba(0, 0, 0, 0.5)',
+                    border: selectedConversation === conversation.id ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (selectedConversation !== conversation.id) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (selectedConversation !== conversation.id) {
+                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#c084fc',
+                      fontWeight: '600',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      {conversation.participant.avatar_url ? (
+                        <img 
+                          src={conversation.participant.avatar_url} 
+                          alt={conversation.participant.name}
+                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        conversation.participant.name.charAt(0)
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: '500', color: '#ffffff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {conversation.participant.name}
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {conversation.job.title}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
+                        {formatDistanceToNow(new Date(conversation.last_message_timestamp), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                      {conversation.unread_count > 0 && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '1.25rem',
+                          height: '1.25rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          color: '#ffffff',
+                          backgroundColor: '#a855f7',
+                          borderRadius: '50%',
+                          marginTop: '0.25rem'
+                        }}>
+                          {conversation.unread_count}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <MessageSquare style={{ width: '3rem', height: '3rem', color: '#6b7280', margin: '0 auto 1rem auto' }} />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#ffffff', marginBottom: '0.5rem', margin: 0 }}>No conversations yet</h3>
+                <p style={{ color: '#9ca3af', marginBottom: '1rem', margin: 0 }}>
+                  Start messaging candidates by clicking on 'Candidates' tab
+                </p>
+                <button 
+                  onClick={() => setView('applicants')} 
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#a855f7',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  View Candidates
+                </button>
+              </div>
+            )
+          ) : (
+            // Applicants view
+            filteredApplicants.length > 0 ? (
+              filteredApplicants.map((applicant) => (
+                <div
+                  key={applicant.id}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#c084fc',
+                      fontWeight: '600',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      {applicant.avatar_url ? (
+                        <img 
+                          src={applicant.avatar_url} 
+                          alt={applicant.name}
+                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        applicant.name.split(' ').map(n => n[0]).join('')
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: '500', color: '#ffffff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {applicant.name}
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {applicant.job.title}
+                      </p>
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>{applicant.location}</p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      {getStatusBadge(applicant.status)}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedApplicant(applicant);
+                        setView('profile');
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: 'transparent',
+                        color: '#9ca3af',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '0.375rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <Eye style={{ width: '1rem', height: '1rem' }} />
+                      View Profile
+                    </button>
+                    <button
+                      onClick={() => startConversation(applicant)}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: '#a855f7',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <MessageSquare style={{ width: '1rem', height: '1rem' }} />
+                      Message
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <User style={{ width: '3rem', height: '3rem', color: '#6b7280', margin: '0 auto 1rem auto' }} />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#ffffff', marginBottom: '0.5rem', margin: 0 }}>No candidates found</h3>
+                <p style={{ color: '#9ca3af', margin: 0 }}>
+                  {searchQuery 
+                    ? "No candidates match your search criteria"
+                    : "You don't have any candidates yet"
+                  }
+                </p>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Right Panel - Messages Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {selectedConversation ? (
+          <>
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              marginBottom: '1rem', 
+              padding: '1rem', 
+              backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+              borderRadius: '0.5rem', 
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              minHeight: 0
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
-                      message.sender_type === 'recruiter' ? 'justify-end' : 'justify-start'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      justifyContent: message.sender_type === 'recruiter' ? 'flex-end' : 'flex-start'
+                    }}
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        message.sender_type === 'recruiter'
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-dark-700 text-white border border-dark-600'
-                      }`}
+                      style={{
+                        maxWidth: '70%',
+                        borderRadius: '0.5rem',
+                        padding: '0.75rem',
+                        backgroundColor: message.sender_type === 'recruiter' ? '#a855f7' : 'rgba(255, 255, 255, 0.05)',
+                        color: '#ffffff',
+                        border: message.sender_type === 'recruiter' ? 'none' : '1px solid rgba(255, 255, 255, 0.1)'
+                      }}
                     >
-                      <p>{message.content}</p>
-                      <p className="text-xs mt-1 opacity-70">
+                      <p style={{ margin: 0, marginBottom: '0.25rem' }}>{message.content}</p>
+                      <p style={{ fontSize: '0.75rem', margin: 0, opacity: 0.7 }}>
                         {formatDistanceToNow(new Date(message.timestamp), {
                           addSuffix: true,
                         })}
@@ -597,37 +850,58 @@ export default function RecruiterMessagesPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex space-x-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  className="bg-dark-700 border-dark-600 text-white placeholder:text-gray-500"
-                />
-                <Button onClick={sendMessage} className="bg-purple-500 hover:bg-purple-600">Send</Button>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              <div className="text-center">
-                <MessageSquare className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-white mb-2">
-                  {view === 'conversations' 
-                    ? "Select a conversation to start messaging"
-                    : "Select a candidate to view their profile or start messaging"
-                  }
-                </h3>
-                <p className="text-gray-400">
-                  {view === 'conversations'
-                    ? "Switch to the Candidates tab to start new conversations"
-                    : "Choose from the list on the left to get started"
-                  }
-                </p>
-              </div>
             </div>
-          )}
-        </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+              <input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '0.375rem',
+                  color: '#ffffff',
+                  fontSize: '0.875rem'
+                }}
+              />
+              <button 
+                onClick={sendMessage} 
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#a855f7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Send
+              </button>
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280' }}>
+            <div style={{ textAlign: 'center' }}>
+              <MessageSquare style={{ width: '4rem', height: '4rem', color: '#6b7280', margin: '0 auto 1rem auto' }} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '500', color: '#ffffff', marginBottom: '0.5rem', margin: 0 }}>
+                {view === 'conversations' 
+                  ? "Select a conversation to start messaging"
+                  : "Select a candidate to view their profile or start messaging"
+                }
+              </h3>
+              <p style={{ color: '#9ca3af', margin: 0 }}>
+                {view === 'conversations'
+                  ? "Switch to the Candidates tab to start new conversations"
+                  : "Choose from the list on the left to get started"
+                }
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
