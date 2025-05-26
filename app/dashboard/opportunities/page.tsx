@@ -211,30 +211,84 @@ export default function OpportunitiesPage() {
       {/* Left Panel - Filters */}
       {showFilters && (
         <div style={{ width: '20rem', flexShrink: 0 }}>
-          <div style={{ height: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ 
+            height: '100%', 
+            backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+            border: '1px solid rgba(51, 65, 85, 0.6)', 
+            borderRadius: '0.75rem', 
+            display: 'flex', 
+            flexDirection: 'column',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          }}>
             {/* Header */}
-            <div style={{ padding: '1rem', borderBottom: '1px solid #374151', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', display: 'flex', alignItems: 'center' }}>
-                <Filter style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#a855f7' }} />
+            <div style={{ 
+              padding: '1.5rem', 
+              borderBottom: '1px solid rgba(51, 65, 85, 0.4)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
+            }}>
+              <h2 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: '700', 
+                color: '#f8fafc', 
+                display: 'flex', 
+                alignItems: 'center',
+                margin: 0
+              }}>
+                <Filter style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                 Filters
               </h2>
               <button
                 onClick={() => setShowFilters(false)}
-                style={{ color: '#9ca3af', padding: '0.25rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ 
+                  color: '#94a3b8', 
+                  padding: '0.5rem', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  borderRadius: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = '#f8fafc';
+                  e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.5)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
-                <X style={{ width: '1rem', height: '1rem' }} />
+                <X style={{ width: '1.25rem', height: '1.25rem' }} />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {/* Industries */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Industries</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Industries</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filterOptions.industries.map((industry) => (
-                      <label key={industry} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <label key={industry} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={filters.industries.includes(industry)}
@@ -251,22 +305,41 @@ export default function OpportunitiesPage() {
                               }))
                             }
                           }}
-                          style={{ accentColor: '#a855f7' }}
+                          style={{ 
+                            accentColor: '#a855f7',
+                            width: '1rem',
+                            height: '1rem'
+                          }}
                         />
-                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{industry}</span>
+                        <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>{industry}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }} />
 
                 {/* Price Range */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Price Range</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Price Range</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filterOptions.priceRanges.map((range) => (
-                      <label key={range} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <label key={range} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={filters.priceRanges.includes(range)}
@@ -283,22 +356,41 @@ export default function OpportunitiesPage() {
                               }))
                             }
                           }}
-                          style={{ accentColor: '#a855f7' }}
+                          style={{ 
+                            accentColor: '#a855f7',
+                            width: '1rem',
+                            height: '1rem'
+                          }}
                         />
-                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{range}</span>
+                        <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>{range}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }} />
 
                 {/* Lead Source */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Lead Source</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Lead Source</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filterOptions.leadSources.map((source) => (
-                      <label key={source} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <label key={source} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={filters.leadSources.includes(source)}
@@ -315,22 +407,41 @@ export default function OpportunitiesPage() {
                               }))
                             }
                           }}
-                          style={{ accentColor: '#a855f7' }}
+                          style={{ 
+                            accentColor: '#a855f7',
+                            width: '1rem',
+                            height: '1rem'
+                          }}
                         />
-                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{source}</span>
+                        <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>{source}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }} />
 
                 {/* Commission Structure */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Commission Structure</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Commission Structure</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filterOptions.commissionStructures.map((structure) => (
-                      <label key={structure} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <label key={structure} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={filters.commissionStructures.includes(structure)}
@@ -347,22 +458,41 @@ export default function OpportunitiesPage() {
                               }))
                             }
                           }}
-                          style={{ accentColor: '#a855f7' }}
+                          style={{ 
+                            accentColor: '#a855f7',
+                            width: '1rem',
+                            height: '1rem'
+                          }}
                         />
-                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{structure}</span>
+                        <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>{structure}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }} />
 
                 {/* Team Size */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Team Size</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Team Size</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filterOptions.teamSizes.map((size) => (
-                      <label key={size} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <label key={size} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={filters.teamSizes.includes(size)}
@@ -379,19 +509,38 @@ export default function OpportunitiesPage() {
                               }))
                             }
                           }}
-                          style={{ accentColor: '#a855f7' }}
+                          style={{ 
+                            accentColor: '#a855f7',
+                            width: '1rem',
+                            height: '1rem'
+                          }}
                         />
-                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{size}</span>
+                        <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>{size}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }} />
 
                 {/* Remote Compatible */}
                 <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <label style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.75rem', 
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                  >
                     <input
                       type="checkbox"
                       checked={filters.remoteCompatible}
@@ -401,16 +550,20 @@ export default function OpportunitiesPage() {
                           remoteCompatible: e.target.checked
                         }))
                       }}
-                      style={{ accentColor: '#a855f7' }}
+                      style={{ 
+                        accentColor: '#a855f7',
+                        width: '1rem',
+                        height: '1rem'
+                      }}
                     />
-                    <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>Remote Compatible</span>
+                    <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>Remote Compatible</span>
                   </label>
                 </div>
               </div>
             </div>
 
             {/* Clear Filters Button */}
-            <div style={{ padding: '1rem', borderTop: '1px solid #374151' }}>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }}>
               <button
                 onClick={() => {
                   setFilters({
@@ -424,22 +577,25 @@ export default function OpportunitiesPage() {
                 }}
                 style={{
                   width: '100%',
-                  padding: '0.5rem 1rem',
+                  padding: '0.75rem 1rem',
                   fontSize: '0.875rem',
-                  color: '#d1d5db',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderRadius: '0.375rem',
+                  fontWeight: '600',
+                  color: '#e2e8f0',
+                  backgroundColor: 'rgba(51, 65, 85, 0.5)',
+                  border: '1px solid rgba(51, 65, 85, 0.6)',
+                  borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.backgroundColor = '#374151';
+                  e.currentTarget.style.color = '#f8fafc';
+                  e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.8)';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#d1d5db';
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#e2e8f0';
+                  e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(51, 65, 85, 0.6)';
                 }}
               >
                 Clear All Filters
@@ -452,24 +608,33 @@ export default function OpportunitiesPage() {
       {/* Middle Panel - Opportunities */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Search Bar */}
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+        <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
           {!showFilters && (
             <button
               onClick={() => setShowFilters(true)}
               style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#374151',
-                border: '1px solid #4b5563',
-                borderRadius: '0.375rem',
-                color: 'white',
-                cursor: 'pointer'
+                padding: '0.75rem 1rem',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(51, 65, 85, 0.6)',
+                borderRadius: '0.5rem',
+                color: '#f8fafc',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.8)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+                e.currentTarget.style.borderColor = 'rgba(51, 65, 85, 0.6)';
               }}
             >
-              <Filter style={{ width: '1rem', height: '1rem' }} />
+              <Filter style={{ width: '1.25rem', height: '1.25rem' }} />
             </button>
           )}
           <div style={{ flex: 1, position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', width: '1rem', height: '1rem' }} />
+            <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', width: '1.25rem', height: '1.25rem' }} />
             <input
               type="text"
               placeholder="Search opportunities..."
@@ -477,15 +642,26 @@ export default function OpportunitiesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                paddingLeft: '2.5rem',
+                paddingLeft: '3rem',
                 paddingRight: '1rem',
-                paddingTop: '0.75rem',
-                paddingBottom: '0.75rem',
-                backgroundColor: '#374151',
-                border: '1px solid #4b5563',
-                borderRadius: '0.375rem',
-                color: 'white',
-                fontSize: '0.875rem'
+                paddingTop: '1rem',
+                paddingBottom: '1rem',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(51, 65, 85, 0.6)',
+                borderRadius: '0.75rem',
+                color: '#f8fafc',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(12px)'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(51, 65, 85, 0.6)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             />
           </div>
@@ -493,30 +669,58 @@ export default function OpportunitiesPage() {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
-              padding: '0.75rem 1rem',
-              backgroundColor: '#374151',
-              border: '1px solid #4b5563',
-              borderRadius: '0.375rem',
-              color: 'white',
-              cursor: 'pointer'
+              padding: '1rem 1.25rem',
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              border: '1px solid rgba(51, 65, 85, 0.6)',
+              borderRadius: '0.75rem',
+              color: '#f8fafc',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(12px)'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(51, 65, 85, 0.6)';
             }}
           >
-            <option value="newest">Newest</option>
-            <option value="lucrative">Most Lucrative</option>
-            <option value="best-fit">Best Fit</option>
+            <option value="newest" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>Newest</option>
+            <option value="lucrative" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>Most Lucrative</option>
+            <option value="best-fit" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>Best Fit</option>
           </select>
         </div>
 
         {/* Active Filters */}
         {(filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
-          <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {[...filters.industries, ...filters.priceRanges, ...filters.leadSources, ...filters.commissionStructures, ...filters.teamSizes].map((filter) => (
-              <span key={filter} style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+              <span key={filter} style={{ 
+                padding: '0.5rem 0.75rem', 
+                backgroundColor: 'rgba(139, 92, 246, 0.15)', 
+                color: '#c084fc', 
+                border: '1px solid rgba(139, 92, 246, 0.3)', 
+                borderRadius: '0.5rem', 
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                backdropFilter: 'blur(8px)'
+              }}>
                 {filter}
               </span>
             ))}
             {filters.remoteCompatible && (
-              <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+              <span style={{ 
+                padding: '0.5rem 0.75rem', 
+                backgroundColor: 'rgba(139, 92, 246, 0.15)', 
+                color: '#c084fc', 
+                border: '1px solid rgba(139, 92, 246, 0.3)', 
+                borderRadius: '0.5rem', 
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                backdropFilter: 'blur(8px)'
+              }}>
                 Remote Compatible
               </span>
             )}
@@ -525,48 +729,80 @@ export default function OpportunitiesPage() {
 
         {/* Opportunities List */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', paddingBottom: '1rem' }}>
+          <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', paddingBottom: '1.5rem' }}>
             {opportunities.map((opportunity) => (
               <div
                 key={opportunity.id}
                 onClick={() => setSelectedOpportunity(opportunity)}
                 style={{
-                  padding: '1.5rem',
-                  backgroundColor: '#1f2937',
-                  border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid #374151',
-                  borderRadius: '0.5rem',
+                  padding: '2rem',
+                  backgroundColor: selectedOpportunity?.id === opportunity.id ? 'rgba(15, 23, 42, 0.98)' : 'rgba(15, 23, 42, 0.95)',
+                  border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(139, 92, 246, 0.6)' : '1px solid rgba(51, 65, 85, 0.4)',
+                  borderRadius: '1rem',
                   cursor: 'pointer',
-                  transition: 'border-color 0.2s'
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: selectedOpportunity?.id === opportunity.id ? '0 25px 50px -12px rgba(139, 92, 246, 0.25)' : '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
                 }}
                 onMouseOver={(e) => {
                   if (selectedOpportunity?.id !== opportunity.id) {
-                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                    e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.98)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.4)';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (selectedOpportunity?.id !== opportunity.id) {
-                    e.currentTarget.style.borderColor = '#374151';
+                    e.currentTarget.style.borderColor = 'rgba(51, 65, 85, 0.4)';
+                    e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3)';
                   }
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
                     <img
                       src={opportunity.logo || "/placeholder.svg"}
                       alt={opportunity.companyName}
-                      style={{ width: '3rem', height: '3rem', borderRadius: '0.5rem', objectFit: 'cover', border: '1px solid #374151' }}
+                      style={{ 
+                        width: '3.5rem', 
+                        height: '3.5rem', 
+                        borderRadius: '0.75rem', 
+                        objectFit: 'cover', 
+                        border: '1px solid rgba(51, 65, 85, 0.4)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                      }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opportunity.companyName}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <h3 style={{ 
+                          fontSize: '1.25rem', 
+                          fontWeight: '700', 
+                          color: '#f8fafc', 
+                          margin: 0, 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap' 
+                        }}>{opportunity.companyName}</h3>
                         {opportunity.new && (
-                          <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                          <span style={{ 
+                            padding: '0.25rem 0.75rem', 
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)', 
+                            color: '#4ade80', 
+                            border: '1px solid rgba(34, 197, 94, 0.3)', 
+                            borderRadius: '0.5rem', 
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            letterSpacing: '0.05em'
+                          }}>
                             NEW
                           </span>
                         )}
                       </div>
-                      <p style={{ color: '#c084fc', fontWeight: '500', marginBottom: '0.25rem', margin: 0 }}>{opportunity.offerType}</p>
-                      <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>{opportunity.industry}</p>
+                      <p style={{ color: '#c084fc', fontWeight: '600', marginBottom: '0.5rem', margin: 0, fontSize: '1rem' }}>{opportunity.offerType}</p>
+                      <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{opportunity.industry}</p>
                     </div>
                   </div>
                   <button
@@ -575,46 +811,70 @@ export default function OpportunitiesPage() {
                       handleStarToggle(opportunity.id)
                     }}
                     style={{
-                      padding: '0.5rem',
-                      borderRadius: '0.375rem',
-                      backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                      color: opportunity.starred ? '#fbbf24' : '#9ca3af',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
+                      backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(51, 65, 85, 0.3)',
+                      color: opportunity.starred ? '#fbbf24' : '#94a3b8',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.25)' : 'rgba(51, 65, 85, 0.5)';
+                      e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#f8fafc';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(51, 65, 85, 0.3)';
+                      e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#94a3b8';
                     }}
                   >
                     <Star style={{ width: '1.25rem', height: '1.25rem', fill: opportunity.starred ? 'currentColor' : 'none' }} />
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
-                    <Briefcase style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1', fontWeight: '500' }}>
+                    <Briefcase style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     <span>{opportunity.salesRole}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
-                    <DollarSign style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
-                    <span style={{ fontFamily: 'monospace' }}>{opportunity.commissionPotential}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1', fontWeight: '500' }}>
+                    <DollarSign style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
+                    <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{opportunity.commissionPotential}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
-                    <Zap style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1', fontWeight: '500' }}>
+                    <Zap style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
-                    <MapPin style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1', fontWeight: '500' }}>
+                    <MapPin style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
                   {opportunity.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} style={{ padding: '0.25rem 0.5rem', backgroundColor: '#374151', color: '#d1d5db', border: '1px solid #4b5563', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                    <span key={tag} style={{ 
+                      padding: '0.375rem 0.75rem', 
+                      backgroundColor: 'rgba(51, 65, 85, 0.5)', 
+                      color: '#e2e8f0', 
+                      border: '1px solid rgba(51, 65, 85, 0.6)', 
+                      borderRadius: '0.5rem', 
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
                       {tag}
                     </span>
                   ))}
                   {opportunity.tags.length > 3 && (
-                    <span style={{ padding: '0.25rem 0.5rem', backgroundColor: '#374151', color: '#9ca3af', border: '1px solid #4b5563', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                    <span style={{ 
+                      padding: '0.375rem 0.75rem', 
+                      backgroundColor: 'rgba(51, 65, 85, 0.3)', 
+                      color: '#94a3b8', 
+                      border: '1px solid rgba(51, 65, 85, 0.4)', 
+                      borderRadius: '0.5rem', 
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
                       +{opportunity.tags.length - 3} more
                     </span>
                   )}
@@ -622,24 +882,34 @@ export default function OpportunitiesPage() {
 
                 <button style={{
                   width: '100%',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#a855f7',
-                  color: 'white',
+                  padding: '0.875rem 1.5rem',
+                  background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                  color: '#ffffff',
                   border: 'none',
-                  borderRadius: '0.375rem',
-                  fontWeight: '500',
+                  borderRadius: '0.75rem',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#a855f7'}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
+                }}
                 >
                   View Role Details
-                  <ChevronRight style={{ width: '1rem', height: '1rem' }} />
+                  <ChevronRight style={{ width: '1.125rem', height: '1.125rem' }} />
                 </button>
               </div>
             ))}
@@ -649,70 +919,117 @@ export default function OpportunitiesPage() {
 
       {/* Right Panel - Role Details */}
       {selectedOpportunity && (
-        <div style={{ width: '24rem', flexShrink: 0 }}>
-          <div style={{ height: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '26rem', flexShrink: 0 }}>
+          <div style={{ 
+            height: '100%', 
+            backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+            border: '1px solid rgba(51, 65, 85, 0.6)', 
+            borderRadius: '1rem', 
+            display: 'flex', 
+            flexDirection: 'column',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          }}>
             {/* Header */}
-            <div style={{ padding: '1rem', borderBottom: '1px solid #374151', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1 }}>
+            <div style={{ 
+              padding: '1.5rem', 
+              borderBottom: '1px solid rgba(51, 65, 85, 0.4)', 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
                 <img
                   src={selectedOpportunity.logo || "/placeholder.svg"}
                   alt={selectedOpportunity.companyName}
-                  style={{ width: '3rem', height: '3rem', borderRadius: '0.5rem', objectFit: 'cover', border: '1px solid #374151' }}
+                  style={{ 
+                    width: '3.5rem', 
+                    height: '3.5rem', 
+                    borderRadius: '0.75rem', 
+                    objectFit: 'cover', 
+                    border: '1px solid rgba(51, 65, 85, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                  }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'white', margin: 0, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedOpportunity.companyName}</h2>
-                  <p style={{ color: '#c084fc', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedOpportunity.offerType}</p>
+                  <h2 style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: '700', 
+                    color: '#f8fafc', 
+                    margin: '0 0 0.5rem 0', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap' 
+                  }}>{selectedOpportunity.companyName}</h2>
+                  <p style={{ color: '#c084fc', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600' }}>{selectedOpportunity.offerType}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedOpportunity(null)}
-                style={{ padding: '0.25rem', color: '#9ca3af', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ 
+                  padding: '0.5rem', 
+                  color: '#94a3b8', 
+                  backgroundColor: 'rgba(51, 65, 85, 0.3)', 
+                  border: 'none', 
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = '#f8fafc';
+                  e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.6)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.3)';
+                }}
               >
                 <X style={{ width: '1.25rem', height: '1.25rem' }} />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {/* Company Overview */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <Building2 style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <Building2 style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     Company Overview
                   </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.companyOverview}</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.companyOverview}</p>
                 </div>
 
                 {/* What You'll Be Selling */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <Target style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <Target style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     What You'll Be Selling
                   </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.whatYouSell}</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.whatYouSell}</p>
                 </div>
 
                 {/* Sales Process */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <TrendingUp style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <TrendingUp style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     Sales Process
                   </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.salesProcess}</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '0.875rem', lineHeight: '1.6', margin: 0, fontWeight: '500' }}>{selectedOpportunity.salesProcess}</p>
                 </div>
 
                 {/* What's Provided */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <CheckCircle style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <CheckCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     What's Provided
                   </h3>
-                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {selectedOpportunity.whatsProvided?.map((item, index) => (
-                      <li key={index} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '0.875rem', color: '#d1d5db' }}>
-                        <CheckCircle style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#4ade80', marginTop: '0.125rem', flexShrink: 0 }} />
-                        <span>{item}</span>
+                      <li key={index} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '0.875rem', color: '#e2e8f0', fontWeight: '500' }}>
+                        <CheckCircle style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#4ade80', marginTop: '0.125rem', flexShrink: 0 }} />
+                        <span style={{ lineHeight: '1.5' }}>{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -720,59 +1037,75 @@ export default function OpportunitiesPage() {
 
                 {/* Commission Breakdown */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <DollarSign style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <DollarSign style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     Commission Breakdown
                   </h3>
-                  <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '0.375rem', padding: '0.75rem' }}>
-                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', fontFamily: 'monospace', margin: 0 }}>{selectedOpportunity.commissionBreakdown}</p>
+                  <div style={{ 
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)', 
+                    border: '1px solid rgba(139, 92, 246, 0.3)', 
+                    borderRadius: '0.75rem', 
+                    padding: '1rem',
+                    backdropFilter: 'blur(8px)'
+                  }}>
+                    <p style={{ color: '#e2e8f0', fontSize: '0.875rem', fontFamily: 'monospace', margin: 0, fontWeight: '600', lineHeight: '1.5' }}>{selectedOpportunity.commissionBreakdown}</p>
                   </div>
                 </div>
 
                 {/* Expected Ramp Time */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <TrendingUp style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <TrendingUp style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     Expected Ramp Time
                   </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>{selectedOpportunity.rampTime}</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '0.875rem', margin: 0, fontWeight: '500', lineHeight: '1.5' }}>{selectedOpportunity.rampTime}</p>
                 </div>
 
                 {/* Working Hours */}
                 <div>
-                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
-                    <Clock style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                  <h3 style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', margin: '0 0 1rem 0' }}>
+                    <Clock style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
                     Working Hours
                   </h3>
-                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>{selectedOpportunity.workingHours}</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '0.875rem', margin: 0, fontWeight: '500', lineHeight: '1.5' }}>{selectedOpportunity.workingHours}</p>
                 </div>
               </div>
             </div>
 
             {/* Apply Button */}
-            <div style={{ padding: '1rem', borderTop: '1px solid #374151' }}>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }}>
               <button
                 onClick={() => handleApply(selectedOpportunity)}
                 disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem',
-                  backgroundColor: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" ? '#6b7280' : '#a855f7',
-                  color: 'white',
+                  padding: '1rem 1.5rem',
+                  background: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" 
+                    ? 'rgba(51, 65, 85, 0.5)' 
+                    : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                  color: '#ffffff',
                   border: 'none',
-                  borderRadius: '0.375rem',
-                  fontWeight: '600',
+                  borderRadius: '0.75rem',
+                  fontWeight: '700',
+                  fontSize: '1rem',
                   cursor: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" ? 'not-allowed' : 'pointer',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.2s ease',
+                  boxShadow: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" 
+                    ? 'none' 
+                    : '0 4px 12px rgba(139, 92, 246, 0.3)'
                 }}
                 onMouseOver={(e) => {
                   if (selectedOpportunity.status !== "accepted" && selectedOpportunity.status !== "rejected") {
-                    e.currentTarget.style.backgroundColor = '#9333ea';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (selectedOpportunity.status !== "accepted" && selectedOpportunity.status !== "rejected") {
-                    e.currentTarget.style.backgroundColor = '#a855f7';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
                   }
                 }}
               >
@@ -787,7 +1120,7 @@ export default function OpportunitiesPage() {
                         : "Apply Now"}
               </button>
               {!selectedOpportunity.status && (
-                <p style={{ fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', marginTop: '0.5rem', margin: '0.5rem 0 0 0' }}>Quick apply with your Helios profile</p>
+                <p style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', margin: '0.75rem 0 0 0', fontWeight: '500' }}>Quick apply with your Helios profile</p>
               )}
             </div>
           </div>
