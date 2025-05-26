@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from "@/lib/hooks/use-user";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 interface Message {
   id: number;
@@ -37,18 +37,14 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const supabase = createClientComponentClient();
+  const supabase = getSupabaseClient();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !userData) {
-      router.push('/login');
+    if (!isLoading && userData) {
+      fetchConversations();
     }
-  }, [isLoading, userData, router]);
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
+  }, [isLoading, userData]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -61,7 +57,14 @@ export default function MessagesPage() {
           table: 'messages',
           filter: `conversation_id=eq.${selectedConversation}`,
         }, (payload) => {
-          setMessages((current) => [...current, payload.new as Message]);
+          const newMessage: Message = {
+            id: payload.new.id as number,
+            content: payload.new.content as string,
+            sender_type: payload.new.sender_type as 'recruiter' | 'applicant',
+            timestamp: payload.new.timestamp as string,
+            read: payload.new.read as boolean,
+          };
+          setMessages((current) => [...current, newMessage]);
         })
         .subscribe();
 
@@ -72,12 +75,6 @@ export default function MessagesPage() {
   }, [selectedConversation]);
 
   const fetchConversations = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
     const { data, error } = await supabase
       .from('conversations')
       .select(`
@@ -123,7 +120,16 @@ export default function MessagesPage() {
       return;
     }
 
-    setMessages(data || []);
+    // Transform the data to match our Message interface
+    const transformedMessages: Message[] = (data || []).map((msg: any) => ({
+      id: msg.id,
+      content: msg.content,
+      sender_type: msg.sender_type as 'recruiter' | 'applicant',
+      timestamp: msg.timestamp,
+      read: msg.read,
+    }));
+
+    setMessages(transformedMessages);
   };
 
   const sendMessage = async () => {
@@ -149,10 +155,6 @@ export default function MessagesPage() {
     setNewMessage('');
     fetchConversations(); // Refresh conversation list to update last message timestamp
   };
-
-  if (isLoading || !userData) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">

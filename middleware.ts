@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 
   // Auth-guard and role routing rules ----------------------------------
   const pathname = request.nextUrl.pathname
-  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding")
+  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding") || pathname.startsWith("/messages")
 
   if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)

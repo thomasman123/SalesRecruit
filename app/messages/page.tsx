@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from "@/lib/hooks/use-user";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 interface Message {
   id: number;
@@ -40,48 +40,14 @@ export default function MessagesPage() {
   const { userData, isLoading } = useUser();
   const router = useRouter();
 
-  const supabase = createClientComponentClient();
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
-    if (!isLoading && !userData) {
-      router.push('/login');
+    if (!isLoading && userData) {
+      // Set role from userData
+      setRole(userData.role as 'recruiter' | 'sales-professional');
     }
-  }, [isLoading, userData, router]);
-
-  useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { user } = session;
-      const { data: userRow, error } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Failed to fetch user role', error);
-        return;
-      }
-
-      if (userRow) {
-        setRole(userRow.role as 'recruiter' | 'sales-professional');
-      }
-
-      // Keep role updated if auth state changes
-      supabase.auth.onAuthStateChange((_event, newSession) => {
-        if (!newSession) {
-          router.push('/login');
-        }
-      });
-    };
-
-    init();
-  }, []);
+  }, [isLoading, userData]);
 
   // When role is resolved fetch conversations
   useEffect(() => {
@@ -101,7 +67,14 @@ export default function MessagesPage() {
           table: 'messages',
           filter: `conversation_id=eq.${selectedConversation}`,
         }, (payload) => {
-          setMessages((current) => [...current, payload.new as Message]);
+          const newMessage: Message = {
+            id: payload.new.id as number,
+            content: payload.new.content as string,
+            sender_type: payload.new.sender_type as 'recruiter' | 'applicant',
+            timestamp: payload.new.timestamp as string,
+            read: payload.new.read as boolean,
+          };
+          setMessages((current) => [...current, newMessage]);
         })
         .subscribe();
 
@@ -169,7 +142,16 @@ export default function MessagesPage() {
       return;
     }
 
-    setMessages(data || []);
+    // Transform the data to match our Message interface
+    const transformedMessages: Message[] = (data || []).map((msg: any) => ({
+      id: msg.id,
+      content: msg.content,
+      sender_type: msg.sender_type as 'recruiter' | 'applicant',
+      timestamp: msg.timestamp,
+      read: msg.read,
+    }));
+
+    setMessages(transformedMessages);
   };
 
   const sendMessage = async () => {
@@ -197,10 +179,6 @@ export default function MessagesPage() {
     setNewMessage('');
     fetchConversations(role); // update list
   };
-
-  if (isLoading || !userData) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">

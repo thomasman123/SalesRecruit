@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
+import { useToast } from "@/components/ui/use-toast"
 
 type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
@@ -84,6 +85,8 @@ export default function OpportunitiesPage() {
     remoteCompatible: false,
   })
 
+  const { toast } = useToast();
+
   useEffect(() => {
     async function loadJobs() {
       const supabase = getSupabaseClient()
@@ -133,10 +136,65 @@ export default function OpportunitiesPage() {
     setOpportunities((prev) => prev.map((opp) => (opp.id === id ? { ...opp, starred: !opp.starred } : opp)))
   }
 
-  const handleApply = (opportunity: Opportunity) => {
-    console.log("Applying to:", opportunity.companyName)
-    // Handle application logic
-  }
+  const handleApply = async (opportunity: Opportunity) => {
+    const supabase = getSupabaseClient();
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast({ title: "Not logged in", description: "Please log in to apply.", variant: "destructive" });
+        return;
+      }
+      // Check if already applied
+      const { data: existing, error: checkError } = await supabase
+        .from("applicants")
+        .select("id")
+        .eq("job_id", opportunity.id)
+        .eq("email", user.email ?? "")
+        .maybeSingle();
+      if (checkError) throw checkError;
+      if (existing) {
+        toast({ title: "Already applied", description: "You have already applied for this job.", variant: "destructive" });
+        return;
+      }
+      // Prepare applicant data from user metadata
+      const meta = user.user_metadata || {};
+      const insertData: {
+        name: string;
+        email: string;
+        location: string;
+        avatar_url: string | null;
+        experience: string;
+        highest_ticket: string;
+        sales_style: string;
+        tools: string;
+        video_url: string | null;
+        job_id: number;
+        status: string;
+        starred: boolean;
+      } = {
+        name: (meta.full_name as string) || user.email || "",
+        email: user.email || "",
+        location: (meta.location as string) || "",
+        avatar_url: (meta.avatar_url as string) || null,
+        experience: (meta.exactRole as string) || (meta.experience as string) || "",
+        highest_ticket: (meta.highestTicket as string) || "",
+        sales_style: (meta.salesStyle as string) || (meta.salesProcess as string) || "",
+        tools: (meta.crmExperience as string) || (meta.tools as string) || "",
+        video_url: (meta.videoUrl as string) || null,
+        job_id: opportunity.id,
+        status: "new",
+        starred: false,
+      };
+      const { error: insertError } = await supabase.from("applicants").insert(insertData);
+      if (insertError) throw insertError;
+      toast({ title: "Application submitted!", description: `You have applied to ${opportunity.companyName}.` });
+      // Optionally update UI (e.g., set status to pending)
+      setOpportunities((prev) => prev.map((opp) => opp.id === opportunity.id ? { ...opp, status: "pending" } : opp));
+    } catch (err: any) {
+      toast({ title: "Application failed", description: err.message || "Could not apply.", variant: "destructive" });
+    }
+  };
 
   const filterOptions = {
     industries: ["Coaching", "Agency", "SaaS", "Fitness", "E-commerce", "Real Estate"],
