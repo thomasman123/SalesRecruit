@@ -118,6 +118,74 @@ export default function OpportunitiesPage() {
     loadJobs()
   }, [])
 
+  // Filter and search opportunities
+  const filteredOpportunities = opportunities.filter((opportunity) => {
+    // Search filter
+    const searchLower = searchQuery.toLowerCase()
+    const matchesSearch = !searchQuery || 
+      opportunity.companyName.toLowerCase().includes(searchLower) ||
+      opportunity.offerType.toLowerCase().includes(searchLower) ||
+      opportunity.industry.toLowerCase().includes(searchLower) ||
+      opportunity.tags.some(tag => tag.toLowerCase().includes(searchLower)) ||
+      opportunity.companyOverview?.toLowerCase().includes(searchLower) ||
+      opportunity.whatYouSell?.toLowerCase().includes(searchLower)
+
+    // Industry filter
+    const matchesIndustry = filters.industries.length === 0 || 
+      filters.industries.includes(opportunity.industry)
+
+    // Price range filter
+    const matchesPriceRange = filters.priceRanges.length === 0 || 
+      filters.priceRanges.includes(opportunity.priceRange)
+
+    // Lead source filter
+    const matchesLeadSource = filters.leadSources.length === 0 || 
+      filters.leadSources.includes(opportunity.leadSource)
+
+    // Commission structure filter
+    const matchesCommissionStructure = filters.commissionStructures.length === 0 || 
+      filters.commissionStructures.includes(opportunity.commissionStructure)
+
+    // Team size filter
+    const matchesTeamSize = filters.teamSizes.length === 0 || 
+      filters.teamSizes.includes(opportunity.teamSize)
+
+    // Remote compatible filter
+    const matchesRemote = !filters.remoteCompatible || opportunity.remoteCompatible
+
+    return matchesSearch && matchesIndustry && matchesPriceRange && 
+           matchesLeadSource && matchesCommissionStructure && matchesTeamSize && matchesRemote
+  })
+
+  // Sort opportunities
+  const sortedOpportunities = [...filteredOpportunities].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return b.id - a.id // Assuming higher ID means newer
+      case "lucrative":
+        // Sort by commission potential (rough estimation)
+        const getCommissionValue = (range: string) => {
+          if (range.includes("$10K+")) return 10000
+          if (range.includes("$3-10K")) return 6500
+          if (range.includes("$1-3K")) return 2000
+          return 0
+        }
+        return getCommissionValue(b.commissionPotential || "") - getCommissionValue(a.commissionPotential || "")
+      case "best-fit":
+        // Prioritize starred, then lead flow provided, then remote compatible
+        const getScore = (opp: Opportunity) => {
+          let score = 0
+          if (opp.starred) score += 100
+          if (opp.leadFlowProvided) score += 10
+          if (opp.remoteCompatible) score += 5
+          return score
+        }
+        return getScore(b) - getScore(a)
+      default:
+        return 0
+    }
+  })
+
   const handleStarToggle = (id: number) => {
     setOpportunities((prev) => prev.map((opp) => (opp.id === id ? { ...opp, starred: !opp.starred } : opp)))
   }
@@ -204,6 +272,26 @@ export default function OpportunitiesPage() {
     leadSources: ["Inbound", "Outbound", "Hybrid"],
     commissionStructures: ["100% Commission", "Base + Commission", "Draw Against Commission"],
     teamSizes: ["Solo closer", "Setters in place", "Full team"],
+  }
+
+  // Helper function to remove a filter
+  const removeFilter = (type: string, value: string) => {
+    setFilters(prev => {
+      switch (type) {
+        case 'industry':
+          return { ...prev, industries: prev.industries.filter(i => i !== value) }
+        case 'priceRange':
+          return { ...prev, priceRanges: prev.priceRanges.filter(r => r !== value) }
+        case 'leadSource':
+          return { ...prev, leadSources: prev.leadSources.filter(s => s !== value) }
+        case 'commissionStructure':
+          return { ...prev, commissionStructures: prev.commissionStructures.filter(s => s !== value) }
+        case 'teamSize':
+          return { ...prev, teamSizes: prev.teamSizes.filter(s => s !== value) }
+        default:
+          return prev
+      }
+    })
   }
 
   return (
@@ -695,225 +783,490 @@ export default function OpportunitiesPage() {
 
         {/* Active Filters */}
         {(filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
-          <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {[...filters.industries, ...filters.priceRanges, ...filters.leadSources, ...filters.commissionStructures, ...filters.teamSizes].map((filter) => (
-              <span key={filter} style={{ 
-                padding: '0.5rem 0.75rem', 
-                backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                color: '#c084fc', 
-                border: '1px solid rgba(168, 85, 247, 0.3)', 
-                borderRadius: '0.5rem', 
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                backdropFilter: 'blur(8px)'
-              }}>
-                {filter}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>
+                Active Filters ({filteredOpportunities.length} result{filteredOpportunities.length !== 1 ? 's' : ''})
               </span>
-            ))}
-            {filters.remoteCompatible && (
-              <span style={{ 
-                padding: '0.5rem 0.75rem', 
-                backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                color: '#c084fc', 
-                border: '1px solid rgba(168, 85, 247, 0.3)', 
-                borderRadius: '0.5rem', 
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                backdropFilter: 'blur(8px)'
-              }}>
-                Remote Compatible
-              </span>
-            )}
+              <button
+                onClick={() => {
+                  setFilters({
+                    industries: [],
+                    priceRanges: [],
+                    leadSources: [],
+                    commissionStructures: [],
+                    teamSizes: [],
+                    remoteCompatible: false,
+                  })
+                }}
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#888888',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '0.25rem'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = '#888888';
+                }}
+              >
+                Clear all
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {filters.industries.map((filter) => (
+                <button
+                  key={`industry-${filter}`}
+                  onClick={() => removeFilter('industry', filter)}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  {filter}
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              ))}
+              {filters.priceRanges.map((filter) => (
+                <button
+                  key={`price-${filter}`}
+                  onClick={() => removeFilter('priceRange', filter)}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  {filter}
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              ))}
+              {filters.leadSources.map((filter) => (
+                <button
+                  key={`lead-${filter}`}
+                  onClick={() => removeFilter('leadSource', filter)}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  {filter}
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              ))}
+              {filters.commissionStructures.map((filter) => (
+                <button
+                  key={`commission-${filter}`}
+                  onClick={() => removeFilter('commissionStructure', filter)}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  {filter}
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              ))}
+              {filters.teamSizes.map((filter) => (
+                <button
+                  key={`team-${filter}`}
+                  onClick={() => removeFilter('teamSize', filter)}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  {filter}
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              ))}
+              {filters.remoteCompatible && (
+                <button
+                  onClick={() => setFilters(prev => ({ ...prev, remoteCompatible: false }))}
+                  style={{ 
+                    padding: '0.5rem 0.75rem', 
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
+                    color: '#c084fc', 
+                    border: '1px solid rgba(168, 85, 247, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
+                  }}
+                >
+                  Remote Compatible
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Opportunities List */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', paddingBottom: '1.5rem' }}>
-            {opportunities.map((opportunity) => (
-              <div
-                key={opportunity.id}
-                onClick={() => setSelectedOpportunity(opportunity)}
-                style={{
-                  padding: '2rem',
-                  backgroundColor: selectedOpportunity?.id === opportunity.id ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)',
-                  border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(168, 85, 247, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '1rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(12px)',
-                  boxShadow: selectedOpportunity?.id === opportunity.id ? '0 25px 50px -12px rgba(168, 85, 247, 0.25)' : '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
-                }}
-                onMouseOver={(e) => {
-                  if (selectedOpportunity?.id !== opportunity.id) {
-                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
-                    e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.6)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (selectedOpportunity?.id !== opportunity.id) {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.5)';
-                  }
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
-                    <img
-                      src={opportunity.logo || "/placeholder.svg"}
-                      alt={opportunity.companyName}
-                      style={{ 
-                        width: '3.5rem', 
-                        height: '3.5rem', 
-                        borderRadius: '0.75rem', 
-                        objectFit: 'cover', 
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-                      }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                        <h3 style={{ 
-                          fontSize: '1.25rem', 
-                          fontWeight: '700', 
-                          color: '#ffffff', 
-                          margin: 0, 
-                          overflow: 'hidden', 
-                          textOverflow: 'ellipsis', 
-                          whiteSpace: 'nowrap' 
-                        }}>{opportunity.companyName}</h3>
-                        {opportunity.new && (
-                          <span style={{ 
-                            padding: '0.25rem 0.75rem', 
-                            backgroundColor: 'rgba(34, 197, 94, 0.15)', 
-                            color: '#4ade80', 
-                            border: '1px solid rgba(34, 197, 94, 0.3)', 
-                            borderRadius: '0.5rem', 
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            letterSpacing: '0.05em'
-                          }}>
-                            NEW
-                          </span>
-                        )}
+          {sortedOpportunities.length === 0 ? (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%', 
+              textAlign: 'center',
+              padding: '3rem'
+            }}>
+              <div style={{ 
+                width: '4rem', 
+                height: '4rem', 
+                backgroundColor: 'rgba(168, 85, 247, 0.1)', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <Search style={{ width: '2rem', height: '2rem', color: '#a855f7' }} />
+              </div>
+              <h3 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: '600', 
+                color: '#ffffff', 
+                margin: '0 0 0.5rem 0' 
+              }}>
+                No opportunities found
+              </h3>
+              <p style={{ 
+                fontSize: '0.875rem', 
+                color: '#888888', 
+                margin: '0 0 1.5rem 0',
+                maxWidth: '24rem'
+              }}>
+                {searchQuery || filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible
+                  ? "Try adjusting your search or filters to find more opportunities."
+                  : "No opportunities are currently available. Check back later for new postings."
+                }
+              </p>
+              {(searchQuery || filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("")
+                    setFilters({
+                      industries: [],
+                      priceRanges: [],
+                      leadSources: [],
+                      commissionStructures: [],
+                      teamSizes: [],
+                      remoteCompatible: false,
+                    })
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: '600',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
+                  }}
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', paddingBottom: '1.5rem' }}>
+              {sortedOpportunities.map((opportunity) => (
+                <div
+                  key={opportunity.id}
+                  onClick={() => setSelectedOpportunity(opportunity)}
+                  style={{
+                    padding: '2rem',
+                    backgroundColor: selectedOpportunity?.id === opportunity.id ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+                    border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(168, 85, 247, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '1rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: selectedOpportunity?.id === opportunity.id ? '0 25px 50px -12px rgba(168, 85, 247, 0.25)' : '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (selectedOpportunity?.id !== opportunity.id) {
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.6)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (selectedOpportunity?.id !== opportunity.id) {
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.5)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
+                      <img
+                        src={opportunity.logo || "/placeholder.svg"}
+                        alt={opportunity.companyName}
+                        style={{ 
+                          width: '3.5rem', 
+                          height: '3.5rem', 
+                          borderRadius: '0.75rem', 
+                          objectFit: 'cover', 
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                        }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                          <h3 style={{ 
+                            fontSize: '1.25rem', 
+                            fontWeight: '700', 
+                            color: '#ffffff', 
+                            margin: 0, 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap' 
+                          }}>{opportunity.companyName}</h3>
+                          {opportunity.new && (
+                            <span style={{ 
+                              padding: '0.25rem 0.75rem', 
+                              backgroundColor: 'rgba(34, 197, 94, 0.15)', 
+                              color: '#4ade80', 
+                              border: '1px solid rgba(34, 197, 94, 0.3)', 
+                              borderRadius: '0.5rem', 
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              letterSpacing: '0.05em'
+                            }}>
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ color: '#c084fc', fontWeight: '600', marginBottom: '0.5rem', margin: 0, fontSize: '1rem' }}>{opportunity.offerType}</p>
+                        <p style={{ color: '#888888', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{opportunity.industry}</p>
                       </div>
-                      <p style={{ color: '#c084fc', fontWeight: '600', marginBottom: '0.5rem', margin: 0, fontSize: '1rem' }}>{opportunity.offerType}</p>
-                      <p style={{ color: '#888888', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{opportunity.industry}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleStarToggle(opportunity.id)
+                      }}
+                      style={{
+                        padding: '0.75rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                        color: opportunity.starred ? '#fbbf24' : '#888888',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.25)' : 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#ffffff';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#888888';
+                      }}
+                    >
+                      <Star style={{ width: '1.25rem', height: '1.25rem', fill: opportunity.starred ? 'currentColor' : 'none' }} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
+                      <Briefcase style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
+                      <span>{opportunity.salesRole}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
+                      <DollarSign style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
+                      <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{opportunity.commissionPotential}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
+                      <Zap style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
+                      <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
+                      <MapPin style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
+                      <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleStarToggle(opportunity.id)
-                    }}
-                    style={{
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                      color: opportunity.starred ? '#fbbf24' : '#888888',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.25)' : 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#ffffff';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#888888';
-                    }}
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                    {opportunity.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} style={{ 
+                        padding: '0.375rem 0.75rem', 
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                        color: '#cccccc', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)', 
+                        borderRadius: '0.5rem', 
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        {tag}
+                      </span>
+                    ))}
+                    {opportunity.tags.length > 3 && (
+                      <span style={{ 
+                        padding: '0.375rem 0.75rem', 
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)', 
+                        color: '#888888', 
+                        border: '1px solid rgba(255, 255, 255, 0.05)', 
+                        borderRadius: '0.5rem', 
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        +{opportunity.tags.length - 3} more
+                      </span>
+                    )}
+                  </div>
+
+                  <button style={{
+                    width: '100%',
+                    padding: '0.875rem 1.5rem',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontWeight: '600',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+                  }}
                   >
-                    <Star style={{ width: '1.25rem', height: '1.25rem', fill: opportunity.starred ? 'currentColor' : 'none' }} />
+                    View Role Details
+                    <ChevronRight style={{ width: '1.125rem', height: '1.125rem' }} />
                   </button>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                    <Briefcase style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                    <span>{opportunity.salesRole}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                    <DollarSign style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                    <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{opportunity.commissionPotential}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                    <Zap style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                    <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                    <MapPin style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                    <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                  {opportunity.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} style={{ 
-                      padding: '0.375rem 0.75rem', 
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                      color: '#cccccc', 
-                      border: '1px solid rgba(255, 255, 255, 0.1)', 
-                      borderRadius: '0.5rem', 
-                      fontSize: '0.75rem',
-                      fontWeight: '600'
-                    }}>
-                      {tag}
-                    </span>
-                  ))}
-                  {opportunity.tags.length > 3 && (
-                    <span style={{ 
-                      padding: '0.375rem 0.75rem', 
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)', 
-                      color: '#888888', 
-                      border: '1px solid rgba(255, 255, 255, 0.05)', 
-                      borderRadius: '0.5rem', 
-                      fontSize: '0.75rem',
-                      fontWeight: '600'
-                    }}>
-                      +{opportunity.tags.length - 3} more
-                    </span>
-                  )}
-                </div>
-
-                <button style={{
-                  width: '100%',
-                  padding: '0.875rem 1.5rem',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '0.75rem',
-                  fontWeight: '600',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.4)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                }}
-                >
-                  View Role Details
-                  <ChevronRight style={{ width: '1.125rem', height: '1.125rem' }} />
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
