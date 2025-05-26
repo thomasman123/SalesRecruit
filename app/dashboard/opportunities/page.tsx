@@ -1,16 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AnimatedCard } from "@/components/ui/animated-card"
-import { AnimatedButton } from "@/components/ui/animated-button"
-import { AnimatedInput } from "@/components/ui/animated-input"
-import { FadeIn } from "@/components/ui/fade-in"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { ScrollArea as SA } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Search,
   Filter,
@@ -31,10 +21,8 @@ import {
   Target,
   Zap,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
-import { useToast } from "@/components/ui/use-toast"
 
 type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
@@ -84,8 +72,6 @@ export default function OpportunitiesPage() {
     teamSizes: [] as string[],
     remoteCompatible: false,
   })
-
-  const { toast } = useToast();
 
   useEffect(() => {
     async function loadJobs() {
@@ -142,7 +128,7 @@ export default function OpportunitiesPage() {
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        toast({ title: "Not logged in", description: "Please log in to apply.", variant: "destructive" });
+        alert("Please log in to apply.");
         return;
       }
 
@@ -155,7 +141,7 @@ export default function OpportunitiesPage() {
       });
       if (upsertError) {
         console.error("Error ensuring user exists:", upsertError);
-        toast({ title: "User setup failed", description: "Could not set up user profile.", variant: "destructive" });
+        alert("Could not set up user profile.");
         return;
       }
 
@@ -168,7 +154,7 @@ export default function OpportunitiesPage() {
         .maybeSingle();
       if (checkError) throw checkError;
       if (existing) {
-        toast({ title: "Already applied", description: "You have already applied for this job.", variant: "destructive" });
+        alert("You have already applied for this job.");
         return;
       }
       // Prepare applicant data from user metadata
@@ -204,11 +190,11 @@ export default function OpportunitiesPage() {
       };
       const { error: insertError } = await supabase.from("applicants").insert(insertData);
       if (insertError) throw insertError;
-      toast({ title: "Application submitted!", description: `You have applied to ${opportunity.companyName}.` });
+      alert(`You have applied to ${opportunity.companyName}.`);
       // Optionally update UI (e.g., set status to pending)
       setOpportunities((prev) => prev.map((opp) => opp.id === opportunity.id ? { ...opp, status: "pending" } : opp));
     } catch (err: any) {
-      toast({ title: "Application failed", description: err.message || "Could not apply.", variant: "destructive" });
+      alert(err.message || "Could not apply.");
     }
   };
 
@@ -220,272 +206,212 @@ export default function OpportunitiesPage() {
     teamSizes: ["Solo closer", "Setters in place", "Full team"],
   }
 
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "interviewing":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30"
-      case "accepted":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      case "rejected":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      default:
-        return ""
-    }
-  }
-
-  const getStatusIcon = (status: string | null) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="w-3 h-3" />
-      case "interviewing":
-        return <Phone className="w-3 h-3" />
-      case "accepted":
-        return <CheckCircle className="w-3 h-3" />
-      case "rejected":
-        return <X className="w-3 h-3" />
-      default:
-        return null
-    }
-  }
-
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6 max-w-7xl mx-auto px-6 overflow-hidden">
+    <div style={{ height: 'calc(100vh - 8rem)', display: 'flex', gap: '1.5rem', maxWidth: '112rem', margin: '0 auto', padding: '0 1.5rem', overflow: 'hidden' }}>
       {/* Left Panel - Filters */}
-      <FadeIn delay={100}>
-        <div className={cn("transition-all duration-300 flex-shrink-0", showFilters ? "w-80" : "w-0 overflow-hidden")}>
-          <div className="h-full flex flex-col bg-dark-800/50 border border-dark-600 rounded-lg">
-            <div className="flex items-center justify-between p-6 border-b border-dark-600 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-white flex items-center">
-                <Filter className="w-5 h-5 mr-3 text-purple-400" />
+      {showFilters && (
+        <div style={{ width: '20rem', flexShrink: 0 }}>
+          <div style={{ height: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div style={{ padding: '1rem', borderBottom: '1px solid #374151', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', display: 'flex', alignItems: 'center' }}>
+                <Filter style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#a855f7' }} />
                 Filters
               </h2>
               <button
                 onClick={() => setShowFilters(false)}
-                className="md:hidden text-gray-400 hover:text-white transition-colors p-1 rounded"
+                style={{ color: '#9ca3af', padding: '0.25rem', background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                <X className="w-5 h-5" />
+                <X style={{ width: '1rem', height: '1rem' }} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-8">
+            {/* Scrollable Content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Industries */}
                 <div>
-                  <Label className="text-white mb-4 block text-base font-semibold">Industries</Label>
-                  <div className="space-y-3">
+                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Industries</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {filterOptions.industries.map((industry) => (
-                      <div key={industry} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={industry}
+                      <label key={industry} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
                           checked={filters.industries.includes(industry)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilters((prev) => ({
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
                                 ...prev,
-                                industries: [...prev.industries, industry],
+                                industries: [...prev.industries, industry]
                               }))
                             } else {
-                              setFilters((prev) => ({
+                              setFilters(prev => ({
                                 ...prev,
-                                industries: prev.industries.filter((i) => i !== industry),
+                                industries: prev.industries.filter(i => i !== industry)
                               }))
                             }
                           }}
-                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                          style={{ accentColor: '#a855f7' }}
                         />
-                        <Label
-                          htmlFor={industry}
-                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                        >
-                          {industry}
-                        </Label>
-                      </div>
+                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{industry}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="bg-dark-600" />
+                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
 
                 {/* Price Range */}
                 <div>
-                  <Label className="text-white mb-4 block text-base font-semibold">Offer Price Range</Label>
-                  <div className="space-y-3">
+                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Price Range</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {filterOptions.priceRanges.map((range) => (
-                      <div key={range} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={range}
+                      <label key={range} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
                           checked={filters.priceRanges.includes(range)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilters((prev) => ({
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
                                 ...prev,
-                                priceRanges: [...prev.priceRanges, range],
+                                priceRanges: [...prev.priceRanges, range]
                               }))
                             } else {
-                              setFilters((prev) => ({
+                              setFilters(prev => ({
                                 ...prev,
-                                priceRanges: prev.priceRanges.filter((r) => r !== range),
+                                priceRanges: prev.priceRanges.filter(r => r !== range)
                               }))
                             }
                           }}
-                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                          style={{ accentColor: '#a855f7' }}
                         />
-                        <Label
-                          htmlFor={range}
-                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                        >
-                          {range}
-                        </Label>
-                      </div>
+                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{range}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="bg-dark-600" />
+                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
 
                 {/* Lead Source */}
                 <div>
-                  <Label className="text-white mb-4 block text-base font-semibold">Lead Source</Label>
-                  <div className="space-y-3">
+                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Lead Source</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {filterOptions.leadSources.map((source) => (
-                      <div key={source} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={source}
+                      <label key={source} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
                           checked={filters.leadSources.includes(source)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilters((prev) => ({
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
                                 ...prev,
-                                leadSources: [...prev.leadSources, source],
+                                leadSources: [...prev.leadSources, source]
                               }))
                             } else {
-                              setFilters((prev) => ({
+                              setFilters(prev => ({
                                 ...prev,
-                                leadSources: prev.leadSources.filter((s) => s !== source),
+                                leadSources: prev.leadSources.filter(s => s !== source)
                               }))
                             }
                           }}
-                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                          style={{ accentColor: '#a855f7' }}
                         />
-                        <Label
-                          htmlFor={source}
-                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                        >
-                          {source}
-                        </Label>
-                      </div>
+                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{source}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="bg-dark-600" />
+                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
 
                 {/* Commission Structure */}
                 <div>
-                  <Label className="text-white mb-4 block text-base font-semibold">Commission Structure</Label>
-                  <div className="space-y-3">
+                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Commission Structure</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {filterOptions.commissionStructures.map((structure) => (
-                      <div key={structure} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={structure}
+                      <label key={structure} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
                           checked={filters.commissionStructures.includes(structure)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilters((prev) => ({
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
                                 ...prev,
-                                commissionStructures: [...prev.commissionStructures, structure],
+                                commissionStructures: [...prev.commissionStructures, structure]
                               }))
                             } else {
-                              setFilters((prev) => ({
+                              setFilters(prev => ({
                                 ...prev,
-                                commissionStructures: prev.commissionStructures.filter((s) => s !== structure),
+                                commissionStructures: prev.commissionStructures.filter(s => s !== structure)
                               }))
                             }
                           }}
-                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                          style={{ accentColor: '#a855f7' }}
                         />
-                        <Label
-                          htmlFor={structure}
-                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1 leading-relaxed"
-                        >
-                          {structure}
-                        </Label>
-                      </div>
+                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{structure}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="bg-dark-600" />
+                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
 
                 {/* Team Size */}
                 <div>
-                  <Label className="text-white mb-4 block text-base font-semibold">Team Size / Sales Infra</Label>
-                  <div className="space-y-3">
+                  <h3 style={{ color: 'white', fontWeight: '500', marginBottom: '0.75rem', fontSize: '0.875rem' }}>Team Size</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {filterOptions.teamSizes.map((size) => (
-                      <div key={size} className="flex items-center space-x-3">
-                        <Checkbox
-                          id={size}
+                      <label key={size} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
                           checked={filters.teamSizes.includes(size)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFilters((prev) => ({
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
                                 ...prev,
-                                teamSizes: [...prev.teamSizes, size],
+                                teamSizes: [...prev.teamSizes, size]
                               }))
                             } else {
-                              setFilters((prev) => ({
+                              setFilters(prev => ({
                                 ...prev,
-                                teamSizes: prev.teamSizes.filter((s) => s !== size),
+                                teamSizes: prev.teamSizes.filter(s => s !== size)
                               }))
                             }
                           }}
-                          className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                          style={{ accentColor: '#a855f7' }}
                         />
-                        <Label
-                          htmlFor={size}
-                          className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                        >
-                          {size}
-                        </Label>
-                      </div>
+                        <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>{size}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="bg-dark-600" />
+                <hr style={{ border: 'none', borderTop: '1px solid #374151' }} />
 
                 {/* Remote Compatible */}
                 <div>
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="remote"
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
                       checked={filters.remoteCompatible}
-                      onCheckedChange={(checked) => {
-                        setFilters((prev) => ({
+                      onChange={(e) => {
+                        setFilters(prev => ({
                           ...prev,
-                          remoteCompatible: checked as boolean,
+                          remoteCompatible: e.target.checked
                         }))
                       }}
-                      className="border-dark-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                      style={{ accentColor: '#a855f7' }}
                     />
-                    <Label
-                      htmlFor="remote"
-                      className="text-sm text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                    >
-                      Remote Time Zone Compatible
-                    </Label>
-                  </div>
+                    <span style={{ fontSize: '0.875rem', color: '#d1d5db' }}>Remote Compatible</span>
+                  </label>
                 </div>
               </div>
             </div>
 
-            {/* Clear Filters (sticky bottom) */}
-            <div className="p-6 border-t border-dark-600 flex-shrink-0">
-              <AnimatedButton
-                variant="ghost"
-                className="w-full text-sm hover:bg-dark-700"
+            {/* Clear Filters Button */}
+            <div style={{ padding: '1rem', borderTop: '1px solid #374151' }}>
+              <button
                 onClick={() => {
                   setFilters({
                     industries: [],
@@ -496,351 +422,377 @@ export default function OpportunitiesPage() {
                     remoteCompatible: false,
                   })
                 }}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
+                  color: '#d1d5db',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.backgroundColor = '#374151';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = '#d1d5db';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 Clear All Filters
-              </AnimatedButton>
+              </button>
             </div>
           </div>
         </div>
-      </FadeIn>
+      )}
 
-      {/* Middle Panel - Opportunity Cards */}
-      <FadeIn delay={200}>
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Search and Sort Bar */}
-          <div className="mb-6 space-y-4 flex-shrink-0">
-            <div className="flex gap-4">
-              {!showFilters && (
-                <AnimatedButton variant="outline" size="sm" onClick={() => setShowFilters(true)} className="md:hidden">
-                  <Filter className="w-4 h-4" />
-                </AnimatedButton>
-              )}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <AnimatedInput
-                  type="text"
-                  placeholder="Search opportunities..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12"
-                  variant="glow"
-                />
-              </div>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48 h-12 border-dark-600 bg-dark-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-dark-700 border-dark-600">
-                  <SelectItem value="newest" className="text-white hover:bg-dark-600">
-                    Newest
-                  </SelectItem>
-                  <SelectItem value="lucrative" className="text-white hover:bg-dark-600">
-                    Most Lucrative
-                  </SelectItem>
-                  <SelectItem value="best-fit" className="text-white hover:bg-dark-600">
-                    Best Fit
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Middle Panel - Opportunities */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Search Bar */}
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+          {!showFilters && (
+            <button
+              onClick={() => setShowFilters(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#374151',
+                border: '1px solid #4b5563',
+                borderRadius: '0.375rem',
+                color: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <Filter style={{ width: '1rem', height: '1rem' }} />
+            </button>
+          )}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', width: '1rem', height: '1rem' }} />
+            <input
+              type="text"
+              placeholder="Search opportunities..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: '2.5rem',
+                paddingRight: '1rem',
+                paddingTop: '0.75rem',
+                paddingBottom: '0.75rem',
+                backgroundColor: '#374151',
+                border: '1px solid #4b5563',
+                borderRadius: '0.375rem',
+                color: 'white',
+                fontSize: '0.875rem'
+              }}
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#374151',
+              border: '1px solid #4b5563',
+              borderRadius: '0.375rem',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="newest">Newest</option>
+            <option value="lucrative">Most Lucrative</option>
+            <option value="best-fit">Best Fit</option>
+          </select>
+        </div>
 
-            {/* Active Filters Display */}
-            {(filters.industries.length > 0 ||
-              filters.priceRanges.length > 0 ||
-              filters.leadSources.length > 0 ||
-              filters.commissionStructures.length > 0 ||
-              filters.teamSizes.length > 0 ||
-              filters.remoteCompatible) && (
-              <div className="flex flex-wrap gap-2">
-                {[
-                  ...filters.industries,
-                  ...filters.priceRanges,
-                  ...filters.leadSources,
-                  ...filters.commissionStructures,
-                  ...filters.teamSizes,
-                ].map((filter) => (
-                  <Badge
-                    key={filter}
-                    variant="secondary"
-                    className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1"
-                  >
-                    {filter}
-                  </Badge>
-                ))}
-                {filters.remoteCompatible && (
-                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
-                    Remote Compatible
-                  </Badge>
-                )}
-              </div>
+        {/* Active Filters */}
+        {(filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
+          <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {[...filters.industries, ...filters.priceRanges, ...filters.leadSources, ...filters.commissionStructures, ...filters.teamSizes].map((filter) => (
+              <span key={filter} style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                {filter}
+              </span>
+            ))}
+            {filters.remoteCompatible && (
+              <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                Remote Compatible
+              </span>
             )}
           </div>
+        )}
 
-          {/* Opportunities List */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="grid gap-6 pr-4 md:grid-cols-1 xl:grid-cols-2 pb-6">
-              {opportunities.map((opportunity) => (
-                <AnimatedCard
-                  key={opportunity.id}
-                  variant="interactive"
-                  className={cn(
-                    "p-6 cursor-pointer bg-dark-800/50 border-dark-600 hover:border-purple-500/50 transition-all duration-300",
-                    selectedOpportunity?.id === opportunity.id && "border-purple-500/50 bg-dark-700/50",
-                  )}
-                  onClick={() => setSelectedOpportunity(opportunity)}
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-start space-x-4 flex-1">
-                      <img
-                        src={opportunity.logo || "/placeholder.svg"}
-                        alt={opportunity.companyName}
-                        className="w-14 h-14 rounded-lg object-cover border border-dark-600"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-white truncate">{opportunity.companyName}</h3>
-                          {opportunity.new && (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs px-2 py-1">NEW</Badge>
-                          )}
-                          {opportunity.status && (
-                            <Badge
-                              className={cn("text-xs flex items-center gap-1 px-2 py-1", getStatusColor(opportunity.status))}
-                            >
-                              {getStatusIcon(opportunity.status)}
-                              {opportunity.status}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-purple-400 font-medium text-base mb-1">{opportunity.offerType}</p>
-                        <p className="text-gray-400 text-sm">{opportunity.industry}</p>
+        {/* Opportunities List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', paddingBottom: '1rem' }}>
+            {opportunities.map((opportunity) => (
+              <div
+                key={opportunity.id}
+                onClick={() => setSelectedOpportunity(opportunity)}
+                style={{
+                  padding: '1.5rem',
+                  backgroundColor: '#1f2937',
+                  border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid #374151',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (selectedOpportunity?.id !== opportunity.id) {
+                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (selectedOpportunity?.id !== opportunity.id) {
+                    e.currentTarget.style.borderColor = '#374151';
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
+                    <img
+                      src={opportunity.logo || "/placeholder.svg"}
+                      alt={opportunity.companyName}
+                      style={{ width: '3rem', height: '3rem', borderRadius: '0.5rem', objectFit: 'cover', border: '1px solid #374151' }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opportunity.companyName}</h3>
+                        {opportunity.new && (
+                          <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                            NEW
+                          </span>
+                        )}
                       </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleStarToggle(opportunity.id)
-                      }}
-                      className={cn(
-                        "p-2 rounded-lg transition-all duration-300 flex-shrink-0",
-                        opportunity.starred
-                          ? "text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20"
-                          : "text-gray-400 hover:text-yellow-400 hover:bg-dark-700",
-                      )}
-                    >
-                      <Star className={cn("w-5 h-5", opportunity.starred && "fill-current")} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-                    <div className="flex items-center text-gray-400">
-                      <Briefcase className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">{opportunity.salesRole}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <DollarSign className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
-                      <span className="font-mono truncate">{opportunity.commissionPotential}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <Zap className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <MapPin className="w-4 h-4 mr-3 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
+                      <p style={{ color: '#c084fc', fontWeight: '500', marginBottom: '0.25rem', margin: 0 }}>{opportunity.offerType}</p>
+                      <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>{opportunity.industry}</p>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {opportunity.tags.slice(0, 3).map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="bg-dark-700 text-gray-300 border-dark-600 text-xs px-2 py-1"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {opportunity.tags.length > 3 && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-dark-700 text-gray-400 border-dark-600 text-xs px-2 py-1"
-                      >
-                        +{opportunity.tags.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-
-                  <AnimatedButton
-                    variant="purple"
-                    size="sm"
-                    className="w-full h-10"
-                    icon={<ChevronRight className="w-4 h-4" />}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleStarToggle(opportunity.id)
+                    }}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: '0.375rem',
+                      backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                      color: opportunity.starred ? '#fbbf24' : '#9ca3af',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
                   >
-                    View Role Details
-                  </AnimatedButton>
-                </AnimatedCard>
-              ))}
+                    <Star style={{ width: '1.25rem', height: '1.25rem', fill: opportunity.starred ? 'currentColor' : 'none' }} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+                    <Briefcase style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    <span>{opportunity.salesRole}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+                    <DollarSign style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    <span style={{ fontFamily: 'monospace' }}>{opportunity.commissionPotential}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+                    <Zap style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+                    <MapPin style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {opportunity.tags.slice(0, 3).map((tag) => (
+                    <span key={tag} style={{ padding: '0.25rem 0.5rem', backgroundColor: '#374151', color: '#d1d5db', border: '1px solid #4b5563', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                      {tag}
+                    </span>
+                  ))}
+                  {opportunity.tags.length > 3 && (
+                    <span style={{ padding: '0.25rem 0.5rem', backgroundColor: '#374151', color: '#9ca3af', border: '1px solid #4b5563', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                      +{opportunity.tags.length - 3} more
+                    </span>
+                  )}
+                </div>
+
+                <button style={{
+                  width: '100%',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#a855f7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#a855f7'}
+                >
+                  View Role Details
+                  <ChevronRight style={{ width: '1rem', height: '1rem' }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Role Details */}
+      {selectedOpportunity && (
+        <div style={{ width: '24rem', flexShrink: 0 }}>
+          <div style={{ height: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div style={{ padding: '1rem', borderBottom: '1px solid #374151', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1 }}>
+                <img
+                  src={selectedOpportunity.logo || "/placeholder.svg"}
+                  alt={selectedOpportunity.companyName}
+                  style={{ width: '3rem', height: '3rem', borderRadius: '0.5rem', objectFit: 'cover', border: '1px solid #374151' }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'white', margin: 0, marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedOpportunity.companyName}</h2>
+                  <p style={{ color: '#c084fc', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedOpportunity.offerType}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedOpportunity(null)}
+                style={{ padding: '0.25rem', color: '#9ca3af', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
+              >
+                <X style={{ width: '1.25rem', height: '1.25rem' }} />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {/* Company Overview */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <Building2 style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    Company Overview
+                  </h3>
+                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.companyOverview}</p>
+                </div>
+
+                {/* What You'll Be Selling */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <Target style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    What You'll Be Selling
+                  </h3>
+                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.whatYouSell}</p>
+                </div>
+
+                {/* Sales Process */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <TrendingUp style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    Sales Process
+                  </h3>
+                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 }}>{selectedOpportunity.salesProcess}</p>
+                </div>
+
+                {/* What's Provided */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <CheckCircle style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    What's Provided
+                  </h3>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {selectedOpportunity.whatsProvided?.map((item, index) => (
+                      <li key={index} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '0.875rem', color: '#d1d5db' }}>
+                        <CheckCircle style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#4ade80', marginTop: '0.125rem', flexShrink: 0 }} />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Commission Breakdown */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <DollarSign style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    Commission Breakdown
+                  </h3>
+                  <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '0.375rem', padding: '0.75rem' }}>
+                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', fontFamily: 'monospace', margin: 0 }}>{selectedOpportunity.commissionBreakdown}</p>
+                  </div>
+                </div>
+
+                {/* Expected Ramp Time */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <TrendingUp style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    Expected Ramp Time
+                  </h3>
+                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>{selectedOpportunity.rampTime}</p>
+                </div>
+
+                {/* Working Hours */}
+                <div>
+                  <h3 style={{ color: 'white', fontWeight: '600', fontSize: '0.875rem', display: 'flex', alignItems: 'center', margin: '0 0 0.5rem 0' }}>
+                    <Clock style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', color: '#c084fc' }} />
+                    Working Hours
+                  </h3>
+                  <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>{selectedOpportunity.workingHours}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Apply Button */}
+            <div style={{ padding: '1rem', borderTop: '1px solid #374151' }}>
+              <button
+                onClick={() => handleApply(selectedOpportunity)}
+                disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" ? '#6b7280' : '#a855f7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  fontWeight: '600',
+                  cursor: selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected" ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (selectedOpportunity.status !== "accepted" && selectedOpportunity.status !== "rejected") {
+                    e.currentTarget.style.backgroundColor = '#9333ea';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (selectedOpportunity.status !== "accepted" && selectedOpportunity.status !== "rejected") {
+                    e.currentTarget.style.backgroundColor = '#a855f7';
+                  }
+                }}
+              >
+                {selectedOpportunity.status === "pending"
+                  ? "Application Pending"
+                  : selectedOpportunity.status === "interviewing"
+                    ? "Continue Interview Process"
+                    : selectedOpportunity.status === "accepted"
+                      ? "Already Accepted"
+                      : selectedOpportunity.status === "rejected"
+                        ? "Application Rejected"
+                        : "Apply Now"}
+              </button>
+              {!selectedOpportunity.status && (
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', marginTop: '0.5rem', margin: '0.5rem 0 0 0' }}>Quick apply with your Helios profile</p>
+              )}
             </div>
           </div>
         </div>
-      </FadeIn>
-
-      {/* Right Panel - Role Details */}
-      <FadeIn delay={300}>
-        <div className={cn("transition-all duration-300 flex-shrink-0", selectedOpportunity ? "w-96" : "w-0 overflow-hidden")}>
-          {selectedOpportunity && (
-            <div className="h-full overflow-hidden flex flex-col bg-dark-800/50 border border-dark-600 rounded-lg">
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="flex items-start space-x-4 flex-1 min-w-0">
-                      <img
-                        src={selectedOpportunity.logo || "/placeholder.svg"}
-                        alt={selectedOpportunity.companyName}
-                        className="w-16 h-16 rounded-lg object-cover border border-dark-600 flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-xl font-bold text-white mb-1 truncate">{selectedOpportunity.companyName}</h2>
-                        <p className="text-purple-400 text-base mb-1 truncate">{selectedOpportunity.offerType}</p>
-                        <p className="text-gray-400 text-sm">{selectedOpportunity.industry}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSelectedOpportunity(null)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors flex-shrink-0"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Video Intro */}
-                  {selectedOpportunity.videoIntro && (
-                    <div className="mb-8">
-                      <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center group cursor-pointer hover:bg-dark-600 transition-colors border border-dark-600">
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-500/30 transition-colors">
-                            <Play className="w-6 h-6 text-purple-400" />
-                          </div>
-                          <p className="text-sm text-gray-400">Watch intro from founder</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Company Overview */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <Building2 className="w-5 h-5 mr-3 text-purple-400" />
-                      Company Overview
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.companyOverview}</p>
-                  </div>
-
-                  {/* What You'll Be Selling */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <Target className="w-5 h-5 mr-3 text-purple-400" />
-                      What You'll Be Selling
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.whatYouSell}</p>
-                  </div>
-
-                  {/* Sales Process */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-3 text-purple-400" />
-                      Sales Process
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.salesProcess}</p>
-                  </div>
-
-                  {/* What's Provided */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <CheckCircle className="w-5 h-5 mr-3 text-purple-400" />
-                      What's Provided
-                    </h3>
-                    <ul className="space-y-3">
-                      {selectedOpportunity.whatsProvided?.map((item, index) => (
-                        <li key={index} className="flex items-start text-sm text-gray-300">
-                          <CheckCircle className="w-4 h-4 mr-3 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span className="leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Who This Role Is NOT For */}
-                  {selectedOpportunity.notFor && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                        <AlertCircle className="w-5 h-5 mr-3 text-red-400" />
-                        Who This Role Is NOT For
-                      </h3>
-                      <p className="text-gray-300 text-sm leading-relaxed bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                        {selectedOpportunity.notFor}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Commission Breakdown */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <DollarSign className="w-5 h-5 mr-3 text-purple-400" />
-                      Commission Breakdown
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed font-mono bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
-                      {selectedOpportunity.commissionBreakdown}
-                    </p>
-                  </div>
-
-                  {/* Expected Ramp Time */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-3 text-purple-400" />
-                      Expected Ramp Time
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.rampTime}</p>
-                  </div>
-
-                  {/* Working Hours */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <Clock className="w-5 h-5 mr-3 text-purple-400" />
-                      Working Hours
-                    </h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">{selectedOpportunity.workingHours}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Apply Button */}
-              <div className="p-6 border-t border-dark-600 flex-shrink-0">
-                <AnimatedButton
-                  variant="purple"
-                  className="w-full h-12 text-base font-semibold"
-                  onClick={() => handleApply(selectedOpportunity)}
-                  disabled={selectedOpportunity.status === "accepted" || selectedOpportunity.status === "rejected"}
-                >
-                  {selectedOpportunity.status === "pending"
-                    ? "Application Pending"
-                    : selectedOpportunity.status === "interviewing"
-                      ? "Continue Interview Process"
-                      : selectedOpportunity.status === "accepted"
-                        ? "Already Accepted"
-                        : selectedOpportunity.status === "rejected"
-                          ? "Application Rejected"
-                          : "Apply Now"}
-                </AnimatedButton>
-                {!selectedOpportunity.status && (
-                  <p className="text-xs text-gray-400 text-center mt-3">Quick apply with your Helios Recruit profile</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </FadeIn>
+      )}
     </div>
   )
 }
