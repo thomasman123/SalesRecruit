@@ -1275,20 +1275,19 @@ export default function OpportunitiesPage() {
         <div 
           style={{ 
             position: 'fixed',
-            top: 0,
+            top: '8rem',
             left: 0,
             right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            backdropFilter: 'blur(20px)',
-            zIndex: 1000,
+            bottom: '1rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 2000,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center',
             padding: '1rem'
           }}
           onClick={(e) => {
-            // Close modal when clicking backdrop
             if (e.target === e.currentTarget) {
               setSelectedOpportunity(null);
             }
@@ -1297,28 +1296,27 @@ export default function OpportunitiesPage() {
           <div 
             style={{ 
               width: '100%',
-              maxWidth: '72rem',
-              height: '100%',
-              maxHeight: '95vh',
-              backgroundColor: 'rgba(0, 0, 0, 0.95)', 
-              border: '1px solid rgba(255, 255, 255, 0.2)', 
-              borderRadius: '1rem', 
+              maxWidth: '60rem',
+              maxHeight: 'calc(100vh - 10rem)',
+              backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+              border: '1px solid rgba(255, 255, 255, 0.15)', 
+              borderRadius: '0.75rem', 
               display: 'flex', 
               flexDirection: 'column',
               backdropFilter: 'blur(12px)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.8)',
               overflow: 'hidden'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div style={{ 
-              padding: '1.5rem 2rem', 
+              padding: '1.25rem 1.75rem', 
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'space-between',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%)',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%)',
               flexShrink: 0
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
@@ -1326,8 +1324,8 @@ export default function OpportunitiesPage() {
                   src={selectedOpportunity.logo || "/placeholder.svg"}
                   alt={selectedOpportunity.companyName}
                   style={{ 
-                    width: '4rem', 
-                    height: '4rem', 
+                    width: '3.5rem', 
+                    height: '3.5rem', 
                     borderRadius: '0.75rem', 
                     objectFit: 'cover', 
                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -1336,12 +1334,12 @@ export default function OpportunitiesPage() {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{ 
-                    fontSize: '1.5rem', 
+                    fontSize: '1.25rem', 
                     fontWeight: '700', 
                     color: '#ffffff', 
-                    margin: '0 0 0.5rem 0'
+                    margin: 0
                   }}>{selectedOpportunity.companyName}</h2>
-                  <p style={{ color: '#c084fc', margin: '0 0 0.25rem 0', fontWeight: '600', fontSize: '1rem' }}>{selectedOpportunity.offerType}</p>
+                  <p style={{ color: '#c084fc', margin: '0.25rem 0', fontWeight: '600', fontSize: '1rem' }}>{selectedOpportunity.offerType}</p>
                   <p style={{ color: '#888888', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{selectedOpportunity.industry}</p>
                 </div>
               </div>
@@ -1354,10 +1352,7 @@ export default function OpportunitiesPage() {
                   border: 'none', 
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.color = '#ffffff';
@@ -1368,15 +1363,15 @@ export default function OpportunitiesPage() {
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                 }}
               >
-                <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                <X style={{ width: '1rem', height: '1rem' }} />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: window.innerWidth > 1024 ? '1fr 1fr' : '1fr', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
                 gap: '2rem',
                 maxWidth: '100%'
               }}>
