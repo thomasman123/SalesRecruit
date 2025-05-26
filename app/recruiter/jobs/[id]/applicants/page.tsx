@@ -41,13 +41,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { getSupabaseClient } from "@/lib/supabase/client"
 
 export default function ApplicantsPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = Number(params.id)
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
   const [applicants, setApplicants] = useState<any[]>([])
   const [selectedApplicant, setSelectedApplicant] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -60,15 +60,7 @@ export default function ApplicantsPage() {
     const fetchApplicants = async () => {
       setLoading(true)
       try {
-        // Ensure we have the current authenticated user loaded first
-        const { data: userData } = await supabase.auth.getUser()
-        if (!userData?.user) {
-          // Not logged in (shouldn't happen on recruiter page), abort
-          setApplicants([])
-          return
-        }
-
-        // Fetch applicants for this job (RLS now has auth context)
+        // Fetch applicants for this job (after ensuring client has auth context)
         const { data, error } = await supabase
           .from("applicants")
           .select("*")
