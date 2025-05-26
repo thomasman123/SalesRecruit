@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { useUser } from "@/lib/hooks/use-user";
 
 interface Message {
   id: number;
@@ -36,9 +37,16 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [role, setRole] = useState<'recruiter' | 'sales-professional' | null>(null);
+  const { userData, isLoading } = useUser();
+  const router = useRouter();
 
   const supabase = createClientComponentClient();
-  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !userData) {
+      router.push('/login');
+    }
+  }, [isLoading, userData, router]);
 
   useEffect(() => {
     const init = async () => {
@@ -189,6 +197,10 @@ export default function MessagesPage() {
     setNewMessage('');
     fetchConversations(role); // update list
   };
+
+  if (isLoading || !userData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">

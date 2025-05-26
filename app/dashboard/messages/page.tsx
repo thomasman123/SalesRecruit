@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { useUser } from "@/lib/hooks/use-user";
 
 interface Message {
   id: number;
@@ -31,12 +32,19 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
+  const { userData, isLoading } = useUser();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const supabase = createClientComponentClient();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !userData) {
+      router.push('/login');
+    }
+  }, [isLoading, userData, router]);
 
   useEffect(() => {
     fetchConversations();
@@ -141,6 +149,10 @@ export default function MessagesPage() {
     setNewMessage('');
     fetchConversations(); // Refresh conversation list to update last message timestamp
   };
+
+  if (isLoading || !userData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">
