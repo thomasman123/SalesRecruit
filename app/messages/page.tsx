@@ -35,12 +35,32 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [role, setRole] = useState<'recruiter' | 'sales-professional' | null>(null);
+
   const supabase = createClientComponentClient();
   const router = useRouter();
 
   useEffect(() => {
-    fetchConversations();
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      const { data: userRow } = await supabase.from('users').select('role').eq('id', user.id).single();
+      if (userRow) {
+        setRole(userRow.role as 'recruiter' | 'sales-professional');
+      }
+    };
+    fetchUserRole();
   }, []);
+
+  // When role is resolved fetch conversations
+  useEffect(() => {
+    if (role) {
+      fetchConversations(role);
+    }
+  }, [role]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -63,31 +83,37 @@ export default function MessagesPage() {
     }
   }, [selectedConversation]);
 
-  const fetchConversations = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
+  const fetchConversations = async (currentRole: 'recruiter' | 'sales-professional') => {
+    const base = supabase.from('conversations');
+
+    let query;
+    if (currentRole === 'recruiter') {
+      query = base.select(`
+          id,
+          participant:users!conversations_applicant_user_id_fkey(name, avatar_url),
+          job:jobs(title),
+          last_message_timestamp,
+          unread_count
+        `);
+    } else {
+      // sales professional -> show recruiter info
+      query = base.select(`
+          id,
+          participant:users!conversations_recruiter_id_fkey(name, avatar_url),
+          job:jobs(title),
+          last_message_timestamp,
+          unread_count
+        `);
     }
 
-    const { data, error } = await supabase
-      .from('conversations')
-      .select(`
-        id,
-        participant:users!conversations_applicant_user_id_fkey(name, avatar_url),
-        job:jobs(title),
-        last_message_timestamp,
-        unread_count
-      `)
-      .order('last_message_timestamp', { ascending: false });
+    const { data, error } = await query.order('last_message_timestamp', { ascending: false });
 
     if (error) {
       console.error('Error fetching conversations:', error);
       return;
     }
 
-    // Transform the data to match our Conversation interface
-    const transformedData: Conversation[] = (data || []).map((conv: any) => ({
+    const transformed: Conversation[] = (data || []).map((conv: any) => ({
       id: conv.id,
       participant: {
         name: conv.participant?.name ?? '',
@@ -100,7 +126,7 @@ export default function MessagesPage() {
       unread_count: conv.unread_count,
     }));
 
-    setConversations(transformedData);
+    setConversations(transformed);
   };
 
   const fetchMessages = async (conversationId: number) => {
@@ -119,17 +145,19 @@ export default function MessagesPage() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !role) return;
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    const senderType = role === 'recruiter' ? 'recruiter' : 'applicant';
 
     const { error } = await supabase
       .from('messages')
       .insert({
         conversation_id: selectedConversation,
         sender_id: user.id,
-        sender_type: 'recruiter',
+        sender_type: senderType,
         content: newMessage.trim(),
       });
 
@@ -139,7 +167,7 @@ export default function MessagesPage() {
     }
 
     setNewMessage('');
-    fetchConversations(); // Refresh conversation list to update last message timestamp
+    fetchConversations(role); // update list
   };
 
   return (
@@ -197,14 +225,14 @@ export default function MessagesPage() {
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.sender_type === 'recruiter' ? 'justify-end' : 'justify-start'
+                      message.sender_type === 'recruiter' ? 'justify-start' : 'justify-end'
                     }`}
                   >
                     <div
                       className={`max-w-[70%] rounded-lg p-3 ${
                         message.sender_type === 'recruiter'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100'
+                          ? 'bg-gray-100 text-black'
+                          : 'bg-blue-500 text-white'
                       }`}
                     >
                       <p>{message.content}</p>
