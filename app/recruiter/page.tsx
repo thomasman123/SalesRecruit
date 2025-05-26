@@ -48,7 +48,7 @@ export default function RecruiterDashboardPage() {
       const [applicantRes, interviewRes, recentApplicantsRes, recentJobsRes] = await Promise.all([
         supabase.from('applicants').select('id', { count: 'exact', head: true }).in('job_id', jobIds),
         supabase.from('applicants').select('id', { count: 'exact', head: true }).in('job_id', jobIds).eq('status', 'interviewing'),
-        supabase.from('applicants').select('name,email,avatar_url,job_id,created_at').in('job_id', jobIds).order('created_at', { ascending: false }).limit(4),
+        supabase.from('applicants').select('name,email,avatar_url,job_id,status,created_at').in('job_id', jobIds).order('created_at', { ascending: false }).limit(4),
         supabase.from('jobs').select('*').eq('recruiter_id', user.id).order('created_at', { ascending: false }).limit(3)
       ])
 

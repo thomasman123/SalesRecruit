@@ -63,7 +63,7 @@ export default function ApplicantsPage() {
         // Fetch applicants for this job
         const { data, error } = await supabase
           .from("applicants")
-          .select("*, user:users!applicants_user_id_fkey(id, name, avatar_url, email)")
+          .select("*, user:users!left(id, name, avatar_url, email)")
           .eq("job_id", jobId)
         if (error) throw error
         setApplicants(data || [])
@@ -77,7 +77,7 @@ export default function ApplicantsPage() {
   }, [jobId, supabase])
 
   const filteredApplicants = applicants.filter((applicant) => {
-    const name = applicant.user?.name || ""
+    const name = applicant.user?.name || applicant.name || ""
     if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase())) return false
     if (activeTab === "new" && applicant.status !== "new") return false
     if (activeTab === "reviewing" && applicant.status !== "reviewing") return false
@@ -283,16 +283,16 @@ export default function ApplicantsPage() {
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3">
                             <Avatar className="h-10 w-10 border border-dark-600">
-                              <AvatarImage src={applicant.user?.avatar_url || "/placeholder.svg"} />
+                              <AvatarImage src={applicant.user?.avatar_url ?? applicant.avatar_url ?? "/placeholder.svg"} />
                               <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                                {applicant.user?.name
+                                {(applicant.user?.name ?? applicant.name)
                                   .split(" ")
                                   .map((n: string) => n[0])
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h3 className="text-white font-medium">{applicant.user?.name}</h3>
+                              <h3 className="text-white font-medium">{applicant.user?.name ?? applicant.name}</h3>
                               <div className="flex items-center text-xs text-gray-400 mt-1">
                                 <Clock className="w-3 h-3 mr-1" />
                                 <span>Applied {applicant.appliedDate}</span>
@@ -351,9 +351,9 @@ export default function ApplicantsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16 border-2 border-dark-600">
-                        <AvatarImage src={selectedApplicant.user?.avatar_url || "/placeholder.svg"} />
+                        <AvatarImage src={selectedApplicant.user?.avatar_url ?? selectedApplicant.avatar_url ?? "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
-                          {selectedApplicant.user?.name
+                          {(selectedApplicant.user?.name ?? selectedApplicant.name)
                             .split(" ")
                             .map((n: string) => n[0])
                             .join("")}
@@ -361,7 +361,7 @@ export default function ApplicantsPage() {
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.name}</h2>
+                          <h2 className="text-2xl font-bold text-white">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
                           {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current" />}
                         </div>
                         <p className="text-gray-400">{selectedApplicant.location}</p>
