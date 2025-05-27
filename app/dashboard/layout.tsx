@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useUser } from "@/lib/hooks/use-user"
 import { NotificationCenter } from "@/components/notification-center"
+import { Badge } from "@/components/ui/badge"
+import { useUnreadMessagesCount } from "@/lib/hooks/use-unread-messages-count"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -44,6 +46,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const { userData, handleLogout } = useUser()
+  const unreadMessageCount = useUnreadMessagesCount()
 
   const toggleSidebar = () => {
     setSidebarExpanded(!sidebarExpanded)
@@ -77,6 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/dashboard/messages",
       icon: <MessageSquare className="h-5 w-5" />,
       current: pathname === "/dashboard/messages",
+      badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
     },
     {
       name: "Settings",
@@ -116,7 +120,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <AnimatedIcon variant="scale" size="sm" color={item.current ? "purple" : "white"}>
                 {item.icon}
               </AnimatedIcon>
-              <span>{item.name}</span>
+              <span className="ml-3">{item.name}</span>
+              {item.badge && <Badge className="ml-auto bg-purple-500 text-white">{item.badge}</Badge>}
             </Link>
           ))}
         </div>
@@ -164,7 +169,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <AnimatedIcon variant="scale" size="sm" color={item.current ? "purple" : "white"}>
                 {item.icon}
               </AnimatedIcon>
-              {sidebarExpanded && <span className="ml-3">{item.name}</span>}
+              {sidebarExpanded && (
+                <>
+                  <span className="ml-3">{item.name}</span>
+                  {item.badge && <Badge className="ml-auto bg-purple-500 text-white">{item.badge}</Badge>}
+                </>
+              )}
+              {!sidebarExpanded && item.badge && (
+                <span className="absolute top-0 right-0 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

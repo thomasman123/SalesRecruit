@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Badge } from "@/components/ui/badge"
 import { useUser } from "@/lib/hooks/use-user"
+import { useUnreadMessagesCount } from "@/lib/hooks/use-unread-messages-count"
 
 interface RecruiterLayoutProps {
   children: React.ReactNode
@@ -45,9 +46,7 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
   const pathname = usePathname()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const { userData, handleLogout } = useUser()
-
-  // Mock unread message count
-  const unreadMessageCount = 3
+  const unreadMessageCount = useUnreadMessagesCount()
 
   const toggleSidebar = () => {
     setSidebarExpanded(!sidebarExpanded)
