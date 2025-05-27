@@ -15,7 +15,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Menu,
   X,
   User,
@@ -33,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useUser } from "@/lib/hooks/use-user"
+import { NotificationCenter } from "@/components/notification-center"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -172,13 +172,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Bottom user section */}
         <div className="p-4 border-t border-dark-600 space-y-4">
           {/* Notifications */}
-          <button className={cn(
-            "w-full flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300",
-            sidebarExpanded ? "justify-start" : "justify-center",
-          )}>
-            <Bell className="h-5 w-5" />
-            {sidebarExpanded && <span className="ml-3">Notifications</span>}
-          </button>
+          <NotificationCenter sidebarExpanded={sidebarExpanded} />
 
           {/* Profile dropdown trigger */}
           <DropdownMenu>
@@ -223,20 +217,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-        </div>
-
-        {/* Logout */}
-        <div className="p-4 border-t border-dark-600">
-          <button
-            onClick={handleLogout}
-            className={cn(
-              "flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300 w-full",
-              sidebarExpanded ? "justify-start" : "justify-center",
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {sidebarExpanded && <span className="ml-3">Logout</span>}
-          </button>
         </div>
       </aside>
 
