@@ -1,6 +1,6 @@
-# SalesRecruit
+# HeliosRecruit
 
-A modern platform connecting sales talent with opportunities.
+A modern platform connecting top sales talent with opportunities at leading companies.
 
 ## Tech Stack
 
@@ -45,6 +45,8 @@ A modern platform connecting sales talent with opportunities.
    npx supabase link --project-ref your_project_ref
    npx supabase db push
    ```
+
+Production URL: https://heliosrecruit.com
 
 ## Features
 

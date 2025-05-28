@@ -73,8 +73,8 @@ BEGIN
   UPDATE public.conversations
   SET last_message_timestamp = NEW.timestamp,
       unread_count = CASE
-        WHEN NEW.sender_type = 'recruiter' AND applicant_user_id = auth.uid() THEN unread_count + 1   -- applicant has a new unread msg from recruiter
-        WHEN NEW.sender_type = 'applicant' AND recruiter_id = auth.uid() THEN unread_count + 1       -- recruiter has a new unread msg from applicant
+        WHEN NEW.sender_type = 'recruiter' AND applicant_user_id = auth.uid() AND NEW.sender_id != auth.uid() THEN unread_count + 1   -- applicant has a new unread msg from recruiter
+        WHEN NEW.sender_type = 'applicant' AND recruiter_id = auth.uid() AND NEW.sender_id != auth.uid() THEN unread_count + 1       -- recruiter has a new unread msg from applicant
         ELSE unread_count
       END
   WHERE id = NEW.conversation_id;
