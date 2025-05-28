@@ -25,34 +25,34 @@ export default function ProfilePage() {
     bio: "",
     avatarUrl: "",
 
-    // Section 1: Background and Performance
+    // Sales Experience
     highestTicket: "",
     bestMonth: "",
     exactRole: "",
     leadDriedUp: "",
     commissionExperience: "",
 
-    // Section 2: Sales Style and Offer Alignment
+    // Sales Style
     salesProcess: "",
     thinkAboutIt: "",
     intangibleSales: "",
     dislikedClients: "",
     disagreedTechnique: "",
 
-    // Section 3: Tools and Self-Management
+    // Tools and Self-Management
     crmExperience: "",
     dailyRoutine: "",
     noShowProcess: "",
     callCapacity: "",
 
-    // Section 4: Drive and Mindset
+    // Drive and Mindset
     whySales: "",
     slumpResponse: "",
     leadershipStyle: "",
     underperformResponse: "",
     currentImprovement: "",
 
-    // Section 5: Video Intro
+    // Video Intro
     videoUrl: "",
   })
 
@@ -656,8 +656,12 @@ export default function ProfilePage() {
       </FadeIn>
 
       <FadeIn delay={400}>
-        <div className="flex justify-end mt-8 mb-16">
-          <AnimatedButton variant="purple" animation="glow" onClick={handleSave} icon={<Save className="w-4 h-4" />}>
+        <div className="mt-8 flex justify-end">
+          <AnimatedButton
+            variant="purple"
+            onClick={handleSave}
+            icon={<Save className="w-4 h-4" />}
+          >
             Save Changes
           </AnimatedButton>
         </div>
