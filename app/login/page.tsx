@@ -61,6 +61,19 @@ export default function LoginPage() {
       // Get user role from metadata first
       const role = data.user?.user_metadata?.role
 
+      // Ensure the session is set before redirecting
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        throw new Error("Failed to get session")
+      }
+
+      // Set the session explicitly
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      })
+
       if (role === "recruiter") {
         router.push("/recruiter")
       } else {
