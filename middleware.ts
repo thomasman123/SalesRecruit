@@ -38,10 +38,25 @@ export async function middleware(request: NextRequest) {
   // Auth-guard and role routing rules ----------------------------------
   const pathname = request.nextUrl.pathname
   const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding") || pathname.startsWith("/messages")
+  const isAuthPage = pathname === "/login" || pathname === "/signup"
+  const isAuthCallback = pathname.startsWith("/auth/callback")
 
+  // Allow auth callback to proceed without redirection
+  if (isAuthCallback) {
+    return response
+  }
+
+  // If user is not logged in and trying to access protected route
   if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // If user is logged in and trying to access auth pages
+  if (user && isAuthPage) {
+    const role = user.user_metadata?.role as string | undefined
+    const redirectPath = role === "recruiter" ? "/recruiter" : "/dashboard"
+    return NextResponse.redirect(new URL(redirectPath, request.url))
   }
 
   if (user) {
@@ -81,6 +96,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
   ],
 }
