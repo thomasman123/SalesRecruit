@@ -295,10 +295,10 @@ export default function OpportunitiesPage() {
   }
 
   return (
-    <div style={{ height: 'calc(100vh - 8rem)', display: 'flex', gap: '1.5rem', maxWidth: '112rem', margin: '0 auto', padding: '0 1.5rem', overflow: 'hidden' }}>
+    <div className="h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-6 flex gap-6 overflow-hidden">
       {/* Left Panel - Filters */}
       {showFilters && (
-        <div style={{ width: '20rem', flexShrink: 0 }}>
+        <div className="w-80 flex-shrink-0">
           <div style={{ 
             height: '100%', 
             backgroundColor: 'rgba(0, 0, 0, 0.8)', 
