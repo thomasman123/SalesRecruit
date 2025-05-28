@@ -133,6 +133,16 @@ export default function MessagesPage() {
     }));
 
     setMessages(transformedMessages);
+
+    // Mark messages as read
+    const { error: updateError } = await supabase
+      .from('conversations')
+      .update({ unread_count: 0 })
+      .eq('id', conversationId);
+
+    if (updateError) {
+      console.error('Error marking messages as read:', updateError);
+    }
   };
 
   const sendMessage = async () => {

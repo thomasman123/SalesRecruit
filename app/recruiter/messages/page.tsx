@@ -214,6 +214,16 @@ export default function RecruiterMessagesPage() {
     }));
 
     setMessages(transformedMessages);
+
+    // Mark messages as read
+    const { error: updateError } = await supabase
+      .from('conversations')
+      .update({ unread_count: 0 })
+      .eq('id', conversationId);
+
+    if (updateError) {
+      console.error('Error marking messages as read:', updateError);
+    }
   };
 
   const startConversation = async (applicant: Applicant) => {
