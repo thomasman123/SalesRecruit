@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
-import openai from "@/lib/openai"
+import getOpenAI from "@/lib/openai"
 
 export async function POST(req: Request) {
   try {
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     const repsArray: any[] = reps || []
 
     // Build prompt for OpenAI
+    const openai = getOpenAI()
     const prompt = `You are an expert recruiter.\n` +
       `Given the following job posting JSON and a list of sales professionals, choose the 5 best user IDs for the job.\n` +
       `Return ONLY a JSON array of user IDs, nothing else.\n` +
@@ -65,10 +66,6 @@ export async function POST(req: Request) {
     matchedIds = matchedIds.filter((id) => repsArray.some((r) => r.id === id)).slice(0, 5)
 
     const matchedReps = repsArray.filter((r) => matchedIds.includes(r.id))
-
-    // You can optionally create notifications here by writing to a `notifications` table or
-    // invoking a webhook that your real-time notifications service listens to. This demo
-    // omits that part to keep the example self-contained.
 
     return NextResponse.json({ matches: matchedReps })
   } catch (err: any) {
