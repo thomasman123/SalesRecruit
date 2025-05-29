@@ -82,12 +82,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       current: pathname === "/dashboard/messages",
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
     },
-    {
-      name: "Settings",
-      href: "/dashboard/settings",
-      icon: <Settings className="h-5 w-5" />,
-      current: pathname === "/dashboard/settings",
-    },
   ]
 
   return (

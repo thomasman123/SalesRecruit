@@ -76,12 +76,6 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
       current: pathname === "/recruiter/messages" || pathname.startsWith("/recruiter/messages/"),
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
     },
-    {
-      name: "Settings",
-      href: "/recruiter/settings",
-      icon: <Settings className="h-5 w-5" />,
-      current: pathname === "/recruiter/settings",
-    },
   ]
 
   return (
