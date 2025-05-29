@@ -18,6 +18,8 @@ import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"
 import { FadeIn } from "@/components/ui/fade-in"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
+import { AnimatedButton } from "@/components/ui/animated-button"
+import { Textarea } from "@/components/ui/textarea"
 
 type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
@@ -60,6 +62,8 @@ export default function OpportunitiesPage() {
   const [selected, setSelected] = useState<Opportunity | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
+  const [applyMessage, setApplyMessage] = useState("")
+  const [applyLoading, setApplyLoading] = useState(false)
 
   const [filters, setFilters] = useState({
     industries: [] as string[],
@@ -153,6 +157,73 @@ export default function OpportunitiesPage() {
       <span className="truncate">{text}</span>
     </div>
   )
+
+  // -----------------------------
+  // Apply Handler
+  // -----------------------------
+  const handleApply = async (opportunity: Opportunity) => {
+    const supabase = getSupabaseClient()
+    setApplyLoading(true)
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        alert("Please log in to apply.")
+        setApplyLoading(false)
+        return
+      }
+
+      // Ensure user exists
+      await supabase.from("users").upsert({
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name ?? user.email!.split("@")[0],
+        role: user.user_metadata?.role ?? "sales-professional",
+      })
+
+      // Check if already applied
+      const { data: existing } = await supabase
+        .from("applicants")
+        .select("id")
+        .eq("job_id", opportunity.id)
+        .eq("email", user.email ?? "")
+        .maybeSingle()
+      if (existing) {
+        alert("You have already applied for this job.")
+        setApplyLoading(false)
+        return
+      }
+
+      const meta = user.user_metadata || {}
+      const insertData: any = {
+        name: meta.full_name || user.email || "",
+        email: user.email || "",
+        location: meta.location || "",
+        avatar_url: meta.avatar_url || null,
+        experience: meta.exactRole || meta.experience || "",
+        highest_ticket: meta.highestTicket || "",
+        sales_style: meta.salesStyle || meta.salesProcess || "",
+        tools: meta.crmExperience || meta.tools || "",
+        video_url: meta.videoUrl || null,
+        job_id: opportunity.id,
+        status: "new",
+        starred: false,
+        user_id: user.id,
+      }
+      if (applyMessage.trim()) insertData.note = applyMessage.trim()
+
+      const { error: insertError } = await supabase.from("applicants").insert(insertData)
+      if (insertError) throw insertError
+
+      alert(`You have applied to ${opportunity.companyName}.`)
+      setDialogOpen(false)
+      setApplyMessage("")
+    } catch (err: any) {
+      alert(err.message || "Could not apply.")
+    } finally {
+      setApplyLoading(false)
+    }
+  }
 
   // -----------------------------
   // JSX
@@ -389,18 +460,69 @@ export default function OpportunitiesPage() {
       {/* Details Dialog */}
       {selected && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-purple-400" /> {selected.offerType}
-            </h2>
-            <p className="text-gray-400 mb-4">
-              {selected.companyName} <span className="mx-1">·</span> {selected.industry}
-            </p>
-            <div className="space-y-3 text-sm">
-              <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={`Pay Range: ${selected.commissionPotential}`} />
-              <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={`Role: ${selected.salesRole}`} />
-              <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={`Location: ${selected.remoteCompatible ? "Remote" : "On-site"}`} />
-              <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow Provided: ${selected.leadFlowProvided ? "Yes" : "No"}`} />
+          <DialogContent className="max-w-2xl">
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                  <Briefcase className="w-6 h-6 text-purple-400" /> {selected.offerType}
+                </h2>
+                <p className="text-gray-400">
+                  {selected.companyName} <span className="mx-1">·</span> {selected.industry}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={`Pay Range: ${selected.commissionPotential}`} />
+                <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={`Role: ${selected.salesRole}`} />
+                <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={`Location: ${selected.remoteCompatible ? "Remote" : "On-site"}`} />
+                <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow: ${selected.leadFlowProvided ? "Yes" : "No"}`} />
+              </div>
+
+              {selected.companyOverview && (
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Company Overview</h3>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.companyOverview}</p>
+                </div>
+              )}
+              {selected.whatYouSell && (
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-400 mb-1">What You Sell</h3>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.whatYouSell}</p>
+                </div>
+              )}
+              {selected.salesProcess && (
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Sales Process</h3>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.salesProcess}</p>
+                </div>
+              )}
+              {selected.commissionBreakdown && (
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Commission Breakdown</h3>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.commissionBreakdown}</p>
+                </div>
+              )}
+
+              {/* Application Message */}
+              <div>
+                <h3 className="text-sm font-semibold text-purple-400 mb-2">Your Message to Recruiter</h3>
+                <Textarea
+                  value={applyMessage}
+                  onChange={(e) => setApplyMessage(e.target.value)}
+                  placeholder="Add a brief note or cover letter..."
+                  className="bg-dark-700 border-dark-600 text-white placeholder-gray-500 focus:border-purple-500"
+                />
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <AnimatedButton
+                  variant="purple"
+                  isLoading={applyLoading}
+                  onClick={() => handleApply(selected)}
+                >
+                  Apply Now
+                </AnimatedButton>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
