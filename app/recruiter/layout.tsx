@@ -13,7 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Menu,
   X,
   User,
@@ -35,6 +34,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { Badge } from "@/components/ui/badge"
 import { useUser } from "@/lib/hooks/use-user"
 import { useUnreadMessagesCount } from "@/lib/hooks/use-unread-messages-count"
+import { NotificationCenter } from "@/components/notification-center"
 
 interface RecruiterLayoutProps {
   children: React.ReactNode
@@ -178,79 +178,67 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-dark-600">
-          <button
-            onClick={handleLogout}
-            className={cn(
-              "flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300 w-full",
-              sidebarExpanded ? "justify-start" : "justify-center",
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {sidebarExpanded && <span className="ml-3">Logout</span>}
-          </button>
+        {/* Bottom user section */}
+        <div className="p-4 border-t border-dark-600 space-y-4">
+          {/* Notifications */}
+          <NotificationCenter sidebarExpanded={sidebarExpanded} />
+
+          {/* Profile dropdown trigger */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={cn(
+                "w-full flex items-center rounded-lg p-2 text-gray-400 hover:bg-dark-700 hover:text-white transition-colors duration-300",
+                sidebarExpanded ? "justify-start" : "justify-center",
+              )}>
+                <Avatar className="h-8 w-8 border border-dark-600">
+                  <AvatarImage src={userData?.avatar_url || "/placeholder.svg?height=32&width=32&query=abstract profile"} />
+                  <AvatarFallback className="bg-purple-500/20 text-purple-400">
+                    {userData?.full_name?.split(" ").map(n => n[0]).join("") || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {sidebarExpanded && (
+                  <div className="ml-3 text-left">
+                    <div className="text-sm font-medium text-white truncate" style={{maxWidth:'8rem'}}>{userData?.full_name || "User"}</div>
+                    <div className="text-xs text-gray-400">Recruiter</div>
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-dark-600" />
+              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <Link href="/recruiter/profile">Company Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-dark-600" />
+              <DropdownMenuItem 
+                className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
       {/* Main content */}
       <div className={cn("transition-all duration-300 ease-in-out", sidebarExpanded ? "md:ml-64" : "md:ml-20")}>
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-dark-800/80 backdrop-blur-sm border-b border-dark-600">
-          <div className="flex items-center justify-between h-16 px-4">
-            <div className="flex items-center md:hidden">
-              <button
-                onClick={toggleMobileMenu}
-                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors duration-300"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="flex-1 md:flex md:justify-end">
-              <div className="flex items-center space-x-4">
-                <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors duration-300 relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full"></span>
-                </button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center space-x-3 p-1 rounded-lg hover:bg-dark-700 transition-colors duration-300">
-                      <Avatar className="h-8 w-8 border border-dark-600">
-                        <AvatarImage src={userData?.avatar_url || "/placeholder.svg?height=32&width=32&query=abstract profile"} />
-                        <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                          {userData?.full_name?.split(" ").map(n => n[0]).join("") || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="hidden md:block text-left">
-                        <div className="text-sm font-medium text-white">{userData?.full_name || "User"}</div>
-                        <div className="text-xs text-gray-400">Recruiter</div>
-                      </div>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-dark-600" />
-                    <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <Link href="/recruiter/profile">Company Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-dark-600" />
-                    <DropdownMenuItem 
-                      className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+        {/* Mobile Header (menu toggle only) */}
+        <header className="sticky top-0 z-30 bg-dark-800/80 backdrop-blur-sm border-b border-dark-600 md:hidden">
+          <div className="flex items-center h-16 px-4">
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors duration-300"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
         </header>
 
