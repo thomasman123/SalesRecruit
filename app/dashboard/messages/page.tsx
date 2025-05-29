@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,6 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('');
   const supabase = getSupabaseClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isLoading && userData) {
@@ -50,15 +49,17 @@ export default function MessagesPage() {
     }
   }, [isLoading, userData]);
 
-  useEffect(() => {
-    const c = searchParams.get("c")
-    if (c && conversations.length) {
-      const cid = Number(c)
-      if (!isNaN(cid)) {
-        setSelectedConversation(cid)
+  const ParamSync = () => {
+    const sp = useSearchParams()
+    useEffect(() => {
+      const c = sp.get('c')
+      if (c && conversations.length) {
+        const cid = Number(c)
+        if (!isNaN(cid)) setSelectedConversation(cid)
       }
-    }
-  }, [searchParams, conversations])
+    }, [sp, conversations])
+    return null
+  }
 
   useEffect(() => {
     if (selectedConversation) {
@@ -199,6 +200,9 @@ export default function MessagesPage() {
 
   return (
     <div className="h-[calc(100vh-8rem)] overflow-hidden">
+      <Suspense>
+        <ParamSync />
+      </Suspense>
       <div className="grid grid-cols-12 gap-4 h-full">
         {/* Left Panel */}
         <div className="col-span-4 border-r border-dark-600 pr-4 flex flex-col h-full">
