@@ -21,12 +21,31 @@ export async function POST(req: Request) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    // Notify the rep
+    // Ensure a conversation exists between recruiter and rep for this job
+    const { data: existingConv } = await (supabaseAdmin as any)
+      .from("conversations")
+      .select("id")
+      .eq("recruiter_id", user.id)
+      .eq("applicant_user_id", repId)
+      .eq("job_id", jobId)
+      .maybeSingle()
+
+    let conversationId = existingConv?.id
+    if (!conversationId) {
+      const { data: newConv } = await (supabaseAdmin as any)
+        .from("conversations")
+        .insert({ recruiter_id: user.id, applicant_user_id: repId, job_id: jobId })
+        .select("id")
+        .single()
+      conversationId = newConv?.id
+    }
+
+    // Notify the rep with link to messages page (opens and highlights conversation)
     await (supabaseAdmin as any).from("notifications").insert({
       user_id: repId,
       title: "You've been pinged!",
-      body: "A recruiter would like you to review an opportunity.",
-      href: `/dashboard/opportunities/${jobId}`,
+      body: "A recruiter would like to chat about an opportunity.",
+      href: `/dashboard/messages?c=${conversationId}`,
       read: false,
     })
 
