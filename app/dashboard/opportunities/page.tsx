@@ -20,6 +20,7 @@ import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/components/ui/use-toast"
 
 type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
@@ -64,6 +65,7 @@ export default function OpportunitiesPage() {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const [applyMessage, setApplyMessage] = useState("")
   const [applyLoading, setApplyLoading] = useState(false)
+  const { toast } = useToast()
 
   const [filters, setFilters] = useState({
     industries: [] as string[],
@@ -168,7 +170,7 @@ export default function OpportunitiesPage() {
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
-        alert("Please log in to apply.")
+        toast({ title: "Please log in", description: "Log in to apply for opportunities", variant: "destructive" })
         setApplyLoading(false)
         return
       }
@@ -189,7 +191,7 @@ export default function OpportunitiesPage() {
         .eq("email", user.email ?? "")
         .maybeSingle()
       if (existing) {
-        alert("You have already applied for this job.")
+        toast({ title: "Already applied", description: "You have already applied for this job.", variant: "destructive" })
         setApplyLoading(false)
         return
       }
@@ -215,11 +217,11 @@ export default function OpportunitiesPage() {
       const { error: insertError } = await supabase.from("applicants").insert(insertData)
       if (insertError) throw insertError
 
-      alert(`You have applied to ${opportunity.companyName}.`)
+      toast({ title: "Application sent", description: `You have applied to ${opportunity.companyName}.`, })
       setDialogOpen(false)
       setApplyMessage("")
     } catch (err: any) {
-      alert(err.message || "Could not apply.")
+      toast({ title: "Application failed", description: err.message || "Could not apply.", variant: "destructive" })
     } finally {
       setApplyLoading(false)
     }
