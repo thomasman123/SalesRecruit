@@ -62,7 +62,7 @@ export default function OnboardingPage() {
       const { whySales } = formData
       return whySales.trim().length >= 50
     },
-    5: () => formData.videoUrl.trim().length > 10,
+    5: () => formData.videoUrl.trim().length > 0,
   }
 
   const validateCurrent = (): boolean => {
@@ -70,7 +70,9 @@ export default function OnboardingPage() {
     if (!valid) {
       toast({
         title: "Incomplete section",
-        description: "Please provide at least 50 characters of detail in your response before continuing.",
+        description: currentSection === 5 
+          ? "Please provide a video URL before continuing."
+          : "Please provide at least 50 characters of detail in your response before continuing.",
         variant: "destructive",
       })
     }
