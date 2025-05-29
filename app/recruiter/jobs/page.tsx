@@ -21,6 +21,8 @@ import {
   Briefcase,
   CheckCircle,
   PauseCircle,
+  Brain,
+  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -57,6 +59,7 @@ export default function JobsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const [matchingJobId, setMatchingJobId] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -187,6 +190,28 @@ export default function JobsPage() {
     }
   }
 
+  const handleAIMatch = async (id: number) => {
+    try {
+      setMatchingJobId(id)
+      const res = await fetch("/api/ai-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "AI match failed")
+
+      toast({
+        title: "AI match complete",
+        description: `Found ${data.matches?.length || 0} potential candidates`,
+      })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    } finally {
+      setMatchingJobId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto max-w-7xl py-12">
@@ -287,6 +312,7 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
+                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -322,6 +348,7 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
+                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -351,6 +378,7 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
+                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -380,6 +408,7 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
+                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -444,9 +473,10 @@ interface JobCardProps {
   onDelete: (id: number) => void
   onDuplicate: (id: number) => void
   onChangeStatus: (id: number, status: "active" | "paused" | "draft") => void
+  onMatch: (id: number) => void
 }
 
-function JobCard({ job, onDelete, onDuplicate, onChangeStatus }: JobCardProps) {
+function JobCard({ job, onDelete, onDuplicate, onChangeStatus, onMatch }: JobCardProps) {
   return (
     <AnimatedCard variant="hover-glow" className="p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -502,8 +532,17 @@ function JobCard({ job, onDelete, onDuplicate, onChangeStatus }: JobCardProps) {
         </div>
 
         <div className="flex items-center space-x-2 self-end md:self-center">
+          <AnimatedButton
+            variant="outline"
+            size="sm"
+            onClick={() => onMatch(job.id)}
+            isLoading={false}
+            icon={<Brain className="w-4 h-4" />}
+          >
+            AI Match
+          </AnimatedButton>
           <Link href={`/recruiter/jobs/${job.id}/applicants`}>
-            <AnimatedButton variant="outline" size="sm" animation="scale">
+            <AnimatedButton variant="outline" size="sm">
               <Users className="w-4 h-4 mr-2" />
               Applicants
             </AnimatedButton>
