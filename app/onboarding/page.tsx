@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PageContainer } from "@/components/layout/page-container"
 import { AnimatedCard } from "@/components/ui/animated-card"
@@ -41,8 +41,65 @@ export default function OnboardingPage() {
   const [isUploading, setIsUploading] = useState(false)
   const { toast } = useToast()
 
+  // Load existing onboarding data
+  useEffect(() => {
+    const loadExistingData = async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const metadata = user.user_metadata || {}
+        if (metadata.onboarding_in_progress) {
+          // Restore form data from metadata
+          setFormData({
+            highestTicket: metadata.highestTicket || "",
+            salesProcess: metadata.salesProcess || "",
+            crmExperience: metadata.crmExperience || "",
+            whySales: metadata.whySales || "",
+            videoUrl: metadata.videoUrl || "",
+            avatarUrl: metadata.avatar_url || "",
+          })
+
+          // If we have data for a specific section, start from there
+          if (metadata.highestTicket) setCurrentSection(2)
+          if (metadata.salesProcess) setCurrentSection(3)
+          if (metadata.crmExperience) setCurrentSection(4)
+          if (metadata.whySales) setCurrentSection(5)
+        }
+      } catch (err) {
+        console.error('Failed to load existing data:', err)
+      }
+    }
+
+    loadExistingData()
+  }, [])
+
+  const autoSave = async (data: any) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Save current section data to auth metadata
+      await supabase.auth.updateUser({
+        data: {
+          ...data,
+          onboarding_in_progress: true,
+        },
+      })
+    } catch (err) {
+      console.error('Auto-save failed:', err)
+    }
+  }
+
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value }
+      // Auto-save after input changes
+      autoSave(newData)
+      return newData
+    })
   }
 
   const sectionValidators: Record<number, () => boolean> = {
@@ -79,15 +136,19 @@ export default function OnboardingPage() {
     return valid
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateCurrent()) return
     if (currentSection < TOTAL_SECTIONS) {
+      // Save current section data before moving to next section
+      await autoSave(formData)
       setCurrentSection((prev) => prev + 1)
     }
   }
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     if (currentSection > 1) {
+      // Save current section data before moving to previous section
+      await autoSave(formData)
       setCurrentSection((prev) => prev - 1)
     }
   }
@@ -109,6 +170,7 @@ export default function OnboardingPage() {
       const { error } = await supabase.auth.updateUser({
         data: {
           onboarded: true,
+          onboarding_in_progress: false, // Mark onboarding as complete
           ...formData,
           avatar_url: formData.avatarUrl,
         },
