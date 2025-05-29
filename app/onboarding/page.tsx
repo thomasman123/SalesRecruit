@@ -48,19 +48,19 @@ export default function OnboardingPage() {
   const sectionValidators: Record<number, () => boolean> = {
     1: () => {
       const { highestTicket } = formData
-      return highestTicket.trim().length >= 100
+      return highestTicket.trim().length >= 50
     },
     2: () => {
       const { salesProcess } = formData
-      return salesProcess.trim().length >= 100
+      return salesProcess.trim().length >= 50
     },
     3: () => {
       const { crmExperience } = formData
-      return crmExperience.trim().length >= 100
+      return crmExperience.trim().length >= 50
     },
     4: () => {
       const { whySales } = formData
-      return whySales.trim().length >= 100
+      return whySales.trim().length >= 50
     },
     5: () => formData.videoUrl.trim().length > 10,
   }
@@ -70,7 +70,7 @@ export default function OnboardingPage() {
     if (!valid) {
       toast({
         title: "Incomplete section",
-        description: "Please provide at least 100 characters of detail in your response before continuing.",
+        description: "Please provide at least 50 characters of detail in your response before continuing.",
         variant: "destructive",
       })
     }
