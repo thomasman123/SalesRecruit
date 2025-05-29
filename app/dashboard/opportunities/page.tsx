@@ -61,17 +61,9 @@ export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState("newest")
-  const [showFilters, setShowFilters] = useState(true)
-
-  // Filter states
   const [filters, setFilters] = useState({
     industries: [] as string[],
     priceRanges: [] as string[],
-    leadSources: [] as string[],
-    commissionStructures: [] as string[],
-    teamSizes: [] as string[],
-    remoteCompatible: false,
   })
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -84,7 +76,6 @@ export default function OpportunitiesPage() {
         console.error("Error loading jobs", error)
         return
       }
-
       const mapped: Opportunity[] = (data as Job[]).map((j) => ({
         id: j.id,
         companyName: (j.company_overview?.split(" ")[0] ?? "Company"),
@@ -114,1247 +105,141 @@ export default function OpportunitiesPage() {
         workingHours: j.working_hours,
         videoIntro: j.video_url,
       }))
-
       setOpportunities(mapped)
     }
-
     loadJobs()
   }, [])
 
   // Filter and search opportunities
   const filteredOpportunities = opportunities.filter((opportunity) => {
-    // Search filter
     const searchLower = searchQuery.toLowerCase()
     const matchesSearch = !searchQuery || 
       opportunity.companyName.toLowerCase().includes(searchLower) ||
       opportunity.offerType.toLowerCase().includes(searchLower) ||
-      opportunity.industry.toLowerCase().includes(searchLower) ||
-      opportunity.tags.some(tag => tag.toLowerCase().includes(searchLower)) ||
-      opportunity.companyOverview?.toLowerCase().includes(searchLower) ||
-      opportunity.whatYouSell?.toLowerCase().includes(searchLower)
-
-    // Industry filter
+      opportunity.industry.toLowerCase().includes(searchLower)
     const matchesIndustry = filters.industries.length === 0 || 
       filters.industries.includes(opportunity.industry)
-
-    // Price range filter
     const matchesPriceRange = filters.priceRanges.length === 0 || 
       filters.priceRanges.includes(opportunity.priceRange)
-
-    // Lead source filter
-    const matchesLeadSource = filters.leadSources.length === 0 || 
-      filters.leadSources.includes(opportunity.leadSource)
-
-    // Commission structure filter
-    const matchesCommissionStructure = filters.commissionStructures.length === 0 || 
-      filters.commissionStructures.includes(opportunity.commissionStructure)
-
-    // Team size filter
-    const matchesTeamSize = filters.teamSizes.length === 0 || 
-      filters.teamSizes.includes(opportunity.teamSize)
-
-    // Remote compatible filter
-    const matchesRemote = !filters.remoteCompatible || opportunity.remoteCompatible
-
-    return matchesSearch && matchesIndustry && matchesPriceRange && 
-           matchesLeadSource && matchesCommissionStructure && matchesTeamSize && matchesRemote
+    return matchesSearch && matchesIndustry && matchesPriceRange
   })
 
-  // Sort opportunities
-  const sortedOpportunities = [...filteredOpportunities].sort((a, b) => {
-    switch (sortBy) {
-      case "newest":
-        return b.id - a.id // Assuming higher ID means newer
-      case "lucrative":
-        // Sort by commission potential (rough estimation)
-        const getCommissionValue = (range: string) => {
-          if (range.includes("$10K+")) return 10000
-          if (range.includes("$3-10K")) return 6500
-          if (range.includes("$1-3K")) return 2000
-          return 0
-        }
-        return getCommissionValue(b.commissionPotential || "") - getCommissionValue(a.commissionPotential || "")
-      case "best-fit":
-        // Prioritize starred, then lead flow provided, then remote compatible
-        const getScore = (opp: Opportunity) => {
-          let score = 0
-          if (opp.starred) score += 100
-          if (opp.leadFlowProvided) score += 10
-          if (opp.remoteCompatible) score += 5
-          return score
-        }
-        return getScore(b) - getScore(a)
-      default:
-        return 0
-    }
-  })
-
-  const handleStarToggle = (id: number) => {
-    setOpportunities((prev) => prev.map((opp) => (opp.id === id ? { ...opp, starred: !opp.starred } : opp)))
-  }
-
-  const handleApply = async (opportunity: Opportunity) => {
-    const supabase = getSupabaseClient();
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        alert("Please log in to apply.");
-        return;
-      }
-
-      // Ensure user exists in public.users (handles existing accounts created before trigger)
-      const { error: upsertError } = await supabase.from("users").upsert({
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.full_name ?? user.email!.split("@")[0],
-        role: user.user_metadata?.role ?? "sales-professional",
-      });
-      if (upsertError) {
-        console.error("Error ensuring user exists:", upsertError);
-        alert("Could not set up user profile.");
-        return;
-      }
-
-      // Check if already applied
-      const { data: existing, error: checkError } = await supabase
-        .from("applicants")
-        .select("id")
-        .eq("job_id", opportunity.id)
-        .eq("email", user.email ?? "")
-        .maybeSingle();
-      if (checkError) throw checkError;
-      if (existing) {
-        alert("You have already applied for this job.");
-        return;
-      }
-      // Prepare applicant data from user metadata
-      const meta = user.user_metadata || {};
-      const insertData: {
-        name: string;
-        email: string;
-        location: string;
-        avatar_url: string | null;
-        experience: string;
-        highest_ticket: string;
-        sales_style: string;
-        tools: string;
-        video_url: string | null;
-        job_id: number;
-        status: string;
-        starred: boolean;
-        user_id: string;
-      } = {
-        name: (meta.full_name as string) || user.email || "",
-        email: user.email || "",
-        location: (meta.location as string) || "",
-        avatar_url: (meta.avatar_url as string) || null,
-        experience: (meta.exactRole as string) || (meta.experience as string) || "",
-        highest_ticket: (meta.highestTicket as string) || "",
-        sales_style: (meta.salesStyle as string) || (meta.salesProcess as string) || "",
-        tools: (meta.crmExperience as string) || (meta.tools as string) || "",
-        video_url: (meta.videoUrl as string) || null,
-        job_id: opportunity.id,
-        status: "new",
-        starred: false,
-        user_id: user.id,
-      };
-      const { error: insertError } = await supabase.from("applicants").insert(insertData);
-      if (insertError) throw insertError;
-      alert(`You have applied to ${opportunity.companyName}.`);
-      // Optionally update UI (e.g., set status to pending)
-      setOpportunities((prev) => prev.map((opp) => opp.id === opportunity.id ? { ...opp, status: "pending" } : opp));
-    } catch (err: any) {
-      alert(err.message || "Could not apply.");
-    }
-  };
-
+  // --- UI ---
   const filterOptions = {
     industries: ["Coaching", "Agency", "SaaS", "Fitness", "E-commerce", "Real Estate"],
     priceRanges: ["$1-3K", "$3-10K", "$10K+"],
-    leadSources: ["Inbound", "Outbound", "Hybrid"],
-    commissionStructures: ["100% Commission", "Base + Commission", "Draw Against Commission"],
-    teamSizes: ["Solo closer", "Setters in place", "Full team"],
-  }
-
-  // Helper function to remove a filter
-  const removeFilter = (type: string, value: string) => {
-    setFilters(prev => {
-      switch (type) {
-        case 'industry':
-          return { ...prev, industries: prev.industries.filter(i => i !== value) }
-        case 'priceRange':
-          return { ...prev, priceRanges: prev.priceRanges.filter(r => r !== value) }
-        case 'leadSource':
-          return { ...prev, leadSources: prev.leadSources.filter(s => s !== value) }
-        case 'commissionStructure':
-          return { ...prev, commissionStructures: prev.commissionStructures.filter(s => s !== value) }
-        case 'teamSize':
-          return { ...prev, teamSizes: prev.teamSizes.filter(s => s !== value) }
-        default:
-          return prev
-      }
-    })
   }
 
   return (
     <div className="h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto px-6 flex gap-6 overflow-hidden">
-      {/* Left Panel - Filters */}
-      {showFilters && (
-        <div className="w-80 flex-shrink-0">
-          <div style={{ 
-            height: '100%', 
-            backgroundColor: 'rgba(0, 0, 0, 0.8)', 
-            border: '1px solid rgba(255, 255, 255, 0.1)', 
-            borderRadius: '0.75rem', 
-            display: 'flex', 
-            flexDirection: 'column',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
-          }}>
-            {/* Header */}
-            <div style={{ 
-              padding: '1.5rem', 
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%)'
-            }}>
-              <h2 style={{ 
-                fontSize: '1.25rem', 
-                fontWeight: '700', 
-                color: '#ffffff', 
-                display: 'flex', 
-                alignItems: 'center',
-                margin: 0
-              }}>
-                <Filter style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                Filters
-              </h2>
-              <button
-                onClick={() => setShowFilters(false)}
-                style={{ 
-                  color: '#888888', 
-                  padding: '0.5rem', 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  borderRadius: '0.5rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#ffffff';
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#888888';
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <X style={{ width: '1.25rem', height: '1.25rem' }} />
-              </button>
+      {/* Filters Sidebar */}
+      <aside className="w-64 flex-shrink-0 border-r border-zinc-800 bg-black/70 rounded-xl p-6 flex flex-col gap-8">
+        <div>
+          <h2 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+            <Filter className="w-5 h-5 text-purple-400" /> Filters
+          </h2>
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-zinc-300 mb-2">Industries</h3>
+            <div className="flex flex-col gap-2">
+              {filterOptions.industries.map((industry) => (
+                <label key={industry} className="flex items-center gap-2 text-sm text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={filters.industries.includes(industry)}
+                    onChange={(e) => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        industries: e.target.checked
+                          ? [...prev.industries, industry]
+                          : prev.industries.filter((i) => i !== industry),
+                      }))
+                    }}
+                  />
+                  {industry}
+                </label>
+              ))}
             </div>
-
-            {/* Scrollable Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {/* Industries */}
-                <div>
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Industries</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {filterOptions.industries.map((industry) => (
-                      <label key={industry} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.75rem', 
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '0.5rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.industries.includes(industry)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters(prev => ({
-                                ...prev,
-                                industries: [...prev.industries, industry]
-                              }))
-                            } else {
-                              setFilters(prev => ({
-                                ...prev,
-                                industries: prev.industries.filter(i => i !== industry)
-                              }))
-                            }
-                          }}
-                          style={{ 
-                            accentColor: '#a855f7',
-                            width: '1rem',
-                            height: '1rem'
-                          }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>{industry}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
-
-                {/* Price Range */}
-                <div>
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Price Range</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {filterOptions.priceRanges.map((range) => (
-                      <label key={range} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.75rem', 
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '0.5rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.priceRanges.includes(range)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters(prev => ({
-                                ...prev,
-                                priceRanges: [...prev.priceRanges, range]
-                              }))
-                            } else {
-                              setFilters(prev => ({
-                                ...prev,
-                                priceRanges: prev.priceRanges.filter(r => r !== range)
-                              }))
-                            }
-                          }}
-                          style={{ 
-                            accentColor: '#a855f7',
-                            width: '1rem',
-                            height: '1rem'
-                          }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>{range}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
-
-                {/* Lead Source */}
-                <div>
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Lead Source</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {filterOptions.leadSources.map((source) => (
-                      <label key={source} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.75rem', 
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '0.5rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.leadSources.includes(source)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters(prev => ({
-                                ...prev,
-                                leadSources: [...prev.leadSources, source]
-                              }))
-                            } else {
-                              setFilters(prev => ({
-                                ...prev,
-                                leadSources: prev.leadSources.filter(s => s !== source)
-                              }))
-                            }
-                          }}
-                          style={{ 
-                            accentColor: '#a855f7',
-                            width: '1rem',
-                            height: '1rem'
-                          }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>{source}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
-
-                {/* Commission Structure */}
-                <div>
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Commission Structure</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {filterOptions.commissionStructures.map((structure) => (
-                      <label key={structure} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.75rem', 
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '0.5rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.commissionStructures.includes(structure)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters(prev => ({
-                                ...prev,
-                                commissionStructures: [...prev.commissionStructures, structure]
-                              }))
-                            } else {
-                              setFilters(prev => ({
-                                ...prev,
-                                commissionStructures: prev.commissionStructures.filter(s => s !== structure)
-                              }))
-                            }
-                          }}
-                          style={{ 
-                            accentColor: '#a855f7',
-                            width: '1rem',
-                            height: '1rem'
-                          }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>{structure}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
-
-                {/* Team Size */}
-                <div>
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '1rem', fontSize: '0.875rem', letterSpacing: '0.05em' }}>Team Size</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {filterOptions.teamSizes.map((size) => (
-                      <label key={size} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.75rem', 
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '0.5rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.teamSizes.includes(size)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters(prev => ({
-                                ...prev,
-                                teamSizes: [...prev.teamSizes, size]
-                              }))
-                            } else {
-                              setFilters(prev => ({
-                                ...prev,
-                                teamSizes: prev.teamSizes.filter(s => s !== size)
-                              }))
-                            }
-                          }}
-                          style={{ 
-                            accentColor: '#a855f7',
-                            width: '1rem',
-                            height: '1rem'
-                          }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>{size}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
-
-                {/* Remote Compatible */}
-                <div>
-                  <label style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.75rem', 
-                    cursor: 'pointer',
-                    padding: '0.5rem',
-                    borderRadius: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filters.remoteCompatible}
-                      onChange={(e) => {
-                        setFilters(prev => ({
-                          ...prev,
-                          remoteCompatible: e.target.checked
-                        }))
-                      }}
-                      style={{ 
-                        accentColor: '#a855f7',
-                        width: '1rem',
-                        height: '1rem'
-                      }}
-                    />
-                    <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>Remote Compatible</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Clear Filters Button */}
-            <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <button
-                onClick={() => {
-                  setFilters({
-                    industries: [],
-                    priceRanges: [],
-                    leadSources: [],
-                    commissionStructures: [],
-                    teamSizes: [],
-                    remoteCompatible: false,
-                  })
-                }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#cccccc',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#ffffff';
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#cccccc';
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                }}
-              >
-                Clear All Filters
-              </button>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold text-zinc-300 mb-2">Price Range</h3>
+            <div className="flex flex-col gap-2">
+              {filterOptions.priceRanges.map((range) => (
+                <label key={range} className="flex items-center gap-2 text-sm text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={filters.priceRanges.includes(range)}
+                    onChange={(e) => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        priceRanges: e.target.checked
+                          ? [...prev.priceRanges, range]
+                          : prev.priceRanges.filter((r) => r !== range),
+                      }))
+                    }}
+                  />
+                  {range}
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      )}
+        <button
+          className="mt-auto text-xs text-zinc-400 border border-zinc-700 rounded-lg px-4 py-2 hover:bg-zinc-800 hover:text-white transition"
+          onClick={() => setFilters({ industries: [], priceRanges: [] })}
+        >
+          Clear All Filters
+        </button>
+      </aside>
 
-      {/* Middle Panel - Opportunities */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Search Bar */}
-        <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
-          {!showFilters && (
-            <button
-              onClick={() => setShowFilters(true)}
-              style={{
-                padding: '0.75rem 1rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '0.5rem',
-                color: '#ffffff',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-              }}
-            >
-              <Filter style={{ width: '1.25rem', height: '1.25rem' }} />
-            </button>
-          )}
-          <div style={{ flex: 1, position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888888', width: '1.25rem', height: '1.25rem' }} />
-            <input
-              type="text"
-              placeholder="Search opportunities..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                paddingLeft: '3rem',
-                paddingRight: '1rem',
-                paddingTop: '1rem',
-                paddingBottom: '1rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '0.75rem',
-                color: '#ffffff',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                transition: 'all 0.2s ease',
-                backdropFilter: 'blur(12px)'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.6)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(168, 85, 247, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              padding: '1rem 1.25rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '0.75rem',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(12px)'
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.6)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-          >
-            <option value="newest" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Newest</option>
-            <option value="lucrative" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Most Lucrative</option>
-            <option value="best-fit" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Best Fit</option>
-          </select>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0">
+        <div className="mb-6 flex items-center gap-4">
+          <input
+            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-500"
+            placeholder="Search opportunities..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-
-        {/* Active Filters */}
-        {(filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', color: '#cccccc', fontWeight: '500' }}>
-                Active Filters ({filteredOpportunities.length} result{filteredOpportunities.length !== 1 ? 's' : ''})
-              </span>
-              <button
-                onClick={() => {
-                  setFilters({
-                    industries: [],
-                    priceRanges: [],
-                    leadSources: [],
-                    commissionStructures: [],
-                    teamSizes: [],
-                    remoteCompatible: false,
-                  })
-                }}
-                style={{
-                  fontSize: '0.75rem',
-                  color: '#888888',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  padding: '0.25rem'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#ffffff';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#888888';
-                }}
-              >
-                Clear all
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {filters.industries.map((filter) => (
-                <button
-                  key={`industry-${filter}`}
-                  onClick={() => removeFilter('industry', filter)}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  {filter}
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              ))}
-              {filters.priceRanges.map((filter) => (
-                <button
-                  key={`price-${filter}`}
-                  onClick={() => removeFilter('priceRange', filter)}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  {filter}
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              ))}
-              {filters.leadSources.map((filter) => (
-                <button
-                  key={`lead-${filter}`}
-                  onClick={() => removeFilter('leadSource', filter)}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  {filter}
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              ))}
-              {filters.commissionStructures.map((filter) => (
-                <button
-                  key={`commission-${filter}`}
-                  onClick={() => removeFilter('commissionStructure', filter)}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  {filter}
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              ))}
-              {filters.teamSizes.map((filter) => (
-                <button
-                  key={`team-${filter}`}
-                  onClick={() => removeFilter('teamSize', filter)}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  {filter}
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              ))}
-              {filters.remoteCompatible && (
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, remoteCompatible: false }))}
-                  style={{ 
-                    padding: '0.5rem 0.75rem', 
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    borderRadius: '0.5rem', 
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backdropFilter: 'blur(6px) saturate(0.8)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-                  }}
-                >
-                  Remote Compatible
-                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Opportunities List */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {sortedOpportunities.length === 0 ? (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '100%', 
-              textAlign: 'center',
-              padding: '3rem'
-            }}>
-              <div style={{ 
-                width: '4rem', 
-                height: '4rem', 
-                backgroundColor: 'rgba(168, 85, 247, 0.1)', 
-                borderRadius: '50%', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                marginBottom: '1.5rem'
-              }}>
-                <Search style={{ width: '2rem', height: '2rem', color: '#a855f7' }} />
-              </div>
-              <h3 style={{ 
-                fontSize: '1.25rem', 
-                fontWeight: '600', 
-                color: '#ffffff', 
-                margin: '0 0 0.5rem 0' 
-              }}>
-                No opportunities found
-              </h3>
-              <p style={{ 
-                fontSize: '0.875rem', 
-                color: '#888888', 
-                margin: '0 0 1.5rem 0',
-                maxWidth: '24rem'
-              }}>
-                {searchQuery || filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible
-                  ? "Try adjusting your search or filters to find more opportunities."
-                  : "No opportunities are currently available. Check back later for new postings."
-                }
-              </p>
-              {(searchQuery || filters.industries.length > 0 || filters.priceRanges.length > 0 || filters.leadSources.length > 0 || filters.commissionStructures.length > 0 || filters.teamSizes.length > 0 || filters.remoteCompatible) && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("")
-                    setFilters({
-                      industries: [],
-                      priceRanges: [],
-                      leadSources: [],
-                      commissionStructures: [],
-                      teamSizes: [],
-                      remoteCompatible: false,
-                    })
-                  }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    fontWeight: '600',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
-                  }}
-                >
-                  Clear all filters
-                </button>
-              )}
+        <div className="flex-1 overflow-y-auto">
+          {filteredOpportunities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-20">
+              <Search className="w-12 h-12 text-purple-400 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No opportunities found</h3>
+              <p className="text-sm text-zinc-400">Try adjusting your search or filters to find more opportunities.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', paddingBottom: '1.5rem' }}>
-              {sortedOpportunities.map((opportunity) => (
+            <div className="flex flex-col gap-4">
+              {filteredOpportunities.map((op) => (
                 <div
-                  key={opportunity.id}
-                  onClick={() => setSelectedOpportunity(opportunity)}
-                  style={{
-                    padding: '2rem',
-                    backgroundColor: selectedOpportunity?.id === opportunity.id ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)',
-                    border: selectedOpportunity?.id === opportunity.id ? '1px solid rgba(168, 85, 247, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '1rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: selectedOpportunity?.id === opportunity.id ? '0 25px 50px -12px rgba(168, 85, 247, 0.25)' : '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
-                  }}
-                  onMouseOver={(e) => {
-                    if (selectedOpportunity?.id !== opportunity.id) {
-                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
-                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.6)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (selectedOpportunity?.id !== opportunity.id) {
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.5)';
-                    }
-                  }}
+                  key={op.id}
+                  className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 rounded-xl px-6 py-4 hover:border-purple-500 transition cursor-pointer"
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
-                      <img
-                        src={opportunity.logo || "/placeholder.svg"}
-                        alt={opportunity.companyName}
-                        style={{ 
-                          width: '3.5rem', 
-                          height: '3.5rem', 
-                          borderRadius: '0.75rem', 
-                          objectFit: 'cover', 
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-                        }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                          <h3 style={{ 
-                            fontSize: '1.25rem', 
-                            fontWeight: '700', 
-                            color: '#ffffff', 
-                            margin: 0, 
-                            overflow: 'hidden', 
-                            textOverflow: 'ellipsis', 
-                            whiteSpace: 'nowrap' 
-                          }}>{opportunity.companyName}</h3>
-                          {opportunity.new && (
-                            <span style={{ 
-                              padding: '0.25rem 0.75rem', 
-                              backgroundColor: 'rgba(34, 197, 94, 0.15)', 
-                              color: '#4ade80', 
-                              border: '1px solid rgba(34, 197, 94, 0.3)', 
-                              borderRadius: '0.5rem', 
-                              fontSize: '0.75rem',
-                              fontWeight: '700',
-                              letterSpacing: '0.05em'
-                            }}>
-                              NEW
-                            </span>
-                          )}
-                        </div>
-                        <p style={{ color: '#c084fc', fontWeight: '600', marginBottom: '0.5rem', margin: 0, fontSize: '1rem' }}>{opportunity.offerType}</p>
-                        <p style={{ color: '#888888', fontSize: '0.875rem', margin: 0, fontWeight: '500' }}>{opportunity.industry}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleStarToggle(opportunity.id)
-                      }}
-                      style={{
-                        padding: '0.75rem',
-                        borderRadius: '0.5rem',
-                        backgroundColor: opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        color: opportunity.starred ? '#fbbf24' : '#888888',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.25)' : 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#ffffff';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = opportunity.starred ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)';
-                        e.currentTarget.style.color = opportunity.starred ? '#fbbf24' : '#888888';
-                      }}
-                    >
-                      <Star style={{ width: '1.25rem', height: '1.25rem', fill: opportunity.starred ? 'currentColor' : 'none' }} />
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                      <Briefcase style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                      <span>{opportunity.salesRole}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                      <DollarSign style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                      <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>{opportunity.commissionPotential}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                      <Zap style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                      <span>Lead Flow: {opportunity.leadFlowProvided ? "Yes" : "No"}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', color: '#cccccc', fontWeight: '500' }}>
-                      <MapPin style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.75rem', color: '#a855f7' }} />
-                      <span>{opportunity.remoteCompatible ? "Remote" : "On-site"}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                    {opportunity.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} style={{ 
-                        padding: '0.375rem 0.75rem', 
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                        color: '#cccccc', 
-                        border: '1px solid rgba(255, 255, 255, 0.1)', 
-                        borderRadius: '0.5rem', 
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
-                      }}>
-                        {tag}
-                      </span>
-                    ))}
-                    {opportunity.tags.length > 3 && (
-                      <span style={{ 
-                        padding: '0.375rem 0.75rem', 
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)', 
-                        color: '#888888', 
-                        border: '1px solid rgba(255, 255, 255, 0.05)', 
-                        borderRadius: '0.5rem', 
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
-                      }}>
-                        +{opportunity.tags.length - 3} more
-                      </span>
-                    )}
-                  </div>
-
-                  <div
-                    style={{
-                      position: 'fixed',
-                      left: '320px', // Sidebar width
-                      top: 0,
-                      width: 'calc(100vw - 320px)',
-                      height: '100vh',
-                      zIndex: 3000, // Above sidebar
-                      pointerEvents: dialogOpen ? 'auto' : 'none',
-                    }}
-                  >
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                      <DialogTrigger asChild>
-                        <button
-                          style={{
-                            width: '100%',
-                            padding: '0.875rem 1.5rem',
-                            background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '0.75rem',
-                            fontWeight: '600',
-                            fontSize: '0.875rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s ease',
-                            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.4)';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                          }}
-                          onClick={() => {
-                            setSelectedOpportunity(opportunity);
-                            setDialogOpen(true);
-                          }}
-                        >
-                          View Role Details
-                          <ChevronRight style={{ width: '1.125rem', height: '1.125rem' }} />
-                        </button>
-                      </DialogTrigger>
-                      {selectedOpportunity && (
-                        <DialogContent
-                          style={{
-                            left: '50%',
-                            top: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            position: 'absolute',
-                            maxWidth: '60rem',
-                            width: '100%',
-                            background: 'rgba(0,0,0,0.95)',
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            borderRadius: '1rem',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
-                            overflow: 'hidden',
-                            padding: 0,
-                          }}
-                          className="shadow-2xl"
-                        >
-                          {/* Modal content here (header, body, etc.) */}
-                          {/* ...existing modal content... */}
-                        </DialogContent>
+                  <img
+                    src={op.logo || "/placeholder.svg"}
+                    alt={op.companyName}
+                    className="w-12 h-12 rounded-lg object-cover border border-zinc-800 bg-zinc-950"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-white truncate text-base">{op.offerType}</span>
+                      {op.new && (
+                        <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-700 text-white font-semibold">NEW</span>
                       )}
-                    </Dialog>
+                    </div>
+                    <div className="text-zinc-400 text-xs truncate">{op.companyName} &middot; {op.industry}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 min-w-[120px]">
+                    <span className="text-sm text-zinc-200 font-medium">{op.salesRole}</span>
+                    <span className="text-xs text-purple-400 font-mono">{op.commissionPotential}</span>
+                    <span className="text-xs text-zinc-400">{op.remoteCompatible ? "Remote" : "On-site"}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
-
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.3);
-          border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.4);
-        }
-      `}</style>
+      </main>
     </div>
   )
 }
