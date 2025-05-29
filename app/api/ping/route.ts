@@ -42,12 +42,53 @@ export async function POST(req: Request) {
         .eq("job_id", jobId)
         .maybeSingle()
 
+      // If the applicant row doesn't exist, create a minimal placeholder
+      let applicantId: number | undefined = applicantRecord?.id
+      if (!applicantId) {
+        // Fetch rep basic details to populate applicant record
+        const { data: repProfile } = await (supabaseAdmin as any)
+          .from("users")
+          .select("name, email, avatar_url")
+          .eq("id", repId)
+          .single()
+
+        const { data: newApplicant, error: applicantErr } = await (supabaseAdmin as any)
+          .from("applicants")
+          .insert({
+            user_id: repId,
+            job_id: jobId,
+            name: repProfile?.name ?? "",
+            email: repProfile?.email ?? "",
+            avatar_url: repProfile?.avatar_url ?? null,
+            location: "",
+            experience: "",
+            highest_ticket: "",
+            sales_style: "",
+            tools: "",
+            applied_date: new Date().toISOString(),
+            status: "new",
+          })
+          .select("id")
+          .single()
+
+        if (applicantErr || !newApplicant) {
+          console.error("Applicant creation failed", applicantErr)
+          return NextResponse.json({ error: "Unable to create applicant" }, { status: 500 })
+        }
+
+        applicantId = newApplicant.id
+      }
+
+      if (!applicantId) {
+        return NextResponse.json({ error: "Unable to resolve applicant ID" }, { status: 500 })
+      }
+
       const conversationPayload: any = {
         recruiter_id: user.id,
         applicant_user_id: repId,
+        applicant_id: applicantId,
         job_id: jobId,
       }
-      if (applicantRecord?.id) conversationPayload.applicant_id = applicantRecord.id
 
       const { data: newConv, error: convErr } = await (supabaseAdmin as any)
         .from("conversations")
