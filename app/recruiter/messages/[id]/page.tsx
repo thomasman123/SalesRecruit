@@ -6,6 +6,6 @@ export default function RecruiterMessageById() {
   const params = useParams()
   const { id } = params ?? {}
 
-  redirect(`/dashboard/messages?c=${id}`)
+  redirect(`/recruiter/messages?c=${id}`)
   return null
 }

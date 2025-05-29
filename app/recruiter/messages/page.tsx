@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -64,6 +64,7 @@ export default function RecruiterMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const { userData, isLoading } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const supabase = getSupabaseClient();
 
@@ -101,6 +102,14 @@ export default function RecruiterMessagesPage() {
       };
     }
   }, [selectedConversation]);
+
+  useEffect(() => {
+    const c = searchParams.get('c');
+    if (c && conversations.length) {
+      const cid = Number(c);
+      if (!isNaN(cid)) setSelectedConversation(cid);
+    }
+  }, [searchParams, conversations]);
 
   const fetchConversations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
