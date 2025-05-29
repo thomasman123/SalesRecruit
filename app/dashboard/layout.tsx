@@ -207,10 +207,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-dark-600" />
-              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <Link href="/dashboard/profile">Profile</Link>
-              </DropdownMenuItem>
+              <Link href="/dashboard/profile" passHref legacyBehavior>
+                <DropdownMenuItem asChild className="hover:bg-dark-600 cursor-pointer">
+                  <>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
