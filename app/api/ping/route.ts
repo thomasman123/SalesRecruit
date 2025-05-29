@@ -32,12 +32,14 @@ export async function POST(req: Request) {
 
     let conversationId = existingConv?.id
     if (!conversationId) {
-      const { data: newConv } = await (supabaseAdmin as any)
+      const { data: convAgain } = await (supabaseAdmin as any)
         .from("conversations")
-        .insert({ recruiter_id: user.id, applicant_user_id: repId, job_id: jobId })
         .select("id")
+        .eq("recruiter_id", user.id)
+        .eq("applicant_user_id", repId)
+        .eq("job_id", jobId)
         .single()
-      conversationId = newConv?.id
+      conversationId = convAgain?.id
     }
 
     // Notify the rep with link to messages page (opens and highlights conversation)
