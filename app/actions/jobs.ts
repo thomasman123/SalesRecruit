@@ -57,6 +57,20 @@ export async function createJob(form: JobInput) {
     throw new Error(error.message)
   }
 
+  // If job is published (status is 'active'), trigger notifications
+  if (data.status === 'active') {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/job-notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: data.id }),
+      })
+    } catch (err) {
+      console.error('Failed to trigger job notifications:', err)
+      // Don't throw error here - we don't want to fail job creation if notifications fail
+    }
+  }
+
   return data
 }
 
