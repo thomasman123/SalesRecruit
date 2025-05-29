@@ -15,7 +15,7 @@ import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 
-const TOTAL_SECTIONS = 2
+const TOTAL_SECTIONS = 5
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -23,12 +23,22 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState({
     // Section 1: Basic Performance
     highestTicket: "",
-    bestMonth: "",
 
-    // Section 2: Video Intro
+    // Section 2: Sales Style
+    salesProcess: "",
+
+    // Section 3: Tools and Self-Management
+    crmExperience: "",
+
+    // Section 4: Drive and Mindset
+    whySales: "",
+
+    // Section 5: Video Intro
     videoUrl: "",
+    avatarUrl: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const { toast } = useToast()
 
   const handleInputChange = (field: string, value: string) => {
@@ -37,12 +47,12 @@ export default function OnboardingPage() {
 
   const sectionValidators: Record<number, () => boolean> = {
     1: () => {
-      const { highestTicket, bestMonth } = formData
-      return [highestTicket, bestMonth].every((t) => t.trim().length >= 30)
+      const { highestTicket } = formData
+      return highestTicket.trim().length >= 30
     },
-    2: () => {
-      return formData.videoUrl.trim().length > 10
-    },
+    2: () => formData.videoUrl.trim().length > 10,
+    3: () => formData.avatarUrl.trim().length > 0,
+    4: () => formData.whySales.trim().length > 0,
   }
 
   const validateCurrent = (): boolean => {
@@ -73,6 +83,11 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     if (!validateCurrent()) return
     setIsSubmitting(true)
+    if (!formData.avatarUrl) {
+      toast({ title: "Missing photo", description: "Please upload a profile picture.", variant: "destructive" })
+      setIsSubmitting(false)
+      return
+    }
     try {
       const supabase = getSupabaseClient()
       // Get current user
@@ -83,6 +98,7 @@ export default function OnboardingPage() {
         data: {
           onboarded: true,
           ...formData,
+          avatar_url: formData.avatarUrl,
         },
       })
       if (error) throw error
@@ -102,9 +118,24 @@ export default function OnboardingPage() {
       description: "Tell us about your key sales achievements",
     },
     {
+      title: "Sales Style",
+      icon: <Target className="w-5 h-5" />,
+      description: "Share your approach to sales",
+    },
+    {
+      title: "Tools & Routine",
+      icon: <Wrench className="w-5 h-5" />,
+      description: "Tell us about your work habits",
+    },
+    {
+      title: "Drive & Mindset",
+      icon: <Brain className="w-5 h-5" />,
+      description: "Share your motivation and approach",
+    },
+    {
       title: "Video Introduction",
       icon: <Video className="w-5 h-5" />,
-      description: "Record a brief video to introduce yourself",
+      description: "Share a link to a short intro video",
     },
   ]
 
@@ -199,26 +230,69 @@ export default function OnboardingPage() {
                       className="min-h-[120px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
                     />
                   </div>
+                </div>
+              )}
 
+              {/* Section 2: Sales Style */}
+              {currentSection === 2 && (
+                <div className="space-y-6">
                   <div>
                     <Label className="text-white mb-2 block">
-                      Tell us about your best month in sales — what made it work?
+                      Walk us through your personal sales process. How do you take a lead from booked to closed?
                     </Label>
                     <p className="text-sm text-gray-400 mb-3">
-                      Share how many calls you took, your close rate, and why you performed well.
+                      Step-by-step: how you build trust, handle objections, and close.
                     </p>
                     <Textarea
-                      value={formData.bestMonth}
-                      onChange={(e) => handleInputChange("bestMonth", e.target.value)}
-                      placeholder="Example: July 2023 - $150K in revenue, 120 calls, 35% close rate. Success came from..."
+                      value={formData.salesProcess}
+                      onChange={(e) => handleInputChange("salesProcess", e.target.value)}
+                      placeholder="Example: 1. Discovery call to understand needs 2. Value alignment 3. Objection handling..."
+                      className="min-h-[150px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 3: Tools and Self-Management */}
+              {currentSection === 3 && (
+                <div className="space-y-6">
+                  <div>
+                    <Label className="text-white mb-2 block">
+                      Which CRMs have you used to manage leads? How did you use them daily?
+                    </Label>
+                    <p className="text-sm text-gray-400 mb-3">
+                      Describe how you tracked follow-ups, notes, and lead stages.
+                    </p>
+                    <Textarea
+                      value={formData.crmExperience}
+                      onChange={(e) => handleInputChange("crmExperience", e.target.value)}
+                      placeholder="Example: I've used Salesforce and HubSpot extensively. In Salesforce, I maintained detailed..."
                       className="min-h-[120px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Section 2: Video Introduction */}
-              {currentSection === 2 && (
+              {/* Section 4: Drive and Mindset */}
+              {currentSection === 4 && (
+                <div className="space-y-6">
+                  <div>
+                    <Label className="text-white mb-2 block">
+                      Why are you in sales — what does success in this role give you?
+                    </Label>
+                    <p className="text-sm text-gray-400 mb-3">This isn't a Hallmark moment. Look for real fuel.</p>
+                    <Textarea
+                      value={formData.whySales}
+                      onChange={(e) => handleInputChange("whySales", e.target.value)}
+                      placeholder="Example: I love the challenge of high-ticket sales because..."
+                      className="min-h-[120px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 5: Video Introduction */}
+              {currentSection === 5 && (
                 <div className="space-y-6">
                   <div className="text-center py-8">
                     <AnimatedIcon variant="pulse" size="xl" className="mx-auto mb-6">
@@ -246,6 +320,18 @@ export default function OnboardingPage() {
                         <span className="text-gray-300">Briefly explain your approach to closing high-ticket</span>
                       </li>
                     </ul>
+                    <div className="max-w-md mx-auto">
+                      <Label htmlFor="videoUrl" className="text-gray-300 mb-2 block">
+                        Paste video URL (Loom / Dropbox / Google Drive / etc.)
+                      </Label>
+                      <AnimatedInput
+                        id="videoUrl"
+                        value={formData.videoUrl}
+                        onChange={(e) => handleInputChange("videoUrl", e.target.value)}
+                        placeholder="https://loom.com/share/your-intro-video"
+                        variant="glow"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
