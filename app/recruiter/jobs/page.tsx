@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedInput } from "@/components/ui/animated-input"
@@ -46,6 +47,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { deleteJob, duplicateJob, updateJob } from "@/app/actions/jobs"
 import type { Database } from "@/lib/supabase/database.types"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function JobsPage() {
   type Job = Database["public"]["Tables"]["jobs"]["Row"] & {
@@ -60,6 +63,11 @@ export default function JobsPage() {
   const [jobToDelete, setJobToDelete] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [matchingJobId, setMatchingJobId] = useState<number | null>(null)
+  const [matchDialogOpen, setMatchDialogOpen] = useState(false)
+  const [matchedReps, setMatchedReps] = useState<any[]>([])
+  const [selectedRep, setSelectedRep] = useState<any | null>(null)
+  const [matchedJobId, setMatchedJobId] = useState<number | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -76,7 +84,7 @@ export default function JobsPage() {
       const { data, error } = await supabase
         .from("jobs")
         .select("*")
-        .eq("recruiter_id", user?.id)
+        .eq("recruiter_id", user!.id)
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -201,10 +209,9 @@ export default function JobsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "AI match failed")
 
-      toast({
-        title: "AI match complete",
-        description: `Found ${data.matches?.length || 0} potential candidates`,
-      })
+      setMatchedReps(data.matches || [])
+      setMatchedJobId(id)
+      setMatchDialogOpen(true)
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" })
     } finally {
@@ -250,7 +257,7 @@ export default function JobsPage() {
             <p className="text-gray-400">Manage your job postings and view applicants</p>
           </div>
           <Link href="/recruiter/jobs/new">
-            <AnimatedButton variant="purple" animation="glow" icon={<Plus className="w-4 h-4" />}>
+            <AnimatedButton variant="purple" icon={<Plus className="w-4 h-4" />}>
               Post New Job
             </AnimatedButton>
           </Link>
@@ -308,7 +315,7 @@ export default function JobsPage() {
                     filteredJobs.map((job) => (
                       <JobCard
                         key={job.id}
-                        job={job}
+                        job={job as any}
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
@@ -327,7 +334,7 @@ export default function JobsPage() {
                             : `You don't have any ${activeTab} jobs`}
                       </p>
                       <Link href="/recruiter/jobs/new">
-                        <AnimatedButton variant="purple" animation="scale" icon={<Plus className="w-4 h-4" />}>
+                        <AnimatedButton variant="purple" icon={<Plus className="w-4 h-4" />}>
                           Create Your First Job
                         </AnimatedButton>
                       </Link>
@@ -344,7 +351,7 @@ export default function JobsPage() {
                     filteredJobs.map((job) => (
                       <JobCard
                         key={job.id}
-                        job={job}
+                        job={job as any}
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
@@ -357,7 +364,7 @@ export default function JobsPage() {
                       <h3 className="text-lg font-medium text-white mb-2">No active jobs</h3>
                       <p className="text-gray-400 mb-6">You don't have any active job listings</p>
                       <Link href="/recruiter/jobs/new">
-                        <AnimatedButton variant="purple" animation="scale" icon={<Plus className="w-4 h-4" />}>
+                        <AnimatedButton variant="purple" icon={<Plus className="w-4 h-4" />}>
                           Create New Job
                         </AnimatedButton>
                       </Link>
@@ -374,7 +381,7 @@ export default function JobsPage() {
                     filteredJobs.map((job) => (
                       <JobCard
                         key={job.id}
-                        job={job}
+                        job={job as any}
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
@@ -387,7 +394,7 @@ export default function JobsPage() {
                       <h3 className="text-lg font-medium text-white mb-2">No draft jobs</h3>
                       <p className="text-gray-400 mb-6">You don't have any jobs in draft status</p>
                       <Link href="/recruiter/jobs/new">
-                        <AnimatedButton variant="purple" animation="scale" icon={<Plus className="w-4 h-4" />}>
+                        <AnimatedButton variant="purple" icon={<Plus className="w-4 h-4" />}>
                           Create New Draft
                         </AnimatedButton>
                       </Link>
@@ -404,7 +411,7 @@ export default function JobsPage() {
                     filteredJobs.map((job) => (
                       <JobCard
                         key={job.id}
-                        job={job}
+                        job={job as any}
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
@@ -417,7 +424,7 @@ export default function JobsPage() {
                       <h3 className="text-lg font-medium text-white mb-2">No paused jobs</h3>
                       <p className="text-gray-400 mb-6">You don't have any paused job listings</p>
                       <Link href="/recruiter/jobs">
-                        <AnimatedButton variant="outline" animation="scale">
+                        <AnimatedButton variant="outline">
                           View All Jobs
                         </AnimatedButton>
                       </Link>
@@ -451,6 +458,79 @@ export default function JobsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Match Results Dialog */}
+      <Dialog open={matchDialogOpen} onOpenChange={(v) => { setMatchDialogOpen(v); if(!v) setSelectedRep(null) }}>
+        <DialogContent className="bg-dark-800 border-dark-600 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white">AI-Selected Candidates</DialogTitle>
+          </DialogHeader>
+
+          {selectedRep ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border border-dark-600">
+                  <AvatarImage src={selectedRep.avatar_url || "/placeholder.svg"} />
+                  <AvatarFallback>{selectedRep.name?.[0] || "?"}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{selectedRep.name || selectedRep.email}</h3>
+                  <p className="text-gray-400 text-sm">{selectedRep.email}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <AnimatedButton
+                  variant="outline"
+                  onClick={() => setSelectedRep(null)}
+                >
+                  Back
+                </AnimatedButton>
+                <AnimatedButton
+                  variant="purple"
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/ping", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ repId: selectedRep.id, jobId: matchedJobId }),
+                      })
+                      router.push(`/recruiter/messages?user=${selectedRep.id}`)
+                    } catch (err) {
+                      toast({ title: "Error", description: "Failed to poke", variant: "destructive" })
+                    }
+                  }}
+                >
+                  Poke
+                </AnimatedButton>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {matchedReps.length === 0 ? (
+                <p className="text-gray-400">No matches found.</p>
+              ) : (
+                matchedReps.map((rep: any) => (
+                  <button
+                    key={rep.id}
+                    onClick={() => setSelectedRep(rep)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-dark-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-dark-600">
+                        <AvatarImage src={rep.avatar_url || "/placeholder.svg"} />
+                        <AvatarFallback>{rep.name?.[0] || "?"}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-white text-sm">{rep.name || rep.email}</span>
+                    </div>
+                    <AnimatedButton variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedRep(rep) }}>View</AnimatedButton>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -548,7 +628,7 @@ function JobCard({ job, onDelete, onDuplicate, onChangeStatus, onMatch }: JobCar
             </AnimatedButton>
           </Link>
           <Link href={`/recruiter/jobs/${job.id}/edit`}>
-            <AnimatedButton variant="outline" size="sm" animation="scale">
+            <AnimatedButton variant="outline" size="sm">
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </AnimatedButton>

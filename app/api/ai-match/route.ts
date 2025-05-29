@@ -69,29 +69,6 @@ export async function POST(req: Request) {
 
     const matchedReps = repsArray.filter((r) => matchedIds.includes(r.id))
 
-    // Insert notifications for recruiter and matched reps
-
-    // Notify recruiter
-    await (supabaseAdmin as any).from("notifications").insert({
-      user_id: user.id,
-      title: `AI match complete for ${job.title}`,
-      body: `Found ${matchedReps.length} potential candidates`,
-      href: `/recruiter/jobs/${job.id}/applicants`,
-      read: false,
-    })
-
-    // Notify each matched rep
-    if (matchedReps.length) {
-      const notifRows = matchedReps.map((rep) => ({
-        user_id: rep.id,
-        title: "New opportunity match",
-        body: `You were matched to ${job.title}. Check it out!`,
-        href: `/dashboard/opportunities/${job.id}`,
-        read: false,
-      }))
-      await (supabaseAdmin as any).from("notifications").insert(notifRows)
-    }
-
     return NextResponse.json({ matches: matchedReps })
   } catch (err: any) {
     console.error("AI-match error", err)
