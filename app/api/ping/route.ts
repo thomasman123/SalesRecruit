@@ -31,15 +31,36 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     let conversationId = existingConv?.id
+
+    // If no conversation yet, create one now
     if (!conversationId) {
-      const { data: convAgain } = await (supabaseAdmin as any)
-        .from("conversations")
+      // Try to look up an applicant record for this user & job (may not exist yet)
+      const { data: applicantRecord } = await (supabaseAdmin as any)
+        .from("applicants")
         .select("id")
-        .eq("recruiter_id", user.id)
-        .eq("applicant_user_id", repId)
+        .eq("user_id", repId)
         .eq("job_id", jobId)
+        .maybeSingle()
+
+      const conversationPayload: any = {
+        recruiter_id: user.id,
+        applicant_user_id: repId,
+        job_id: jobId,
+      }
+      if (applicantRecord?.id) conversationPayload.applicant_id = applicantRecord.id
+
+      const { data: newConv, error: convErr } = await (supabaseAdmin as any)
+        .from("conversations")
+        .insert(conversationPayload)
+        .select("id")
         .single()
-      conversationId = convAgain?.id
+
+      if (convErr || !newConv) {
+        console.error("Conversation creation failed", convErr)
+        return NextResponse.json({ error: "Unable to create conversation" }, { status: 500 })
+      }
+
+      conversationId = newConv.id
     }
 
     // Notify the rep with link to messages page (opens and highlights conversation)
