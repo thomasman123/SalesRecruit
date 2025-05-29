@@ -381,6 +381,24 @@ export default function ApplicantsPage() {
                           Message
                         </AnimatedButton>
                       </Link>
+                      <AnimatedButton
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await fetch("/api/ping", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
+                            })
+                          } catch (err) {
+                            console.error(err)
+                          }
+                        }}
+                        icon={<Brain className="w-4 h-4 mr-2" />}
+                      >
+                        Ping
+                      </AnimatedButton>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">

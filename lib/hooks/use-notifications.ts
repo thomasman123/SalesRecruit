@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { getSupabaseClient } from "@/lib/supabase/client"
 
 export interface Notification {
   id: string
@@ -7,55 +8,77 @@ export interface Notification {
   href?: string
   read: boolean
   created_at: string
+  user_id: string
 }
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
-
-  // Keep a ref to WebSocket so we can cleanly close it on unmount
-  const socketRef = useRef<WebSocket | null>(null)
+  const supabase = getSupabaseClient()
 
   useEffect(() => {
-    // Prefer env variable but fall back to localhost for dev
-    const WS_URL = process.env.NEXT_PUBLIC_NOTIFICATIONS_WS || "ws://localhost:3001"
+    let userId: string | null = null
 
-    const socket = new WebSocket(WS_URL)
-    socketRef.current = socket
+    const init = async () => {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+      userId = user.id
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
+      // Fetch existing notifications
+      const { data } = await (supabase as any)
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+      if (data) setNotifications(data as Notification[])
 
-        // Handle both single notification and array for initial load
-        setNotifications((prev) => {
-          if (Array.isArray(data)) {
-            return [...data, ...prev]
-          }
-          return [data, ...prev]
-        })
-      } catch (error) {
-        console.error("Failed to parse notification message", error)
+      // Subscribe to realtime inserts for this user
+      const channel = (supabase as any)
+        .channel("notifications")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            const newNotif = payload.new as Notification
+            setNotifications((prev) => [newNotif, ...prev])
+          },
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
       }
     }
 
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error)
-    }
+    const cleanupPromise = init()
 
     return () => {
-      socket.close()
+      cleanupPromise.then((cleanup) => cleanup && cleanup())
     }
-  }, [])
+  }, [supabase])
 
   // Derived values & helpers
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications])
 
-  const markAllRead = () => {
+  const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    if (!notifications.length) return
+    await (supabase as any)
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", notifications[0].user_id)
   }
 
-  const markRead = (id: string) => {
+  const markRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    await (supabase as any).from("notifications").update({ read: true }).eq("id", id)
   }
 
   return {
