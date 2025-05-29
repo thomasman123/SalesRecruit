@@ -345,6 +345,61 @@ export default function OnboardingPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Profile Picture Upload */}
+                  <div className="border-t border-dark-600 pt-8 mt-8">
+                    <div className="text-center">
+                      <AnimatedIcon variant="pulse" size="xl" className="mx-auto mb-4">
+                        <Upload className="w-12 h-12" />
+                      </AnimatedIcon>
+                      <h3 className="text-xl font-semibold text-white mb-2">Profile Picture</h3>
+                      <p className="text-gray-400 mb-6">
+                        Upload a clear headshot so recruiters can put a face to the name
+                      </p>
+
+                      {formData.avatarUrl ? (
+                        <div className="mb-4">
+                          <img
+                            src={formData.avatarUrl}
+                            alt="Profile preview"
+                            className="h-32 w-32 rounded-full object-cover border-2 border-purple-500/40 shadow-lg mx-auto"
+                          />
+                        </div>
+                      ) : null}
+
+                      <label 
+                        className={`relative inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-md cursor-pointer transition-colors ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
+                      > 
+                        {isUploading ? "Uploading..." : "Choose Photo"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          disabled={isUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            setIsUploading(true)
+                            try {
+                              const supabase = getSupabaseClient()
+                              const fileExt = file.name.split('.').pop()
+                              const filePath = `${Date.now()}.${fileExt}`
+                              const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: false })
+                              if (uploadError) throw uploadError
+
+                              const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+                              handleInputChange('avatarUrl', data.publicUrl)
+                            } catch (err:any) {
+                              console.error(err)
+                              toast({ title: 'Upload failed', description: err.message, variant: 'destructive' })
+                            } finally {
+                              setIsUploading(false)
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               )}
 
