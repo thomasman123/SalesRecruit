@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import getOpenAI from "@/lib/openai"
+import { getSupabaseAdmin } from "@/lib/supabase/admin"
 
 export async function POST(req: Request) {
   try {
@@ -29,8 +30,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 })
     }
 
-    // Fetch all sales-professional profiles (typed as any to avoid strict column checks)
-    const { data: reps, error: repsError } = await (supabase as any)
+    // Use admin client to bypass RLS and fetch all sales professionals
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: reps, error: repsError } = await supabaseAdmin
       .from("users")
       .select("*")
       .eq("role", "sales-professional")
