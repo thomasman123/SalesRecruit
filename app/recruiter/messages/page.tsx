@@ -7,7 +7,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 
@@ -104,6 +104,7 @@ export default function RecruiterMessagesPage() {
   const [newMessage, setNewMessage] = useState("")
   const [view, setView] = useState<"conversations" | "applicants" | "profile">("conversations")
   const [searchQuery, setSearchQuery] = useState("")
+  const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const supabase = getSupabaseClient()
 
@@ -149,6 +150,11 @@ export default function RecruiterMessagesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation])
+
+  // Auto-scroll chat to bottom whenever messages change ------------------------------------
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   // Keep URL param ?c in sync --------------------------------------------------------------
   function ParamSync() {
@@ -341,7 +347,7 @@ export default function RecruiterMessagesPage() {
         glowColor="purple"
         variant="interactive"
         className={cn(
-          "flex items-center gap-3 p-4",
+          "flex items-center gap-3 p-4 animate-in fade-in slide-in-from-left duration-300",
           selected && "border-purple-500/40 shadow-purple-500/10 bg-dark-700",
         )}
         onClick={() => setSelectedConversation(conversation.id)}
@@ -378,7 +384,7 @@ export default function RecruiterMessagesPage() {
     <AnimatedCard
       glowColor="purple"
       variant="interactive"
-      className="p-4 space-y-3"
+      className="p-4 space-y-3 animate-in fade-in slide-in-from-left duration-300"
     >
       <div className="flex items-center gap-3">
         <Avatar className="border border-dark-600">
@@ -581,10 +587,10 @@ export default function RecruiterMessagesPage() {
                     >
                       <div
                         className={cn(
-                          "max-w-[75%] rounded-lg p-3 text-sm",
+                          "max-w-[75%] p-3 text-sm animate-in fade-in zoom-in duration-200",
                           m.sender_type === "recruiter"
-                            ? "bg-purple-500 text-white"
-                            : "bg-dark-700 text-white border border-dark-600",
+                            ? "rounded-l-lg rounded-br-lg rounded-tr-none bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                            : "rounded-r-lg rounded-bl-lg rounded-tl-none bg-dark-700 text-white border border-dark-600",
                         )}
                       >
                         <p>{m.content}</p>
@@ -594,6 +600,7 @@ export default function RecruiterMessagesPage() {
                       </div>
                     </div>
                   ))}
+                  <div ref={bottomRef} />
                 </div>
               </ScrollArea>
 
