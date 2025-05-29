@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -40,12 +40,23 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('');
   const supabase = getSupabaseClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isLoading && userData) {
       fetchConversations();
     }
   }, [isLoading, userData]);
+
+  useEffect(() => {
+    const c = searchParams.get("c")
+    if (c && conversations.length) {
+      const cid = Number(c)
+      if (!isNaN(cid)) {
+        setSelectedConversation(cid)
+      }
+    }
+  }, [searchParams, conversations])
 
   useEffect(() => {
     if (selectedConversation) {

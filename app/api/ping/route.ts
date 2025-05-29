@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       read: false,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, conversationId })
   } catch (err: any) {
     console.error("Ping error", err)
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 })

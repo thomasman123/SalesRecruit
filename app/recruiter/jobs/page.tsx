@@ -490,12 +490,13 @@ export default function JobsPage() {
                   variant="purple"
                   onClick={async () => {
                     try {
-                      await fetch("/api/ping", {
+                      const res = await fetch("/api/ping", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ repId: selectedRep.id, jobId: matchedJobId }),
                       })
-                      router.push(`/recruiter/messages?user=${selectedRep.id}`)
+                      const { conversationId } = await res.json()
+                      router.push(`/recruiter/messages/${conversationId}`)
                     } catch (err) {
                       toast({ title: "Error", description: "Failed to poke", variant: "destructive" })
                     }
