@@ -229,8 +229,23 @@ export default function OpportunitiesPage() {
       }
       if (applyMessage.trim()) insertData.note = applyMessage.trim()
 
-      const { error: insertError } = await supabase.from("applicants").insert(insertData)
-      if (insertError) throw insertError
+      const { data: newApplicant, error: insertError } = await supabase
+        .from("applicants")
+        .insert(insertData)
+        .select("id")
+        .single()
+      if (insertError || !newApplicant) throw insertError || new Error("Insert failed")
+
+      // Trigger AI scoring
+      try {
+        await fetch("/api/score-applicant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ applicantId: newApplicant.id }),
+        })
+      } catch (err) {
+        console.error("Scoring request failed", err)
+      }
 
       toast({ title: "Application sent", description: `You have applied to ${opportunity.companyName}.`, })
       setDialogOpen(false)
