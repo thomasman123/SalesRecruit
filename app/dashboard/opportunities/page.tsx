@@ -260,9 +260,10 @@ export default function OpportunitiesPage() {
           <h1 className="text-3xl font-bold text-white mb-4">
             Open <span className="font-mono text-purple-400">Opportunities</span>
           </h1>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Browse and apply to roles that match your skills and experience.
-          </p>
+          <div className="flex items-center justify-center gap-2 text-gray-400">
+            <Brain className="w-5 h-5 text-purple-400" />
+            <p>AI-matched opportunities based on your profile</p>
+          </div>
         </div>
       </FadeIn>
 
@@ -282,6 +283,24 @@ export default function OpportunitiesPage() {
                 <Filter className="w-5 h-5 text-purple-400" /> Filter Opportunities
               </h3>
               <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                {/* Country */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Country</h4>
+                  <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                    <SelectTrigger className="w-full border-dark-600 bg-dark-700 text-white">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-dark-700 border-dark-600">
+                      <SelectItem value="all">All Countries</SelectItem>
+                      <SelectItem value="us">United States</SelectItem>
+                      <SelectItem value="ca">Canada</SelectItem>
+                      <SelectItem value="uk">United Kingdom</SelectItem>
+                      <SelectItem value="au">Australia</SelectItem>
+                      <SelectItem value="nz">New Zealand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Industries */}
                 <div>
                   <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Industries</h4>
