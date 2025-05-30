@@ -196,7 +196,7 @@ export default function ProfilePage() {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-purple-500/90 text-white border-none">
-                  <p>Update your profile photo to keep it current and professional</p>
+                  <p>Add a professional photo to make your profile stand out</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -217,7 +217,7 @@ export default function ProfilePage() {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="bg-purple-500/90 text-white border-none">
-                      <p>Keep your name up to date for better recognition</p>
+                      <p>Add your first name to personalize your profile</p>
                     </TooltipContent>
                   </Tooltip>
 
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="bg-purple-500/90 text-white border-none">
-                      <p>Keep your name up to date for better recognition</p>
+                      <p>Add your last name to complete your profile</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="bg-purple-500/90 text-white border-none">
-                    <p>Update your location to find relevant opportunities in your area</p>
+                    <p>Add your location to find relevant opportunities in your area</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -397,7 +397,7 @@ export default function ProfilePage() {
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="bg-purple-500/90 text-white border-none">
-                  <p>Update your video introduction to showcase your latest achievements</p>
+                  <p>Add a video introduction to showcase your personality</p>
                 </TooltipContent>
               </Tooltip>
             </TabsList>
