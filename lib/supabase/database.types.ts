@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       applicants: {
@@ -177,6 +152,89 @@ export type Database = {
           },
         ]
       }
+      email_notification_history: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: number
+          job_id: number
+          sent_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          job_id: number
+          sent_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          job_id?: number
+          sent_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_notification_history_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_notification_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_notification_preferences: {
+        Row: {
+          created_at: string
+          id: number
+          job_notifications_enabled: boolean | null
+          last_notification_sent: string | null
+          notification_frequency: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          job_notifications_enabled?: boolean | null
+          last_notification_sent?: string | null
+          notification_frequency?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          job_notifications_enabled?: boolean | null
+          last_notification_sent?: string | null
+          notification_frequency?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           applicants_count: number
@@ -192,6 +250,7 @@ export type Database = {
           ramp_time: string | null
           recruiter_id: string
           remote_compatible: boolean
+          role: string | null
           sales_process: string | null
           status: string
           team_size: string
@@ -217,6 +276,7 @@ export type Database = {
           ramp_time?: string | null
           recruiter_id: string
           remote_compatible?: boolean
+          role?: string | null
           sales_process?: string | null
           status: string
           team_size: string
@@ -242,6 +302,7 @@ export type Database = {
           ramp_time?: string | null
           recruiter_id?: string
           remote_compatible?: boolean
+          role?: string | null
           sales_process?: string | null
           status?: string
           team_size?: string
@@ -307,6 +368,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          href: string | null
+          id: string
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          href?: string | null
+          id?: string
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          href?: string | null
+          id?: string
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -342,7 +433,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_notification_sent: {
+        Args: {
+          p_user_id: string
+          p_job_id: number
+          p_status?: string
+          p_error_message?: string
+        }
+        Returns: undefined
+      }
+      update_notification_preferences: {
+        Args: {
+          p_user_id: string
+          p_job_notifications_enabled: boolean
+          p_notification_frequency: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -459,9 +566,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

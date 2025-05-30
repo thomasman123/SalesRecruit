@@ -21,7 +21,7 @@ export default function NewJobPage() {
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
-    role: "",
+    role: "AE/Closer",
     country: "",
     price_range: "",
     lead_source: "",
