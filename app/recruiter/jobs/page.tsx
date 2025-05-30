@@ -70,18 +70,35 @@ export default function JobsPage() {
         return
       }
 
-      const { data, error } = await supabase
+      const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
         .select("*")
         .eq("recruiter_id", user!.id)
         .order("created_at", { ascending: false })
 
-      if (error) {
-        console.error(error)
-      } else {
-        setJobs(data as any)
+      if (jobsError) {
+        console.error(jobsError)
+        setLoading(false)
+        return
       }
 
+      // Fetch applicant counts for each job
+      const jobsWithCounts = await Promise.all(
+        (jobsData || []).map(async (job) => {
+          const { count } = await supabase
+            .from("applicants")
+            .select("*", { count: "exact", head: true })
+            .eq("job_id", job.id)
+          
+          return {
+            ...job,
+            applicants_count: count || 0,
+            views: job.views || 0
+          }
+        })
+      )
+
+      setJobs(jobsWithCounts as any)
       setLoading(false)
     }
 
