@@ -59,16 +59,28 @@ export async function createJob(form: JobInput) {
 
   // If job is published (status is 'active'), trigger notifications
   if (data.status === 'active') {
+    console.log('🚀 Job published with active status, triggering notifications for job:', data.id);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/job-notifications`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/job-notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId: data.id }),
       })
+      
+      const result = await response.json();
+      console.log('📧 Notification API response:', result);
+      
+      if (!response.ok) {
+        console.error('❌ Notification API failed:', result);
+      } else {
+        console.log('✅ Notifications triggered successfully');
+      }
     } catch (err) {
-      console.error('Failed to trigger job notifications:', err)
+      console.error('💥 Failed to trigger job notifications:', err)
       // Don't throw error here - we don't want to fail job creation if notifications fail
     }
+  } else {
+    console.log('📝 Job created with status:', data.status, '- notifications not triggered');
   }
 
   return data

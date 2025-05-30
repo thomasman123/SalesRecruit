@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { getSupabaseAdmin } from "@/lib/supabase/admin"
+import { sendJobNotificationEmail } from "@/lib/email/resend"
 
 export async function POST(req: Request) {
   try {
+    console.log('🔔 Job notification API called');
     const { jobId } = await req.json()
+    console.log('📋 Job ID:', jobId);
+    
     if (!jobId) {
       return NextResponse.json({ error: "jobId is required" }, { status: 400 })
     }
@@ -20,86 +24,104 @@ export async function POST(req: Request) {
       .single()
 
     if (jobError || !job) {
+      console.error('❌ Job not found:', jobError);
       return NextResponse.json({ error: "Job not found" }, { status: 404 })
     }
 
-    // Get all sales professionals with immediate notifications enabled
-    const { data: salesProfessionals, error: usersError } = await supabaseAdmin
-      .from("users")
-      .select(`
-        id,
-        email,
-        name,
-        email_notification_preferences (
-          job_notifications_enabled,
-          notification_frequency,
-          last_notification_sent
-        )
-      `)
-      .eq("role", "sales-professional")
-      .eq("email_notification_preferences.job_notifications_enabled", true)
-      .eq("email_notification_preferences.notification_frequency", "immediate")
+    console.log('✅ Found job:', job.title);
 
-    if (usersError) {
-      throw usersError
+    // Get sales professionals with immediate notifications
+    // First get all sales professionals
+    const { data: salesUsers, error: salesError } = await supabaseAdmin
+      .from("users")
+      .select("id, email, name")
+      .eq("role", "sales-professional")
+
+    if (salesError) {
+      console.error('❌ Error fetching sales users:', salesError);
+      throw salesError
     }
 
-    // Send notifications to each eligible sales professional
+    console.log('👥 Found sales professionals:', salesUsers?.length || 0);
+
+    // Get their notification preferences
+    const { data: preferences, error: prefsError } = await supabaseAdmin
+      .from("email_notification_preferences")
+      .select("*")
+      .eq("job_notifications_enabled", true)
+      .eq("notification_frequency", "immediate")
+      .in("user_id", salesUsers?.map(u => u.id) || [])
+
+    if (prefsError) {
+      console.error('❌ Error fetching preferences:', prefsError);
+      throw prefsError
+    }
+
+    console.log('⚙️ Found immediate notification preferences:', preferences?.length || 0);
+
+    // Combine users with their preferences
+    const eligibleUsers = salesUsers?.filter(user => 
+      preferences?.some(pref => pref.user_id === user.id)
+    ).map(user => ({
+      ...user,
+      preferences: preferences?.find(pref => pref.user_id === user.id)
+    })) || []
+
+    console.log('✅ Eligible users for notifications:', eligibleUsers.length);
+
+    // Send notifications to each eligible user
     const notifications = await Promise.all(
-      salesProfessionals.map(async (user) => {
+      eligibleUsers.map(async (user) => {
         try {
-          // Skip if user has received a notification in the last hour
-          const lastNotification = user.email_notification_preferences?.last_notification_sent
-          if (lastNotification) {
+          // Check if user received notification recently
+          const lastNotification = user.preferences?.last_notification_sent
+          if (lastNotification && typeof lastNotification === 'string') {
             const hoursSinceLastNotification = (Date.now() - new Date(lastNotification).getTime()) / (1000 * 60 * 60)
             if (hoursSinceLastNotification < 1) {
-              return null
+              console.log(`⏰ Skipping ${user.email} - notified ${hoursSinceLastNotification.toFixed(2)}h ago`);
+              return { userId: user.id, status: "skipped", reason: "too_recent" }
             }
           }
 
-          // Send email using Supabase's email service
-          const { error: emailError } = await supabaseAdmin.auth.admin.sendRawEmail({
-            to: user.email,
-            subject: `New Job Opportunity: ${job.title}`,
-            html: `
-              <p>Hi ${user.name},</p>
-              <p>A new job opportunity that matches your profile has been posted:</p>
-              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h2 style="margin: 0 0 10px 0;">${job.title}</h2>
-                <div style="color: #4b5563; font-size: 14px; margin-bottom: 15px;">
-                  <span style="margin-right: 15px;">💰 ${job.price_range}</span>
-                  <span style="margin-right: 15px;">🏢 ${job.industry}</span>
-                  <span>👥 ${job.team_size}</span>
-                </div>
-                <p>${job.company_overview || ""}</p>
-              </div>
-              <div style="text-align: center;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/opportunities/${job.id}" 
-                   style="display: inline-block; padding: 12px 24px; background-color: #9333ea; color: white; text-decoration: none; border-radius: 6px; font-weight: 500; margin: 20px 0;">
-                  View Job Details
-                </a>
-              </div>
-              <p>This opportunity was selected for you based on your profile and preferences. If you're interested, click the button above to learn more and apply.</p>
-              <div style="font-size: 12px; color: #6b7280; margin-top: 20px; text-align: center;">
-                <p>You're receiving this email because you're subscribed to job notifications. 
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/notifications" style="color: #9333ea;">Manage your notification preferences</a></p>
-              </div>
-            `,
-          })
+          console.log(`📧 Sending email notification to: ${user.email}`);
+          
+          // Send actual email using Resend
+          const emailResult = await sendJobNotificationEmail({
+            to: user.email as string,
+            name: (user.name as string) || (user.email as string).split('@')[0],
+            jobTitle: job.title,
+            jobId: job.id,
+            industry: job.industry || '',
+            priceRange: job.price_range || '',
+            teamSize: job.team_size || '',
+            companyOverview: job.company_overview || undefined
+          });
 
-          if (emailError) {
-            throw emailError
-          }
+          console.log(`✅ Email sent successfully to ${user.email}, Message ID: ${emailResult.messageId}`);
 
-          // Record the notification
-          await supabaseAdmin.rpc("record_notification_sent", {
+          // Record the notification as sent
+          const { error: recordError } = await supabaseAdmin.rpc("record_notification_sent", {
             p_user_id: user.id,
             p_job_id: jobId,
             p_status: "sent",
           })
 
-          return { userId: user.id, status: "sent" }
+          if (recordError) {
+            console.error('❌ Error recording notification:', recordError);
+            throw recordError
+          }
+
+          console.log(`✅ Notification recorded for ${user.email}`);
+          return { 
+            userId: user.id, 
+            status: "sent", 
+            email: user.email,
+            messageId: emailResult.messageId
+          }
+
         } catch (error: any) {
+          console.error(`❌ Failed to notify ${user.email}:`, error);
+          
           // Record failed notification
           await supabaseAdmin.rpc("record_notification_sent", {
             p_user_id: user.id,
@@ -108,17 +130,34 @@ export async function POST(req: Request) {
             p_error_message: error.message,
           })
 
-          return { userId: user.id, status: "failed", error: error.message }
+          return { userId: user.id, status: "failed", error: error.message, email: user.email }
         }
       })
     )
 
+    const successCount = notifications.filter(n => n.status === "sent").length
+    const failedCount = notifications.filter(n => n.status === "failed").length
+    const skippedCount = notifications.filter(n => n.status === "skipped").length
+
+    console.log(`📊 Notification summary: ${successCount} sent, ${failedCount} failed, ${skippedCount} skipped`);
+
     return NextResponse.json({
       success: true,
-      notifications: notifications.filter(Boolean),
+      summary: {
+        total: notifications.length,
+        sent: successCount,
+        failed: failedCount,
+        skipped: skippedCount
+      },
+      notifications: notifications,
+      jobTitle: job.title
     })
+
   } catch (err: any) {
-    console.error("Job notification error:", err)
-    return NextResponse.json({ error: err.message || "Server error" }, { status: 500 })
+    console.error("💥 Job notification error:", err)
+    return NextResponse.json({ 
+      error: err.message || "Server error",
+      details: err
+    }, { status: 500 })
   }
 } 
