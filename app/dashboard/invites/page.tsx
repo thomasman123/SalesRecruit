@@ -37,6 +37,8 @@ interface Invite {
   scheduledTime?: string
   message?: string
   notificationId: string
+  applicantId?: string
+  recruiterId?: string
 }
 
 export default function InvitesPage() {
@@ -71,17 +73,39 @@ export default function InvitesPage() {
 
       if (notifications) {
         // Parse invites from notifications
-        const parsedInvites = notifications.map((notif) => {
+        const parsedInvites = notifications.map((notif: any) => {
           // Extract job details from the notification body
           const body = notif.body || ""
           const title = notif.title || ""
+          const metadata = notif.metadata || {}
           
           // Extract job title from notification title
           const titleMatch = title.match(/Interview Invitation: (.+)/)
           const jobTitle = titleMatch ? titleMatch[1] : "Unknown Position"
           
-          // Parse the body more reliably
-          const lines = body.split('\n').map(line => line.trim())
+          // If we have metadata, use it (newer notifications)
+          if (metadata.type === 'interview_invitation') {
+            return {
+              id: notif.id,
+              jobId: metadata.jobId || 0,
+              jobTitle,
+              company: "Unknown Company", // We'll parse from body
+              priceRange: "Not specified",
+              industry: "Not specified",
+              remote: false,
+              commission: "Not specified",
+              recruiterName: metadata.recruiterName || "Recruiter",
+              scheduledDate: undefined,
+              scheduledTime: undefined,
+              message: undefined,
+              notificationId: notif.id,
+              applicantId: metadata.applicantId,
+              recruiterId: metadata.recruiterId
+            }
+          }
+          
+          // Parse the body for all notifications to get job details
+          const lines = body.split('\n').map((line: string) => line.trim())
           
           let company = "Unknown Company"
           let priceRange = "Not specified"
@@ -89,7 +113,7 @@ export default function InvitesPage() {
           let remote = false
           let commission = "Not specified"
           
-          lines.forEach(line => {
+          lines.forEach((line: string) => {
             if (line.startsWith('• Company:')) {
               company = line.replace('• Company:', '').trim()
             } else if (line.startsWith('• Price Range:')) {
@@ -106,18 +130,20 @@ export default function InvitesPage() {
 
           return {
             id: notif.id,
-            jobId: 0,
+            jobId: metadata.jobId || 0,
             jobTitle,
             company,
             priceRange,
             industry,
             remote,
             commission,
-            recruiterName: "Recruiter",
+            recruiterName: metadata.recruiterName || "Recruiter",
             scheduledDate: undefined,
             scheduledTime: undefined,
             message: undefined,
             notificationId: notif.id,
+            applicantId: metadata.applicantId,
+            recruiterId: metadata.recruiterId
           }
         })
 
@@ -151,13 +177,58 @@ export default function InvitesPage() {
     if (!selectedInvite || !selectedDate || !selectedTime) return
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Check required fields
+      if (!selectedInvite.applicantId || !selectedInvite.recruiterId) {
+        toast({
+          title: "Missing information",
+          description: "This invitation is missing required details. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Create scheduled interview record
+      const scheduledDateTime = new Date(selectedDate)
+      const [hours, minutes] = selectedTime.split(':')
+      scheduledDateTime.setHours(parseInt(hours), parseInt(minutes))
+
+      // Use type assertion for the table that's not in the types yet
+      const { error: scheduleError } = await (supabase as any)
+        .from("scheduled_interviews")
+        .insert({
+          job_id: selectedInvite.jobId,
+          applicant_id: selectedInvite.applicantId,
+          recruiter_id: selectedInvite.recruiterId,
+          sales_rep_id: user.id,
+          scheduled_date: selectedDate.toISOString().split('T')[0],
+          scheduled_time: selectedTime + ':00',
+          duration_minutes: 30,
+          status: 'scheduled'
+        })
+
+      if (scheduleError) {
+        console.error("Error scheduling interview:", scheduleError)
+        throw scheduleError
+      }
+
       // Mark notification as read
       await supabase
         .from("notifications")
         .update({ read: true })
         .eq("id", selectedInvite.notificationId)
 
-      // TODO: Create actual calendar event and update scheduled_interviews table
+      // Send notification to recruiter
+      if (selectedInvite.recruiterId) {
+        await supabase.from("notifications").insert({
+          user_id: selectedInvite.recruiterId,
+          title: "Interview Scheduled",
+          body: `${user.user_metadata?.full_name || 'Sales rep'} has scheduled an interview for ${selectedInvite.jobTitle} on ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+          href: `/recruiter/jobs/${selectedInvite.jobId}/applicants`
+        })
+      }
 
       toast({
         title: "Interview booked!",

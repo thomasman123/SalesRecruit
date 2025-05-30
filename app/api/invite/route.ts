@@ -61,7 +61,8 @@ Click here to schedule your interview at a time that works for you.
       .eq("id", user.id)
       .single()
 
-    await supabase.from("notifications").insert({
+    // Create the notification with metadata
+    const { error: notifError } = await supabase.from("notifications").insert({
       user_id: repId,
       title: `Interview Invitation: ${jobDetails?.title}`,
       body: notificationBody.trim(),
@@ -70,9 +71,15 @@ Click here to schedule your interview at a time that works for you.
         type: 'interview_invitation',
         jobId: jobId,
         recruiterName: recruiter?.name || 'Recruiter',
-        recruiterId: user.id
+        recruiterId: user.id,
+        applicantId: applicant.id
       }
     })
+
+    if (notifError) {
+      console.error("Error creating notification:", notifError)
+      throw notifError
+    }
 
     // Notify recruiter as confirmation
     await supabase.from("notifications").insert({
