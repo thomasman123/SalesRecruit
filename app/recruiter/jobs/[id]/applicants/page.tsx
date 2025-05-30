@@ -6,14 +6,12 @@ import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { FadeIn } from "@/components/ui/fade-in"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input" // Correct import for Input
 import {
   Search,
   ArrowLeft,
-  Star,
   Users,
   Eye,
   Clock,
@@ -21,7 +19,6 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  User,
   Briefcase,
   DollarSign,
   Target,
@@ -42,7 +39,6 @@ import {
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function ApplicantsPage() {
   const params = useParams()
