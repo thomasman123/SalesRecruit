@@ -11,6 +11,7 @@ import {
   Briefcase,
   Zap,
   X,
+  Brain,
 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
@@ -21,8 +22,14 @@ import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
-type Job = Database["public"]["Tables"]["jobs"]["Row"]
+type Job = Database["public"]["Tables"]["jobs"]["Row"] & {
+  country: string
+  region: string
+  salary: string
+  description: string
+}
 
 interface Opportunity {
   id: number
@@ -52,6 +59,10 @@ interface Opportunity {
   rampTime: string | null
   workingHours: string | null
   videoIntro: string | null
+  country: string
+  region: string
+  salary: string
+  description: string
 }
 
 export default function OpportunitiesPage() {
@@ -66,6 +77,7 @@ export default function OpportunitiesPage() {
   const [applyMessage, setApplyMessage] = useState("")
   const [applyLoading, setApplyLoading] = useState(false)
   const { toast } = useToast()
+  const [selectedCountry, setSelectedCountry] = useState("")
 
   const [filters, setFilters] = useState({
     industries: [] as string[],
@@ -77,17 +89,21 @@ export default function OpportunitiesPage() {
   })
 
   useEffect(() => {
-    async function loadJobs() {
+    fetchOpportunities()
+  }, [selectedCountry])
+
+  const fetchOpportunities = async () => {
+    try {
       const supabase = getSupabaseClient()
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-      if (error) {
-        console.error("Error loading jobs", error)
-        return
+      let query = supabase.from('jobs').select('*')
+      
+      if (selectedCountry) {
+        query = query.eq('country', selectedCountry)
       }
+      
+      const { data, error } = await query
+      if (error) throw error
+      
       const mapped: Opportunity[] = (data as Job[]).map((j) => ({
         id: j.id,
         companyName: (j.company_overview?.split(" ")[0] ?? "Company"),
@@ -116,11 +132,17 @@ export default function OpportunitiesPage() {
         rampTime: j.ramp_time,
         workingHours: j.working_hours,
         videoIntro: j.video_url,
+        country: j.country,
+        region: j.region,
+        salary: j.salary,
+        description: j.description,
       }))
       setOpportunities(mapped)
+    } catch (err: any) {
+      console.error(err)
+      toast({ title: "Error", description: err.message, variant: "destructive" })
     }
-    loadJobs()
-  }, [])
+  }
 
   // -----------------------------
   // Derived Data
@@ -246,7 +268,7 @@ export default function OpportunitiesPage() {
 
       {/* Search */}
       <FadeIn delay={150}>
-        <div className="flex items-center justify-center mb-10 gap-4 max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-10 gap-4 max-w-lg mx-auto">
           {/* Filter Button */}
           <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
             <DialogTrigger asChild>
@@ -529,6 +551,77 @@ export default function OpportunitiesPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      <FadeIn delay={300}>
+        <div className="flex items-center justify-between mt-8">
+          <div>
+            <h2 className="text-3xl font-bold text-white mb-2">AI-Matched Opportunities</h2>
+            <p className="text-gray-400">
+              All opportunities shown here are carefully selected by our AI to match your experience, 
+              preferences, and career goals. If you see few opportunities, it means you don't currently 
+              match or qualify for any available positions. Check back tomorrow for new matches!
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+              <SelectTrigger className="w-[180px] border-dark-600 bg-dark-700 text-white">
+                <SelectValue placeholder="Filter by country" />
+              </SelectTrigger>
+              <SelectContent className="bg-dark-700 border-dark-600">
+                <SelectItem value="">All Countries</SelectItem>
+                <SelectItem value="us">United States</SelectItem>
+                <SelectItem value="ca">Canada</SelectItem>
+                <SelectItem value="uk">United Kingdom</SelectItem>
+                <SelectItem value="au">Australia</SelectItem>
+                <SelectItem value="nz">New Zealand</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={400}>
+        <div className="grid gap-6">
+          {opportunities.length === 0 ? (
+            <AnimatedCard variant="hover-glow" className="p-8 text-center">
+              <div className="max-w-md mx-auto">
+                <h3 className="text-xl font-semibold text-white mb-4">No Matches Found</h3>
+                <p className="text-gray-400 mb-6">
+                  We couldn't find any opportunities that match your profile right now. 
+                  This could be because:
+                </p>
+                <ul className="text-left text-gray-400 space-y-2 mb-6">
+                  <li>• Your profile needs more information</li>
+                  <li>• There are no current openings in your target locations</li>
+                  <li>• Your experience level doesn't match current requirements</li>
+                </ul>
+                <p className="text-gray-400">
+                  Check back tomorrow for new opportunities, or update your profile to increase your chances of matching!
+                </p>
+              </div>
+            </AnimatedCard>
+          ) : (
+            opportunities.map((opportunity: any) => (
+              <AnimatedCard key={opportunity.id} variant="hover-glow" className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-2">{opportunity.title}</h3>
+                    <div className="flex items-center gap-4 text-gray-400 mb-4">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{opportunity.region}, {opportunity.country}</span>
+                      </div>
+                      <span>•</span>
+                      <span>{opportunity.salary}</span>
+                    </div>
+                    <p className="text-gray-400">{opportunity.description}</p>
+                  </div>
+                </div>
+              </AnimatedCard>
+            ))
+          )}
+        </div>
+      </FadeIn>
     </div>
   )
 }
