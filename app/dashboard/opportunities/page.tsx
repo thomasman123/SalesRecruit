@@ -74,6 +74,7 @@ export default function OpportunitiesPage() {
 
   const [filters, setFilters] = useState({
     industries: [] as string[],
+    roles: [] as string[],
     priceRanges: [] as string[],
     leadSources: [] as string[],
     commissionStructures: [] as string[],
@@ -102,7 +103,7 @@ export default function OpportunitiesPage() {
         logo: j.video_url ?? "/placeholder.svg?height=48&width=48&query=company logo",
         offerType: j.title,
         leadFlowProvided: j.lead_source !== "Outbound",
-        salesRole: j.team_size?.includes("Setter") ? "Hybrid" : "Closer",
+        salesRole: (j as any).role ?? (j.team_size?.includes("Setter") ? "SDR/Appointment Setter" : "AE/Closer"),
         callVolume: null,
         commissionPotential: j.price_range,
         tags: [j.industry, j.lead_source, j.commission_structure].filter(Boolean) as string[],
@@ -137,6 +138,7 @@ export default function OpportunitiesPage() {
   // -----------------------------
   const filterOptions = {
     industries: ["Coaching", "Agency", "SaaS", "Fitness", "E-commerce", "Real Estate"],
+    roles: ["SDR/Appointment Setter", "AE/Closer"],
     priceRanges: ["$1-3K", "$3-10K", "$10K+"],
     leadSources: ["Inbound", "Outbound", "Hybrid"],
     commissionStructures: ["100% Commission", "Base + Commission", "Draw Against Commission"],
@@ -156,10 +158,11 @@ export default function OpportunitiesPage() {
     const matchesLead = filters.leadSources.length === 0 || filters.leadSources.includes(o.leadSource)
     const matchesCommission = filters.commissionStructures.length === 0 || filters.commissionStructures.includes(o.commissionStructure)
     const matchesTeam = filters.teamSizes.length === 0 || filters.teamSizes.includes(o.teamSize)
+    const matchesRole = filters.roles.length === 0 || filters.roles.includes(o.salesRole)
     const matchesRemote = !filters.remoteCompatible || o.remoteCompatible
     const matchesCountry = selectedCountry === 'all' || o.country === selectedCountry
 
-    return matchesSearch && matchesIndustry && matchesPrice && matchesLead && matchesCommission && matchesTeam && matchesRemote && matchesCountry
+    return matchesSearch && matchesIndustry && matchesPrice && matchesLead && matchesCommission && matchesTeam && matchesRemote && matchesCountry && matchesRole
   })
 
   // -----------------------------
@@ -272,7 +275,7 @@ export default function OpportunitiesPage() {
               placeholder="Search opportunities..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
           <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
@@ -288,10 +291,10 @@ export default function OpportunitiesPage() {
                 <div>
                   <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Country</h4>
                   <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                    <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
+                    <SelectTrigger className="w-full border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 max-h-64 overflow-y-auto">
+                    <SelectContent className="bg-dark-700 border-dark-600 max-h-64 overflow-y-auto">
                       <SelectItem value="all">All Countries</SelectItem>
                       {filterOptions.countries.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -339,6 +342,28 @@ export default function OpportunitiesPage() {
                           }}
                         />
                         {range}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Role */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Role</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {filterOptions.roles.map((r) => (
+                      <label key={r} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.roles.includes(r)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              roles: e.target.checked ? [...prev.roles, r] : prev.roles.filter((x) => x !== r),
+                            }))
+                          }}
+                        />
+                        {r}
                       </label>
                     ))}
                   </div>

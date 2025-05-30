@@ -7,6 +7,7 @@ const jobSchema = z.object({
   title: z.string().min(3),
   status: z.enum(["active", "draft", "paused", "closed"]).default("draft"),
   industry: z.string(),
+  role: z.enum(["SDR/Appointment Setter", "AE/Closer"]),
   country: z.string(),
   price_range: z.string(),
   lead_source: z.string(),

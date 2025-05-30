@@ -21,6 +21,7 @@ export default function NewJobPage() {
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
+    role: "",
     country: "",
     price_range: "",
     lead_source: "",
@@ -141,6 +142,25 @@ export default function NewJobPage() {
                     </SelectItem>
                     <SelectItem value="Real Estate" className="text-white hover:bg-dark-600">
                       Real Estate
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-white">
+                  Role
+                </Label>
+                <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
+                  <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-700 border-dark-600">
+                    <SelectItem value="SDR/Appointment Setter" className="text-white hover:bg-dark-600">
+                      SDR / Appointment Setter
+                    </SelectItem>
+                    <SelectItem value="AE/Closer" className="text-white hover:bg-dark-600">
+                      AE / Closer
                     </SelectItem>
                   </SelectContent>
                 </Select>
