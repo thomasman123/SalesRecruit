@@ -60,12 +60,19 @@ export async function POST(req: Request) {
     console.log('⚙️ Found immediate notification preferences:', preferences?.length || 0);
 
     // Combine users with their preferences
-    const eligibleUsers = salesUsers?.filter(user => 
-      preferences?.some(pref => pref.user_id === user.id)
-    ).map(user => ({
-      ...user,
-      preferences: preferences?.find(pref => pref.user_id === user.id)
-    })) || []
+    const eligibleUsers = (salesUsers || []).map(user => {
+      const pref = preferences?.find(p => p.user_id === user.id)
+      return {
+        ...user,
+        preferences: pref ?? {
+          user_id: user.id,
+          job_notifications_enabled: true,
+          notification_frequency: "immediate",
+          last_notification_sent: null,
+        },
+        _hasExplicitPref: !!pref,
+      }
+    }).filter(u => u.preferences.job_notifications_enabled === true && u.preferences.notification_frequency === "immediate")
 
     console.log('✅ Eligible users for notifications:', eligibleUsers.length);
 
