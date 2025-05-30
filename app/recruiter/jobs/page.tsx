@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { deleteJob, duplicateJob, updateJob } from "@/app/actions/jobs"
 import type { Database } from "@/lib/supabase/database.types"
+import { cn } from "@/lib/utils"
 
 export default function JobsPage() {
   type Job = Database["public"]["Tables"]["jobs"]["Row"]
@@ -275,18 +276,20 @@ export default function JobsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-20rem)]">
-                <div className="space-y-4">
+            <TabsContent value="all" className="mt-6 overflow-visible">
+              <ScrollArea className="h-[calc(100vh-20rem)] overflow-visible">
+                <div className="space-y-6 px-4 py-4">
                   {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job) => (
-                      <JobCard
-                        key={job.id}
-                        job={job as any}
-                        onDelete={handleDeleteJob}
-                        onDuplicate={handleDuplicateJob}
-                        onChangeStatus={handleChangeStatus}
-                      />
+                    filteredJobs.map((job, index) => (
+                      <div key={job.id} className="relative">
+                        <JobCard
+                          job={job as any}
+                          onDelete={handleDeleteJob}
+                          onDuplicate={handleDuplicateJob}
+                          onChangeStatus={handleChangeStatus}
+                          index={index}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="text-center py-12">
@@ -310,18 +313,20 @@ export default function JobsPage() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="active" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-20rem)]">
-                <div className="space-y-4">
+            <TabsContent value="active" className="mt-6 overflow-visible">
+              <ScrollArea className="h-[calc(100vh-20rem)] overflow-visible">
+                <div className="space-y-6 px-4 py-4">
                   {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job) => (
-                      <JobCard
-                        key={job.id}
-                        job={job as any}
-                        onDelete={handleDeleteJob}
-                        onDuplicate={handleDuplicateJob}
-                        onChangeStatus={handleChangeStatus}
-                      />
+                    filteredJobs.map((job, index) => (
+                      <div key={job.id} className="relative">
+                        <JobCard
+                          job={job as any}
+                          onDelete={handleDeleteJob}
+                          onDuplicate={handleDuplicateJob}
+                          onChangeStatus={handleChangeStatus}
+                          index={index}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="text-center py-12">
@@ -339,18 +344,20 @@ export default function JobsPage() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="draft" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-20rem)]">
-                <div className="space-y-4">
+            <TabsContent value="draft" className="mt-6 overflow-visible">
+              <ScrollArea className="h-[calc(100vh-20rem)] overflow-visible">
+                <div className="space-y-6 px-4 py-4">
                   {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job) => (
-                      <JobCard
-                        key={job.id}
-                        job={job as any}
-                        onDelete={handleDeleteJob}
-                        onDuplicate={handleDuplicateJob}
-                        onChangeStatus={handleChangeStatus}
-                      />
+                    filteredJobs.map((job, index) => (
+                      <div key={job.id} className="relative">
+                        <JobCard
+                          job={job as any}
+                          onDelete={handleDeleteJob}
+                          onDuplicate={handleDuplicateJob}
+                          onChangeStatus={handleChangeStatus}
+                          index={index}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="text-center py-12">
@@ -368,18 +375,20 @@ export default function JobsPage() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="paused" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-20rem)]">
-                <div className="space-y-4">
+            <TabsContent value="paused" className="mt-6 overflow-visible">
+              <ScrollArea className="h-[calc(100vh-20rem)] overflow-visible">
+                <div className="space-y-6 px-4 py-4">
                   {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job) => (
-                      <JobCard
-                        key={job.id}
-                        job={job as any}
-                        onDelete={handleDeleteJob}
-                        onDuplicate={handleDuplicateJob}
-                        onChangeStatus={handleChangeStatus}
-                      />
+                    filteredJobs.map((job, index) => (
+                      <div key={job.id} className="relative">
+                        <JobCard
+                          job={job as any}
+                          onDelete={handleDeleteJob}
+                          onDuplicate={handleDuplicateJob}
+                          onChangeStatus={handleChangeStatus}
+                          index={index}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="text-center py-12">
@@ -430,10 +439,12 @@ interface JobCardProps {
   onDelete: (id: number) => void
   onDuplicate: (id: number) => void
   onChangeStatus: (id: number, status: "active" | "paused" | "draft") => void
+  index?: number
 }
 
-function JobCard({ job, onDelete, onDuplicate, onChangeStatus }: JobCardProps) {
+function JobCard({ job, onDelete, onDuplicate, onChangeStatus, index = 0 }: JobCardProps) {
   const router = useRouter()
+  const [isHovered, setIsHovered] = useState(false)
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -459,122 +470,134 @@ function JobCard({ job, onDelete, onDuplicate, onChangeStatus }: JobCardProps) {
   }
 
   return (
-    <AnimatedCard 
-      variant="hover-glow" 
-      className="p-6 cursor-pointer transition-all hover:scale-[1.01]"
-      onClick={handleCardClick}
+    <div 
+      className={cn(
+        "relative transition-all duration-300",
+        isHovered && "z-20"
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="text-lg font-semibold text-white">{job.title}</h3>
-            {job.status === "active" && (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" />
-                Active
-              </Badge>
-            )}
-            {job.status === "draft" && (
-              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Draft
-              </Badge>
-            )}
-            {job.status === "paused" && (
-              <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 flex items-center gap-1">
-                <PauseCircle className="w-3 h-3" />
-                Paused
-              </Badge>
-            )}
+      <AnimatedCard 
+        variant="hover-glow" 
+        className={cn(
+          "p-6 cursor-pointer transition-all",
+          isHovered && "scale-[1.02] shadow-2xl shadow-purple-500/30 border-purple-500/50"
+        )}
+        onClick={handleCardClick}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-lg font-semibold text-white">{job.title}</h3>
+              {job.status === "active" && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Active
+                </Badge>
+              )}
+              {job.status === "draft" && (
+                <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Draft
+                </Badge>
+              )}
+              {job.status === "paused" && (
+                <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 flex items-center gap-1">
+                  <PauseCircle className="w-3 h-3" />
+                  Paused
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4">
+              <div className="flex items-center text-sm text-gray-400">
+                <Users className="w-4 h-4 mr-2 text-purple-400" />
+                <span>{job.applicants_count} applicants</span>
+              </div>
+              <div className="flex items-center text-sm text-gray-400">
+                <Eye className="w-4 h-4 mr-2 text-purple-400" />
+                <span>{job.views} views</span>
+              </div>
+              <div className="flex items-center text-sm text-gray-400">
+                <Clock className="w-4 h-4 mr-2 text-purple-400" />
+                <span>Posted {formatDate(job.created_at)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.industry}</Badge>
+              <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.price_range}</Badge>
+              <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.lead_source}</Badge>
+              <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.commission_structure}</Badge>
+              <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.team_size}</Badge>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4">
-            <div className="flex items-center text-sm text-gray-400">
-              <Users className="w-4 h-4 mr-2 text-purple-400" />
-              <span>{job.applicants_count} applicants</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <Eye className="w-4 h-4 mr-2 text-purple-400" />
-              <span>{job.views} views</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <Clock className="w-4 h-4 mr-2 text-purple-400" />
-              <span>Posted {formatDate(job.created_at)}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.industry}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.price_range}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.lead_source}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.commission_structure}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.team_size}</Badge>
+          <div className="flex items-center space-x-2 self-end md:self-center">
+            <Link href={`/recruiter/jobs/${job.id}/applicants`}>
+              <AnimatedButton variant="outline" size="sm">
+                <Users className="w-4 h-4 mr-2" />
+                Applicants
+              </AnimatedButton>
+            </Link>
+            <Link href={`/recruiter/jobs/${job.id}/edit`}>
+              <AnimatedButton variant="outline" size="sm">
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </AnimatedButton>
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
+                {job.status !== "active" && (
+                  <DropdownMenuItem
+                    className="hover:bg-dark-600 cursor-pointer"
+                    onClick={() => onChangeStatus(job.id, "active")}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
+                    <span>Activate Job</span>
+                  </DropdownMenuItem>
+                )}
+                {job.status !== "paused" && job.status !== "draft" && (
+                  <DropdownMenuItem
+                    className="hover:bg-dark-600 cursor-pointer"
+                    onClick={() => onChangeStatus(job.id, "paused")}
+                  >
+                    <PauseCircle className="mr-2 h-4 w-4 text-yellow-400" />
+                    <span>Pause Job</span>
+                  </DropdownMenuItem>
+                )}
+                {job.status !== "draft" && (
+                  <DropdownMenuItem
+                    className="hover:bg-dark-600 cursor-pointer"
+                    onClick={() => onChangeStatus(job.id, "draft")}
+                  >
+                    <Clock className="mr-2 h-4 w-4 text-gray-400" />
+                    <span>Move to Draft</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer" onClick={() => onDuplicate(job.id)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  <span>Duplicate</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-dark-600" />
+                <DropdownMenuItem
+                  className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
+                  onClick={() => onDelete(job.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-
-        <div className="flex items-center space-x-2 self-end md:self-center">
-          <Link href={`/recruiter/jobs/${job.id}/applicants`}>
-            <AnimatedButton variant="outline" size="sm">
-              <Users className="w-4 h-4 mr-2" />
-              Applicants
-            </AnimatedButton>
-          </Link>
-          <Link href={`/recruiter/jobs/${job.id}/edit`}>
-            <AnimatedButton variant="outline" size="sm">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </AnimatedButton>
-          </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
-              {job.status !== "active" && (
-                <DropdownMenuItem
-                  className="hover:bg-dark-600 cursor-pointer"
-                  onClick={() => onChangeStatus(job.id, "active")}
-                >
-                  <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
-                  <span>Activate Job</span>
-                </DropdownMenuItem>
-              )}
-              {job.status !== "paused" && job.status !== "draft" && (
-                <DropdownMenuItem
-                  className="hover:bg-dark-600 cursor-pointer"
-                  onClick={() => onChangeStatus(job.id, "paused")}
-                >
-                  <PauseCircle className="mr-2 h-4 w-4 text-yellow-400" />
-                  <span>Pause Job</span>
-                </DropdownMenuItem>
-              )}
-              {job.status !== "draft" && (
-                <DropdownMenuItem
-                  className="hover:bg-dark-600 cursor-pointer"
-                  onClick={() => onChangeStatus(job.id, "draft")}
-                >
-                  <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                  <span>Move to Draft</span>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer" onClick={() => onDuplicate(job.id)}>
-                <Copy className="mr-2 h-4 w-4" />
-                <span>Duplicate</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-dark-600" />
-              <DropdownMenuItem
-                className="hover:bg-dark-600 cursor-pointer text-red-400 hover:text-red-300"
-                onClick={() => onDelete(job.id)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </AnimatedCard>
+      </AnimatedCard>
+    </div>
   )
 }
