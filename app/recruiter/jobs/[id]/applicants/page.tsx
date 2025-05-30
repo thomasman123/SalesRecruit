@@ -8,7 +8,17 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input" // Correct import for Input
+import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Calendar } from "@/components/ui/calendar"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Search,
   ArrowLeft,
@@ -16,7 +26,7 @@ import {
   Eye,
   Clock,
   MessageSquare,
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle,
   XCircle,
   Briefcase,
@@ -29,6 +39,7 @@ import {
   Mail,
   Play,
   Send,
+  MapPin,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -55,18 +66,33 @@ export default function ApplicantsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [scoringInProgress, setScoringInProgress] = useState<number | null>(null)
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [jobDetails, setJobDetails] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [selectedTime, setSelectedTime] = useState("10:00")
+  const [meetingDuration, setMeetingDuration] = useState("30")
+  const [additionalMessage, setAdditionalMessage] = useState("")
 
   useEffect(() => {
     const fetchApplicants = async () => {
       setLoading(true)
       try {
-        // Fetch applicants for this job (after ensuring client has auth context)
+        // Fetch applicants for this job
         const { data, error } = await supabase
           .from("applicants")
           .select("*")
           .eq("job_id", jobId)
         if (error) throw error
         setApplicants(data || [])
+
+        // Fetch job details
+        const { data: jobData, error: jobError } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("id", jobId)
+          .single()
+        if (jobError) throw jobError
+        setJobDetails(jobData)
       } catch (err: any) {
         setError(err.message || "Failed to load applicants")
       } finally {
@@ -177,7 +203,7 @@ export default function ApplicantsPage() {
       case "interviewing":
         return (
           <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+            <CalendarIcon className="w-3 h-3" />
             Interviewing
           </Badge>
         )
@@ -228,7 +254,7 @@ export default function ApplicantsPage() {
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-bold text-white mb-2">Applicants</h1>
-            <p className="text-gray-400 truncate">{applicants[0]?.job?.title}</p>
+            <p className="text-gray-400 truncate">{jobDetails?.title}</p>
           </div>
         </div>
       </FadeIn>
@@ -376,26 +402,7 @@ export default function ApplicantsPage() {
                       <AnimatedButton
                         variant="purple"
                         size="sm"
-                        onClick={async () => {
-                          try {
-                            await fetch("/api/invite", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
-                            })
-                            toast({
-                              title: "Invite sent",
-                              description: "The sales rep has been notified about this opportunity.",
-                            })
-                          } catch (err) {
-                            console.error(err)
-                            toast({
-                              title: "Failed to send invite",
-                              description: "Please try again later.",
-                              variant: "destructive",
-                            })
-                          }
-                        }}
+                        onClick={() => setInviteDialogOpen(true)}
                         icon={<Send className="w-4 h-4" />}
                       >
                         Invite
@@ -425,7 +432,7 @@ export default function ApplicantsPage() {
                             className="hover:bg-dark-600 cursor-pointer"
                             onClick={() => handleStatusChange(selectedApplicant.id, "interviewing")}
                           >
-                            <Calendar className="mr-2 h-4 w-4 text-purple-400" />
+                            <CalendarIcon className="mr-2 h-4 w-4 text-purple-400" />
                             <span>Mark as Interviewing</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -628,26 +635,7 @@ export default function ApplicantsPage() {
                     <AnimatedButton
                       variant="purple"
                       size="lg"
-                      onClick={async () => {
-                        try {
-                          await fetch("/api/invite", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
-                          })
-                          toast({
-                            title: "Invite sent",
-                            description: "The sales rep has been notified about this opportunity.",
-                          })
-                        } catch (err) {
-                          console.error(err)
-                          toast({
-                            title: "Failed to send invite",
-                            description: "Please try again later.",
-                            variant: "destructive",
-                          })
-                        }
-                      }}
+                      onClick={() => setInviteDialogOpen(true)}
                       icon={<Send className="w-5 h-5" />}
                     >
                       Invite Candidate
@@ -669,6 +657,163 @@ export default function ApplicantsPage() {
           </div>
         </FadeIn>
       </div>
+
+      {/* Invite Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-2xl bg-dark-800 border-dark-600">
+          <DialogHeader>
+            <DialogTitle className="text-white">Schedule Interview with {selectedApplicant?.name}</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Send an interview invitation with job details and calendar invite
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Job Details Summary */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Job Details</h3>
+              <AnimatedCard className="p-4 bg-dark-700 border-dark-600">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-white font-medium">{jobDetails?.title}</h4>
+                    <p className="text-sm text-gray-400 mt-1">{jobDetails?.company_overview}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center text-gray-400">
+                      <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{jobDetails?.price_range}</span>
+                    </div>
+                    <div className="flex items-center text-gray-400">
+                      <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{jobDetails?.industry}</span>
+                    </div>
+                    <div className="flex items-center text-gray-400">
+                      <MapPin className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{jobDetails?.remote_compatible ? "Remote" : "On-site"}</span>
+                    </div>
+                    <div className="flex items-center text-gray-400">
+                      <Target className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{jobDetails?.commission_structure}</span>
+                    </div>
+                  </div>
+                </div>
+              </AnimatedCard>
+            </div>
+
+            {/* Calendar Scheduling */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Schedule Interview</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date" className="text-gray-300">Select Date</Label>
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="rounded-md border border-dark-600"
+                    disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="time" className="text-gray-300">Time</Label>
+                    <select
+                      id="time"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      className="w-full bg-dark-700 border border-dark-600 rounded-lg p-2 text-white"
+                    >
+                      {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
+                        <option key={hour} value={`${hour}:00`}>{`${hour}:00`}</option>
+                      ))}
+                      {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
+                        <option key={`${hour}:30`} value={`${hour}:30`}>{`${hour}:30`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="duration" className="text-gray-300">Duration</Label>
+                    <select
+                      id="duration"
+                      value={meetingDuration}
+                      onChange={(e) => setMeetingDuration(e.target.value)}
+                      className="w-full bg-dark-700 border border-dark-600 rounded-lg p-2 text-white"
+                    >
+                      <option value="30">30 minutes</option>
+                      <option value="45">45 minutes</option>
+                      <option value="60">1 hour</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Message */}
+            <div className="space-y-2">
+              <Label htmlFor="message" className="text-gray-300">Additional Message (Optional)</Label>
+              <Textarea
+                id="message"
+                value={additionalMessage}
+                onChange={(e) => setAdditionalMessage(e.target.value)}
+                placeholder="Add a personal message to the candidate..."
+                className="bg-dark-700 border-dark-600"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <AnimatedButton variant="outline" onClick={() => setInviteDialogOpen(false)}>
+              Cancel
+            </AnimatedButton>
+            <AnimatedButton
+              variant="purple"
+              onClick={async () => {
+                try {
+                  const inviteData = {
+                    repId: selectedApplicant?.user?.id || selectedApplicant?.user_id,
+                    jobId,
+                    scheduledDate: selectedDate?.toISOString(),
+                    scheduledTime: selectedTime,
+                    duration: meetingDuration,
+                    message: additionalMessage,
+                    jobDetails: {
+                      title: jobDetails?.title,
+                      company: jobDetails?.company_overview,
+                      priceRange: jobDetails?.price_range,
+                      industry: jobDetails?.industry,
+                      remote: jobDetails?.remote_compatible,
+                      commission: jobDetails?.commission_structure,
+                    }
+                  }
+
+                  await fetch("/api/invite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(inviteData),
+                  })
+
+                  toast({
+                    title: "Interview scheduled",
+                    description: "Calendar invite sent to the candidate.",
+                  })
+                  setInviteDialogOpen(false)
+                } catch (err) {
+                  console.error(err)
+                  toast({
+                    title: "Failed to schedule interview",
+                    description: "Please try again later.",
+                    variant: "destructive",
+                  })
+                }
+              }}
+              icon={<Send className="w-4 h-4" />}
+            >
+              Send Invite
+            </AnimatedButton>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
