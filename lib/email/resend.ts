@@ -24,6 +24,10 @@ export async function sendJobNotificationEmail({
   companyOverview
 }: JobNotificationEmailProps) {
   try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
     const { data, error } = await resend.emails.send({
       from: 'Helios Recruit <noreply@heliosrecruit.com>',
       to: [to],
@@ -176,7 +180,7 @@ export async function sendJobNotificationEmail({
               </div>
               
               <div class="cta">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/opportunities/${jobId}" class="cta-button">
+                <a href="${baseUrl}/dashboard/opportunities/${jobId}" class="cta-button">
                   View Full Details & Apply
                 </a>
               </div>
@@ -187,7 +191,7 @@ export async function sendJobNotificationEmail({
             <div class="footer">
               <p>
                 You're receiving this email because you're subscribed to job notifications.<br>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/notifications">Manage your notification preferences</a>
+                <a href="${baseUrl}/dashboard/settings/notifications">Manage your notification preferences</a>
               </p>
               <p style="margin-top: 16px;">
                 <strong>Helios Recruit</strong> - Connecting sales talent with opportunity

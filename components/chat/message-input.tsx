@@ -56,7 +56,6 @@ export function MessageInput({ onSendMessage, isLoading = false }: MessageInputP
           type="submit"
           variant="purple"
           size="icon"
-          animation="scale"
           disabled={!message.trim() || isLoading}
           className="rounded-full"
         >

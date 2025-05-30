@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     // Ensure the caller is an authenticated recruiter
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const {
       data: { user },
       error: userError,

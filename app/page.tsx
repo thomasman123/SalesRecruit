@@ -63,13 +63,8 @@ export default function HomePage() {
       if (error) throw error
 
       if (data.user && data.user.id && data.user.email) {
-        // Upsert user into public.users
-        await supabase.from("users").upsert({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || `${signupData.firstName} ${signupData.lastName}` || data.user.email.split("@")[0] || "User",
-          role: data.user.user_metadata?.role || signupData.role || "sales-professional",
-        });
+        // A database trigger now handles creating a row in public.users, so we
+        // only need to inform the user that the verification e-mail was sent.
         toast({
           title: "Verification email sent",
           description: "Please check your email to verify your account before logging in..",
@@ -118,15 +113,7 @@ export default function HomePage() {
         return
       }
 
-      if (data.user && data.user.id && data.user.email) {
-        // Upsert user into public.users after login
-        await supabase.from("users").upsert({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email.split("@")[0] || "User",
-          role: data.user.user_metadata?.role || "sales-professional",
-        });
-      }
+      // User profile insertion handled by trigger.
 
       // Determine user role from metadata
       const role = data.user?.user_metadata?.role
@@ -253,7 +240,6 @@ export default function HomePage() {
                         <AnimatedButton
                           type="submit"
                           variant="purple"
-                          animation="glow"
                           icon={<ArrowRight className="w-4 h-4" />}
                           className="w-full mt-6"
                           disabled={isLoading}
@@ -356,7 +342,6 @@ export default function HomePage() {
                         <AnimatedButton
                           type="submit"
                           variant="purple"
-                          animation="glow"
                           icon={<ArrowRight className="w-4 h-4" />}
                           className="w-full mt-6"
                           disabled={isLoading}

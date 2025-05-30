@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const refresh_token = requestUrl.searchParams.get("refresh_token")
 
   if (code) {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const {
       data: { session },
     } = await supabase.auth.exchangeCodeForSession(code)
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   // Password recovery
   if (type === "recovery" && access_token && refresh_token) {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     await supabase.auth.setSession({ access_token, refresh_token })
 
     return NextResponse.redirect(new URL("/reset-password", requestUrl.origin))

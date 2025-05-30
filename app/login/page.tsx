@@ -74,16 +74,6 @@ export default function LoginPage() {
         refresh_token: session.refresh_token,
       })
 
-      if (data.user && data.user.id && data.user.email) {
-        // Upsert user into public.users after login
-        await supabase.from("users").upsert({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email.split("@")[0] || "User",
-          role: data.user.user_metadata?.role || "sales-professional",
-        });
-      }
-
       if (role === "recruiter") {
         router.push("/recruiter")
       } else {
@@ -130,13 +120,6 @@ export default function LoginPage() {
       if (error) throw error
 
       if (data.user && data.user.id && data.user.email) {
-        // Upsert user into public.users
-        await supabase.from("users").upsert({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || `${signupData.firstName} ${signupData.lastName}` || data.user.email.split("@")[0] || "User",
-          role: data.user.user_metadata?.role || signupData.role || "sales-professional",
-        });
         toast({
           title: "Verification email sent",
           description: "Please check your email to verify your account before logging in.",
@@ -209,7 +192,6 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full mt-2"
                     disabled={isLoading}
-                    animation="glow"
                     variant="purple"
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -291,7 +273,6 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full mt-2"
                     disabled={isLoading}
-                    animation="glow"
                     variant="purple"
                   >
                     {isLoading ? "Creating account..." : "Create Account"}

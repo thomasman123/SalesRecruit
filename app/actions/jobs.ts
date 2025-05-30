@@ -26,7 +26,7 @@ const jobSchema = z.object({
 type JobInput = z.infer<typeof jobSchema>
 
 export async function createJob(form: JobInput) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
     throw new Error("Unauthorized")
@@ -61,7 +61,12 @@ export async function createJob(form: JobInput) {
   if (data.status === 'active') {
     console.log('🚀 Job published with active status, triggering notifications for job:', data.id);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/job-notifications`, {
+      // Build an absolute URL for the internal API – Node.js `fetch` requires one.
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
+      const response = await fetch(`${baseUrl}/api/job-notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId: data.id }),
@@ -87,7 +92,7 @@ export async function createJob(form: JobInput) {
 }
 
 export async function updateJob(id: number, updates: Partial<JobInput>) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) throw new Error("Unauthorized")
 
@@ -102,7 +107,7 @@ export async function updateJob(id: number, updates: Partial<JobInput>) {
 }
 
 export async function deleteJob(id: number) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) throw new Error("Unauthorized")
 
@@ -114,7 +119,7 @@ export async function deleteJob(id: number) {
 }
 
 export async function duplicateJob(id: number) {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) throw new Error("Unauthorized")
 

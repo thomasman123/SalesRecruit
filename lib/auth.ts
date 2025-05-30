@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from "./supabase/server"
 import { redirect } from "next/navigation"
 
 export async function getSession() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
 
   try {
     const {
@@ -16,7 +16,7 @@ export async function getSession() {
 }
 
 export async function getUserDetails() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
 
   try {
     const {

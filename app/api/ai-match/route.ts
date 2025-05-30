@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "jobId is required" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Authenticated recruiter
     const {

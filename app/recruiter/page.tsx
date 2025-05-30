@@ -76,7 +76,7 @@ export default function RecruiterDashboardPage() {
             <p className="text-gray-400">Manage your job postings and applicants</p>
           </div>
           <Link href="/recruiter/jobs/new">
-            <AnimatedButton variant="purple" animation="glow" icon={<Plus className="w-4 h-4" />}>
+            <AnimatedButton variant="purple" icon={<Plus className="w-4 h-4" />}>
               Post New Job
             </AnimatedButton>
           </Link>
@@ -195,7 +195,7 @@ export default function RecruiterDashboardPage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Recent Applicants</h2>
                 <Link href="/recruiter/jobs">
-                  <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
+                  <AnimatedButton variant="ghost" size="sm" className="text-sm">
                     View All
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </AnimatedButton>
@@ -257,7 +257,7 @@ export default function RecruiterDashboardPage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Active Job Postings</h2>
                 <Link href="/recruiter/jobs">
-                  <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
+                  <AnimatedButton variant="ghost" size="sm" className="text-sm">
                     Manage All Jobs
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </AnimatedButton>
@@ -308,7 +308,7 @@ export default function RecruiterDashboardPage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Recent Messages</h2>
                 <Link href="/recruiter/messages">
-                  <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
+                  <AnimatedButton variant="ghost" size="sm" className="text-sm">
                     View All Messages
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </AnimatedButton>
@@ -356,7 +356,7 @@ export default function RecruiterDashboardPage() {
           <AnimatedCard variant="hover-glow" className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Upcoming Interviews</h2>
-              <AnimatedButton variant="ghost" size="sm" animation="scale" className="text-sm">
+              <AnimatedButton variant="ghost" size="sm" className="text-sm">
                 View Calendar
                 <Calendar className="ml-1 w-4 h-4" />
               </AnimatedButton>
