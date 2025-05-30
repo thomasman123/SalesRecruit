@@ -64,7 +64,9 @@ export async function createJob(form: JobInput) {
       // Build an absolute URL for the internal API – Node.js `fetch` requires one.
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+        (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ||
+        "http://localhost:3000"
 
       const response = await fetch(`${baseUrl}/api/job-notifications`, {
         method: 'POST',
@@ -72,13 +74,20 @@ export async function createJob(form: JobInput) {
         body: JSON.stringify({ jobId: data.id }),
       })
       
-      const result = await response.json();
-      console.log('📧 Notification API response:', result);
-      
-      if (!response.ok) {
-        console.error('❌ Notification API failed:', result);
+      const contentType = response.headers.get('content-type') || ''
+      let payload: any = null
+      if (contentType.includes('application/json')) {
+        payload = await response.json()
       } else {
-        console.log('✅ Notifications triggered successfully');
+        payload = await response.text()
+      }
+
+      console.log('📧 Notification API response:', payload)
+
+      if (!response.ok) {
+        console.error('❌ Notification API failed:', payload)
+      } else {
+        console.log('✅ Notifications triggered successfully')
       }
     } catch (err) {
       console.error('💥 Failed to trigger job notifications:', err)
