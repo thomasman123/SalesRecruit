@@ -20,6 +20,7 @@ import {
   User,
   LogOut,
   Calendar,
+  Send,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -71,6 +72,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       current: pathname === "/dashboard/opportunities",
     },
     {
+      name: "Invites",
+      href: "/dashboard/invites",
+      icon: <Send className="h-5 w-5" />,
+      current: pathname === "/dashboard/invites",
+      show: userData?.role === "user",
+    },
+    {
       name: "Network",
       href: "/dashboard/network",
       icon: <Users className="h-5 w-5" />,
@@ -89,7 +97,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <Calendar className="h-5 w-5" />,
       current: pathname === "/dashboard/calendar",
     },
-  ]
+  ].filter(item => item.show !== false)
 
   return (
     <div className="min-h-screen bg-dark-900 text-gray-100 relative">

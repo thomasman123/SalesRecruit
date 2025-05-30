@@ -7,11 +7,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { 
       repId, 
-      jobId, 
-      scheduledDate, 
-      scheduledTime, 
-      duration,
-      message,
+      jobId,
       jobDetails 
     } = body
 
@@ -44,27 +40,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Applicant not found" }, { status: 404 })
     }
 
-    // For now, we'll store the interview details in the notification
-    // until the scheduled_interviews table is available in production
-    const interviewDetails = {
-      job_id: jobId,
-      applicant_id: applicant.id,
-      recruiter_id: user.id,
-      sales_rep_id: repId,
-      scheduled_date: new Date(scheduledDate).toISOString().split('T')[0],
-      scheduled_time: scheduledTime,
-      duration_minutes: parseInt(duration),
-      additional_message: message,
-      meeting_link: jobDetails?.video_url || 'https://meet.google.com/new',
-    }
-
-    // Create notification for the sales rep with interview details
+    // Create notification for the sales rep with invitation
     const notificationBody = `
 You've been invited to interview for ${jobDetails?.title}!
-
-📅 Date: ${new Date(scheduledDate).toLocaleDateString()}
-⏰ Time: ${scheduledTime}
-⏱️ Duration: ${duration} minutes
 
 Job Details:
 • Company: ${jobDetails?.company}
@@ -73,35 +51,33 @@ Job Details:
 • Location: ${jobDetails?.remote ? 'Remote' : 'On-site'}
 • Commission: ${jobDetails?.commission}
 
-${message ? `Message from recruiter:\n${message}` : ''}
-
-Meeting Link: ${interviewDetails.meeting_link}
+Click here to schedule your interview at a time that works for you.
 `
 
     await supabase.from("notifications").insert({
       user_id: repId,
       title: `Interview Invitation: ${jobDetails?.title}`,
       body: notificationBody.trim(),
-      href: interviewDetails.meeting_link,
+      href: `/dashboard/invites`,
     })
 
     // Notify recruiter as confirmation
     await supabase.from("notifications").insert({
       user_id: user.id,
-      title: "Interview scheduled",
-      body: `Interview scheduled with ${salesRep.name} for ${new Date(scheduledDate).toLocaleDateString()} at ${scheduledTime}`,
+      title: "Invitation sent",
+      body: `Interview invitation sent to ${salesRep.name} for ${jobDetails?.title}`,
       href: `/recruiter/jobs/${jobId}/applicants`,
     })
 
     return NextResponse.json({ 
       success: true, 
-      message: "Interview scheduled successfully" 
+      message: "Invitation sent successfully" 
     })
 
   } catch (error: any) {
-    console.error("Failed to schedule interview:", error)
+    console.error("Failed to send invitation:", error)
     return NextResponse.json(
-      { error: error.message || "Failed to schedule interview" },
+      { error: error.message || "Failed to send invitation" },
       { status: 500 }
     )
   }

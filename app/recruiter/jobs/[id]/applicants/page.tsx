@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -26,7 +25,7 @@ import {
   Eye,
   Clock,
   MessageSquare,
-  Calendar as CalendarIcon,
+  Calendar,
   CheckCircle,
   XCircle,
   Briefcase,
@@ -68,10 +67,6 @@ export default function ApplicantsPage() {
   const [scoringInProgress, setScoringInProgress] = useState<number | null>(null)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [jobDetails, setJobDetails] = useState<any>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [selectedTime, setSelectedTime] = useState("10:00")
-  const [meetingDuration, setMeetingDuration] = useState("30")
-  const [additionalMessage, setAdditionalMessage] = useState("")
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -203,7 +198,7 @@ export default function ApplicantsPage() {
       case "interviewing":
         return (
           <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 flex items-center gap-1">
-            <CalendarIcon className="w-3 h-3" />
+            <Calendar className="w-3 h-3" />
             Interviewing
           </Badge>
         )
@@ -432,7 +427,7 @@ export default function ApplicantsPage() {
                             className="hover:bg-dark-600 cursor-pointer"
                             onClick={() => handleStatusChange(selectedApplicant.id, "interviewing")}
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4 text-purple-400" />
+                            <Calendar className="mr-2 h-4 w-4 text-purple-400" />
                             <span>Mark as Interviewing</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -660,105 +655,42 @@ export default function ApplicantsPage() {
 
       {/* Invite Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent className="max-w-2xl bg-dark-800 border-dark-600">
+        <DialogContent className="max-w-lg bg-dark-800 border-dark-600">
           <DialogHeader>
-            <DialogTitle className="text-white">Schedule Interview with {selectedApplicant?.name}</DialogTitle>
+            <DialogTitle className="text-white">Send Interview Invitation</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Send an interview invitation with job details and calendar invite
+              Send an invitation to {selectedApplicant?.name} to schedule an interview
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-4">
             {/* Job Details Summary */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Job Details</h3>
-              <AnimatedCard className="p-4 bg-dark-700 border-dark-600">
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-white font-medium">{jobDetails?.title}</h4>
-                    <p className="text-sm text-gray-400 mt-1">{jobDetails?.company_overview}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center text-gray-400">
-                      <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{jobDetails?.price_range}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{jobDetails?.industry}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <MapPin className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{jobDetails?.remote_compatible ? "Remote" : "On-site"}</span>
-                    </div>
-                    <div className="flex items-center text-gray-400">
-                      <Target className="w-4 h-4 mr-2 text-purple-400" />
-                      <span>{jobDetails?.commission_structure}</span>
-                    </div>
-                  </div>
+            <AnimatedCard className="p-4 bg-dark-700 border-dark-600">
+              <h4 className="text-white font-medium mb-3">{jobDetails?.title}</h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center text-gray-400">
+                  <DollarSign className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>{jobDetails?.price_range}</span>
                 </div>
-              </AnimatedCard>
-            </div>
-
-            {/* Calendar Scheduling */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Schedule Interview</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date" className="text-gray-300">Select Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="rounded-md border border-dark-600"
-                    disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
-                  />
+                <div className="flex items-center text-gray-400">
+                  <Briefcase className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>{jobDetails?.industry}</span>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="time" className="text-gray-300">Time</Label>
-                    <select
-                      id="time"
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      className="w-full bg-dark-700 border border-dark-600 rounded-lg p-2 text-white"
-                    >
-                      {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
-                        <option key={hour} value={`${hour}:00`}>{`${hour}:00`}</option>
-                      ))}
-                      {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
-                        <option key={`${hour}:30`} value={`${hour}:30`}>{`${hour}:30`}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="duration" className="text-gray-300">Duration</Label>
-                    <select
-                      id="duration"
-                      value={meetingDuration}
-                      onChange={(e) => setMeetingDuration(e.target.value)}
-                      className="w-full bg-dark-700 border border-dark-600 rounded-lg p-2 text-white"
-                    >
-                      <option value="30">30 minutes</option>
-                      <option value="45">45 minutes</option>
-                      <option value="60">1 hour</option>
-                    </select>
-                  </div>
+                <div className="flex items-center text-gray-400">
+                  <MapPin className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>{jobDetails?.remote_compatible ? "Remote" : "On-site"}</span>
+                </div>
+                <div className="flex items-center text-gray-400">
+                  <Target className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>{jobDetails?.commission_structure}</span>
                 </div>
               </div>
-            </div>
+            </AnimatedCard>
 
-            {/* Additional Message */}
-            <div className="space-y-2">
-              <Label htmlFor="message" className="text-gray-300">Additional Message (Optional)</Label>
-              <Textarea
-                id="message"
-                value={additionalMessage}
-                onChange={(e) => setAdditionalMessage(e.target.value)}
-                placeholder="Add a personal message to the candidate..."
-                className="bg-dark-700 border-dark-600"
-                rows={3}
-              />
+            <div className="p-4 bg-dark-700/50 rounded-lg">
+              <p className="text-sm text-gray-300">
+                The candidate will receive an invitation to view this opportunity and book an interview time based on your availability settings.
+              </p>
             </div>
           </div>
 
@@ -773,10 +705,6 @@ export default function ApplicantsPage() {
                   const inviteData = {
                     repId: selectedApplicant?.user?.id || selectedApplicant?.user_id,
                     jobId,
-                    scheduledDate: selectedDate?.toISOString(),
-                    scheduledTime: selectedTime,
-                    duration: meetingDuration,
-                    message: additionalMessage,
                     jobDetails: {
                       title: jobDetails?.title,
                       company: jobDetails?.company_overview,
@@ -794,14 +722,14 @@ export default function ApplicantsPage() {
                   })
 
                   toast({
-                    title: "Interview scheduled",
-                    description: "Calendar invite sent to the candidate.",
+                    title: "Invitation sent",
+                    description: "The candidate will be notified and can schedule their interview.",
                   })
                   setInviteDialogOpen(false)
                 } catch (err) {
                   console.error(err)
                   toast({
-                    title: "Failed to schedule interview",
+                    title: "Failed to send invitation",
                     description: "Please try again later.",
                     variant: "destructive",
                   })
@@ -809,7 +737,7 @@ export default function ApplicantsPage() {
               }}
               icon={<Send className="w-4 h-4" />}
             >
-              Send Invite
+              Send Invitation
             </AnimatedButton>
           </div>
         </DialogContent>
