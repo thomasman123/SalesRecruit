@@ -97,7 +97,7 @@ export default function OpportunitiesPage() {
       const supabase = getSupabaseClient()
       let query = supabase.from('jobs').select('*')
       
-      if (selectedCountry) {
+      if (selectedCountry && selectedCountry !== 'all') {
         query = query.eq('country', selectedCountry)
       }
       
@@ -568,7 +568,7 @@ export default function OpportunitiesPage() {
                 <SelectValue placeholder="Filter by country" />
               </SelectTrigger>
               <SelectContent className="bg-dark-700 border-dark-600">
-                <SelectItem value="">All Countries</SelectItem>
+                <SelectItem value="all">All Countries</SelectItem>
                 <SelectItem value="us">United States</SelectItem>
                 <SelectItem value="ca">Canada</SelectItem>
                 <SelectItem value="uk">United Kingdom</SelectItem>
