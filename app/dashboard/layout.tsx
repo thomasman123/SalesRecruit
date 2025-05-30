@@ -213,9 +213,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="hover:bg-dark-600 cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+              <DropdownMenuItem asChild className="hover:bg-dark-600 cursor-pointer">
+                <Link href="/dashboard/settings/notifications">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-dark-600" />
               <DropdownMenuItem 
