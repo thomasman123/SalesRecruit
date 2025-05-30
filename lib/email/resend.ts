@@ -2,6 +2,13 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Sender address – must belong to a domain verified in Resend.
+// Configure in Vercel / Supabase as RESEND_FROM="Helios Recruit <noreply@updates.heliosrecruit.com>"
+// Falls back to Resend's sandbox domain so dev/test still works even when
+// you haven't verified your own domain yet (e-mails may land in spam).
+const DEFAULT_FROM = "Helios Recruit <onboarding@resend.dev>"
+const FROM = process.env.RESEND_FROM || DEFAULT_FROM
+
 interface JobNotificationEmailProps {
   to: string;
   name: string;
@@ -31,7 +38,7 @@ export async function sendJobNotificationEmail({
       'http://localhost:3000'
 
     const { data, error } = await resend.emails.send({
-      from: 'Helios Recruit <noreply@heliosrecruit.com>',
+      from: FROM,
       to: [to],
       subject: `New Job Opportunity: ${jobTitle}`,
       html: `
