@@ -246,17 +246,22 @@ export default function OpportunitiesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col gap-8">
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-bold">Opportunities</h1>
-          <p className="text-gray-400">Find your next sales role</p>
-          <div className="flex items-start gap-2 text-xs text-yellow-400 max-w-xl">
-            <AlertTriangle className="w-4 h-4 mt-0.5" />
-            <span>
-              Opportunities are based on your profile and AI matching. If you see very few, try updating your
-              profile, add more information, and check back tomorrow.
-            </span>
+        <FadeIn delay={0}>
+          <div className="text-center mb-10">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Open <span className="font-mono text-purple-400">Opportunities</span>
+            </h1>
+            <div className="flex items-center justify-center gap-2 text-gray-400">
+              <Brain className="w-5 h-5 text-purple-400" />
+              <p>AI-matched opportunities based on your profile</p>
+            </div>
+            <p className="flex items-center justify-center gap-2 text-yellow-400 text-xs mt-2 max-w-2xl mx-auto">
+              <AlertTriangle className="w-4 h-4" />
+              Opportunities are generated from your profile. If you see very few, update your details and check
+              back tomorrow.
+            </p>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-4">
@@ -295,7 +300,127 @@ export default function OpportunitiesPage() {
                   </Select>
                 </div>
 
-                {/* Additional filters can be added here */}
+                {/* Industries */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Industries</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {filterOptions.industries.map((ind) => (
+                      <label key={ind} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.industries.includes(ind)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              industries: e.target.checked ? [...prev.industries, ind] : prev.industries.filter((i) => i !== ind),
+                            }))
+                          }}
+                        />
+                        {ind}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Price Range</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {filterOptions.priceRanges.map((range) => (
+                      <label key={range} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.priceRanges.includes(range)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              priceRanges: e.target.checked ? [...prev.priceRanges, range] : prev.priceRanges.filter((r) => r !== range),
+                            }))
+                          }}
+                        />
+                        {range}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Lead Source */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Lead Source</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {filterOptions.leadSources.map((source) => (
+                      <label key={source} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.leadSources.includes(source)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              leadSources: e.target.checked ? [...prev.leadSources, source] : prev.leadSources.filter((s) => s !== source),
+                            }))
+                          }}
+                        />
+                        {source}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Commission Structure */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Commission Structure</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {filterOptions.commissionStructures.map((cs) => (
+                      <label key={cs} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.commissionStructures.includes(cs)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              commissionStructures: e.target.checked ? [...prev.commissionStructures, cs] : prev.commissionStructures.filter((c) => c !== cs),
+                            }))
+                          }}
+                        />
+                        {cs}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Team Size */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Team Size</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {filterOptions.teamSizes.map((ts) => (
+                      <label key={ts} className="flex items-center gap-2 text-sm text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={filters.teamSizes.includes(ts)}
+                          onChange={(e) => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              teamSizes: e.target.checked ? [...prev.teamSizes, ts] : prev.teamSizes.filter((t) => t !== ts),
+                            }))
+                          }}
+                        />
+                        {ts}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Remote Compatible */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={filters.remoteCompatible}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, remoteCompatible: e.target.checked }))}
+                    />
+                    Remote Compatible
+                  </label>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
