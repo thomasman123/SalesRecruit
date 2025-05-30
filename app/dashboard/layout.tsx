@@ -19,6 +19,7 @@ import {
   X,
   User,
   LogOut,
+  Calendar,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -81,6 +82,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <MessageSquare className="h-5 w-5" />,
       current: pathname === "/dashboard/messages",
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
+    },
+    {
+      name: "Calendar",
+      href: "/dashboard/calendar",
+      icon: <Calendar className="h-5 w-5" />,
+      current: pathname === "/dashboard/calendar",
     },
   ]
 
