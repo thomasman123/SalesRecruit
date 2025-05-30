@@ -7,6 +7,7 @@ const jobSchema = z.object({
   title: z.string().min(3),
   status: z.enum(["active", "draft", "paused", "closed"]).default("draft"),
   industry: z.string(),
+  country: z.string(),
   price_range: z.string(),
   lead_source: z.string(),
   commission_structure: z.string(),
@@ -51,7 +52,7 @@ export async function createJob(form: JobInput) {
   const { error, data } = await supabase.from("jobs").insert({
     ...validation.data,
     recruiter_id: user.id,
-  }).select().single()
+  } as any).select().single()
 
   if (error) {
     throw new Error(error.message)
@@ -106,7 +107,7 @@ export async function updateJob(id: number, updates: Partial<JobInput>) {
   if (userError || !user) throw new Error("Unauthorized")
 
   const { error, data } = await supabase.from("jobs")
-    .update(updates)
+    .update(updates as any)
     .eq("id", id)
     .eq("recruiter_id", user.id)
     .select()
@@ -150,7 +151,7 @@ export async function duplicateJob(id: number) {
       recruiter_id: user.id,
       views: 0,
       applicants_count: 0,
-    })
+    } as any)
     .select()
     .single()
   if (error) throw new Error(error.message)

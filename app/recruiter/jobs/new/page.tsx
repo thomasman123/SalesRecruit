@@ -21,6 +21,7 @@ export default function NewJobPage() {
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
+    country: "",
     price_range: "",
     lead_source: "",
     commission_structure: "",
@@ -141,6 +142,28 @@ export default function NewJobPage() {
                     <SelectItem value="Real Estate" className="text-white hover:bg-dark-600">
                       Real Estate
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="country" className="text-white">
+                  Country
+                </Label>
+                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                  <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-700 border-dark-600 max-h-64 overflow-y-auto">
+                    <SelectItem value="United States" className="text-white hover:bg-dark-600">United States</SelectItem>
+                    <SelectItem value="Canada" className="text-white hover:bg-dark-600">Canada</SelectItem>
+                    <SelectItem value="United Kingdom" className="text-white hover:bg-dark-600">United Kingdom</SelectItem>
+                    <SelectItem value="Australia" className="text-white hover:bg-dark-600">Australia</SelectItem>
+                    <SelectItem value="Germany" className="text-white hover:bg-dark-600">Germany</SelectItem>
+                    <SelectItem value="France" className="text-white hover:bg-dark-600">France</SelectItem>
+                    <SelectItem value="India" className="text-white hover:bg-dark-600">India</SelectItem>
+                    <SelectItem value="Brazil" className="text-white hover:bg-dark-600">Brazil</SelectItem>
+                    <SelectItem value="Remote" className="text-white hover:bg-dark-600">Remote</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

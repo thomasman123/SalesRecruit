@@ -12,6 +12,7 @@ import {
   Zap,
   X,
   Brain,
+  AlertTriangle,
 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
@@ -24,12 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
-type Job = Database["public"]["Tables"]["jobs"]["Row"] & {
-  country: string
-  region: string
-  salary: string
-  description: string
-}
+type Job = Database["public"]["Tables"]["jobs"]["Row"] & { country?: string }
 
 interface Opportunity {
   id: number
@@ -60,9 +56,6 @@ interface Opportunity {
   workingHours: string | null
   videoIntro: string | null
   country: string
-  region: string
-  salary: string
-  description: string
 }
 
 export default function OpportunitiesPage() {
@@ -77,7 +70,7 @@ export default function OpportunitiesPage() {
   const [applyMessage, setApplyMessage] = useState("")
   const [applyLoading, setApplyLoading] = useState(false)
   const { toast } = useToast()
-  const [selectedCountry, setSelectedCountry] = useState("")
+  const [selectedCountry, setSelectedCountry] = useState("all")
 
   const [filters, setFilters] = useState({
     industries: [] as string[],
@@ -96,16 +89,15 @@ export default function OpportunitiesPage() {
     try {
       const supabase = getSupabaseClient()
       let query = supabase.from('jobs').select('*')
-      
       if (selectedCountry && selectedCountry !== 'all') {
         query = query.eq('country', selectedCountry)
       }
-      
       const { data, error } = await query
       if (error) throw error
       
       const mapped: Opportunity[] = (data as Job[]).map((j) => ({
         id: j.id,
+        country: (j as any).country ?? "",
         companyName: (j.company_overview?.split(" ")[0] ?? "Company"),
         logo: j.video_url ?? "/placeholder.svg?height=48&width=48&query=company logo",
         offerType: j.title,
@@ -132,10 +124,6 @@ export default function OpportunitiesPage() {
         rampTime: j.ramp_time,
         workingHours: j.working_hours,
         videoIntro: j.video_url,
-        country: j.country,
-        region: j.region,
-        salary: j.salary,
-        description: j.description,
       }))
       setOpportunities(mapped)
     } catch (err: any) {
@@ -153,6 +141,7 @@ export default function OpportunitiesPage() {
     leadSources: ["Inbound", "Outbound", "Hybrid"],
     commissionStructures: ["100% Commission", "Base + Commission", "Draw Against Commission"],
     teamSizes: ["Solo closer", "Setters in place", "Full team"],
+    countries: ["United States", "Canada", "United Kingdom", "Australia", "Germany", "France", "India", "Brazil", "Remote"],
   }
 
   const filtered = opportunities.filter((o) => {
@@ -168,8 +157,9 @@ export default function OpportunitiesPage() {
     const matchesCommission = filters.commissionStructures.length === 0 || filters.commissionStructures.includes(o.commissionStructure)
     const matchesTeam = filters.teamSizes.length === 0 || filters.teamSizes.includes(o.teamSize)
     const matchesRemote = !filters.remoteCompatible || o.remoteCompatible
+    const matchesCountry = selectedCountry === 'all' || o.country === selectedCountry
 
-    return matchesSearch && matchesIndustry && matchesPrice && matchesLead && matchesCommission && matchesTeam && matchesRemote
+    return matchesSearch && matchesIndustry && matchesPrice && matchesLead && matchesCommission && matchesTeam && matchesRemote && matchesCountry
   })
 
   // -----------------------------
@@ -253,323 +243,182 @@ export default function OpportunitiesPage() {
   // JSX
   // -----------------------------
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      {/* Page Header */}
-      <FadeIn delay={0}>
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-white mb-4">
-            Open <span className="font-mono text-purple-400">Opportunities</span>
-          </h1>
-          <div className="flex items-center justify-center gap-2 text-gray-400">
-            <Brain className="w-5 h-5 text-purple-400" />
-            <p>AI-matched opportunities based on your profile</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col gap-8">
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-bold">Opportunities</h1>
+          <p className="text-gray-400">Find your next sales role</p>
+          <div className="flex items-start gap-2 text-xs text-yellow-400 max-w-xl">
+            <AlertTriangle className="w-4 h-4 mt-0.5" />
+            <span>
+              Opportunities are based on your profile and AI matching. If you see very few, try updating your
+              profile, add more information, and check back tomorrow.
+            </span>
           </div>
         </div>
-      </FadeIn>
 
-      {/* Search */}
-      <FadeIn delay={150}>
-        <div className="flex items-center justify-between mb-10 gap-4 max-w-lg mx-auto">
-          {/* Filter Button */}
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search opportunities..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-gray-400 hover:text-white hover:border-purple-500 transition-colors">
-                <Filter className="w-4 h-4" />
-                <span className="text-sm">Filters</span>
-              </button>
+              <AnimatedButton variant="outline" className="whitespace-nowrap">
+                <Filter size={20} className="mr-2" />
+                Filters
+              </AnimatedButton>
             </DialogTrigger>
-            <DialogContent className="max-w-xl">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-purple-400" /> Filter Opportunities
-              </h3>
-              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+            <DialogContent className="sm:max-w-[425px]">
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                 {/* Country */}
                 <div>
                   <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Country</h4>
                   <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                    <SelectTrigger className="w-full border-dark-600 bg-dark-700 text-white">
+                    <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
-                    <SelectContent className="bg-dark-700 border-dark-600">
+                    <SelectContent className="bg-gray-800 border-gray-700 max-h-64 overflow-y-auto">
                       <SelectItem value="all">All Countries</SelectItem>
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
-                      <SelectItem value="uk">United Kingdom</SelectItem>
-                      <SelectItem value="au">Australia</SelectItem>
-                      <SelectItem value="nz">New Zealand</SelectItem>
+                      {filterOptions.countries.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Industries */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Industries</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {filterOptions.industries.map((ind) => (
-                      <label key={ind} className="flex items-center gap-2 text-sm text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={filters.industries.includes(ind)}
-                          onChange={(e) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              industries: e.target.checked ? [...prev.industries, ind] : prev.industries.filter((i) => i !== ind),
-                            }))
-                          }}
-                        />
-                        {ind}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Price Range</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {filterOptions.priceRanges.map((range) => (
-                      <label key={range} className="flex items-center gap-2 text-sm text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={filters.priceRanges.includes(range)}
-                          onChange={(e) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              priceRanges: e.target.checked ? [...prev.priceRanges, range] : prev.priceRanges.filter((r) => r !== range),
-                            }))
-                          }}
-                        />
-                        {range}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Lead Source */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Lead Source</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {filterOptions.leadSources.map((source) => (
-                      <label key={source} className="flex items-center gap-2 text-sm text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={filters.leadSources.includes(source)}
-                          onChange={(e) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              leadSources: e.target.checked ? [...prev.leadSources, source] : prev.leadSources.filter((s) => s !== source),
-                            }))
-                          }}
-                        />
-                        {source}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Commission Structure */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Commission Structure</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {filterOptions.commissionStructures.map((cs) => (
-                      <label key={cs} className="flex items-center gap-2 text-sm text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={filters.commissionStructures.includes(cs)}
-                          onChange={(e) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              commissionStructures: e.target.checked ? [...prev.commissionStructures, cs] : prev.commissionStructures.filter((c) => c !== cs),
-                            }))
-                          }}
-                        />
-                        {cs}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Team Size */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Team Size</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {filterOptions.teamSizes.map((ts) => (
-                      <label key={ts} className="flex items-center gap-2 text-sm text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={filters.teamSizes.includes(ts)}
-                          onChange={(e) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              teamSizes: e.target.checked ? [...prev.teamSizes, ts] : prev.teamSizes.filter((t) => t !== ts),
-                            }))
-                          }}
-                        />
-                        {ts}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Remote Compatible */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={filters.remoteCompatible}
-                      onChange={(e) => setFilters((prev) => ({ ...prev, remoteCompatible: e.target.checked }))}
-                    />
-                    Remote Compatible
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mt-6">
-                <button
-                  className="text-xs text-gray-400 hover:text-white transition-colors"
-                  onClick={() => setFilters({ industries: [], priceRanges: [], leadSources: [], commissionStructures: [], teamSizes: [], remoteCompatible: false })}
-                >
-                  Clear All
-                </button>
-                <button
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors text-sm"
-                  onClick={() => setFilterDialogOpen(false)}
-                >
-                  Apply Filters
-                </button>
+                {/* Additional filters can be added here */}
               </div>
             </DialogContent>
           </Dialog>
-
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-            <input
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-dark-700 border border-dark-600 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-0 outline-none transition-colors"
-              placeholder="Search opportunities..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
         </div>
-      </FadeIn>
 
-      {/* Opportunities Grid */}
-      <FadeIn delay={250}>
-        {filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-400">No opportunities found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((op, idx) => (
-              <FadeIn delay={idx * 100} key={op.id}>
-                <AnimatedCard
-                  variant="interactive"
-                  className="p-6 group"
-                  onClick={() => {
-                    setSelected(op)
-                    setDialogOpen(true)
-                  }}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Icon Box */}
-                    <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center group-hover:bg-purple-500/20 transition-all duration-300">
-                      <AnimatedIcon variant="scale" size="md" color="purple">
-                        <Briefcase className="h-6 w-6" />
-                      </AnimatedIcon>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-lg font-semibold mb-1 text-white group-hover:text-purple-400 transition-colors duration-300 truncate">
-                        {op.offerType}
-                      </h4>
-                      <p className="text-gray-400 text-sm mb-3 truncate">
-                        {op.companyName} <span className="mx-1">·</span> {op.industry}
-                      </p>
-                      <div className="space-y-2">
-                        <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={op.commissionPotential || "Varies"} />
-                        <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={op.salesRole} />
-                        <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={op.remoteCompatible ? "Remote" : "On-site"} />
-                        <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow: ${op.leadFlowProvided ? "Yes" : "No"}`} />
+        {/* Opportunities Grid */}
+        <FadeIn delay={250}>
+          {filtered.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-400">No opportunities found.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((op, idx) => (
+                <FadeIn delay={idx * 100} key={op.id}>
+                  <AnimatedCard
+                    variant="interactive"
+                    className="p-6 group"
+                    onClick={() => {
+                      setSelected(op)
+                      setDialogOpen(true)
+                    }}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Icon Box */}
+                      <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center group-hover:bg-purple-500/20 transition-all duration-300">
+                        <AnimatedIcon variant="scale" size="md" color="purple">
+                          <Briefcase className="h-6 w-6" />
+                        </AnimatedIcon>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-lg font-semibold mb-1 text-white group-hover:text-purple-400 transition-colors duration-300 truncate">
+                          {op.offerType}
+                        </h4>
+                        <p className="text-gray-400 text-sm mb-3 truncate">
+                          {op.companyName} <span className="mx-1">·</span> {op.industry}
+                        </p>
+                        <div className="space-y-2">
+                          <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={op.commissionPotential || "Varies"} />
+                          <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={op.salesRole} />
+                          <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={op.remoteCompatible ? "Remote" : "On-site"} />
+                          <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow: ${op.leadFlowProvided ? "Yes" : "No"}`} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </AnimatedCard>
-              </FadeIn>
-            ))}
-          </div>
-        )}
-      </FadeIn>
-
-      {/* Details Dialog */}
-      {selected && (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
-                  <Briefcase className="w-6 h-6 text-purple-400" /> {selected.offerType}
-                </h2>
-                <p className="text-gray-400">
-                  {selected.companyName} <span className="mx-1">·</span> {selected.industry}
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={`Pay Range: ${selected.commissionPotential}`} />
-                <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={`Role: ${selected.salesRole}`} />
-                <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={`Location: ${selected.remoteCompatible ? "Remote" : "On-site"}`} />
-                <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow: ${selected.leadFlowProvided ? "Yes" : "No"}`} />
-              </div>
-
-              {selected.companyOverview && (
-                <div>
-                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Company Overview</h3>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.companyOverview}</p>
-                </div>
-              )}
-              {selected.whatYouSell && (
-                <div>
-                  <h3 className="text-sm font-semibold text-purple-400 mb-1">What You Sell</h3>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.whatYouSell}</p>
-                </div>
-              )}
-              {selected.salesProcess && (
-                <div>
-                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Sales Process</h3>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.salesProcess}</p>
-                </div>
-              )}
-              {selected.commissionBreakdown && (
-                <div>
-                  <h3 className="text-sm font-semibold text-purple-400 mb-1">Commission Breakdown</h3>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.commissionBreakdown}</p>
-                </div>
-              )}
-
-              {/* Application Message */}
-              <div>
-                <h3 className="text-sm font-semibold text-purple-400 mb-2">Your Message to Recruiter</h3>
-                <Textarea
-                  value={applyMessage}
-                  onChange={(e) => setApplyMessage(e.target.value)}
-                  placeholder="Add a brief note or cover letter..."
-                  className="bg-dark-700 border-dark-600 text-white placeholder-gray-500 focus:border-purple-500"
-                />
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <AnimatedButton
-                  variant="purple"
-                  isLoading={applyLoading}
-                  onClick={() => handleApply(selected)}
-                >
-                  Apply Now
-                </AnimatedButton>
-              </div>
+                  </AnimatedCard>
+                </FadeIn>
+              ))}
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </FadeIn>
+
+        {/* Details Dialog */}
+        {selected && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                    <Briefcase className="w-6 h-6 text-purple-400" /> {selected.offerType}
+                  </h2>
+                  <p className="text-gray-400">
+                    {selected.companyName} <span className="mx-1">·</span> {selected.industry}
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <InfoRow icon={<DollarSign className="w-4 h-4 text-purple-400" />} text={`Pay Range: ${selected.commissionPotential}`} />
+                  <InfoRow icon={<Briefcase className="w-4 h-4 text-purple-400" />} text={`Role: ${selected.salesRole}`} />
+                  <InfoRow icon={<MapPin className="w-4 h-4 text-purple-400" />} text={`Location: ${selected.remoteCompatible ? "Remote" : "On-site"}`} />
+                  <InfoRow icon={<Zap className="w-4 h-4 text-purple-400" />} text={`Lead Flow: ${selected.leadFlowProvided ? "Yes" : "No"}`} />
+                </div>
+
+                {selected.companyOverview && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-400 mb-1">Company Overview</h3>
+                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.companyOverview}</p>
+                  </div>
+                )}
+                {selected.whatYouSell && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-400 mb-1">What You Sell</h3>
+                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.whatYouSell}</p>
+                  </div>
+                )}
+                {selected.salesProcess && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-400 mb-1">Sales Process</h3>
+                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.salesProcess}</p>
+                  </div>
+                )}
+                {selected.commissionBreakdown && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-400 mb-1">Commission Breakdown</h3>
+                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selected.commissionBreakdown}</p>
+                  </div>
+                )}
+
+                {/* Application Message */}
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-400 mb-2">Your Message to Recruiter</h3>
+                  <Textarea
+                    value={applyMessage}
+                    onChange={(e) => setApplyMessage(e.target.value)}
+                    placeholder="Add a brief note or cover letter..."
+                    className="bg-dark-700 border-dark-600 text-white placeholder-gray-500 focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <AnimatedButton
+                    variant="purple"
+                    isLoading={applyLoading}
+                    onClick={() => handleApply(selected)}
+                  >
+                    Apply Now
+                  </AnimatedButton>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
     </div>
   )
 }
