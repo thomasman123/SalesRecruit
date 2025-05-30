@@ -42,6 +42,7 @@ import {
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function ApplicantsPage() {
   const params = useParams()
@@ -186,6 +187,22 @@ export default function ApplicantsPage() {
     }
   }
 
+  const getScoreBadge = (score: number | null | undefined) => {
+    if (score === null || score === undefined) return null
+    let color = score >= 75 ? "green" : score >= 40 ? "yellow" : "red"
+    const cls =
+      color === "green"
+        ? "bg-green-500/20 text-green-400 border-green-500/30"
+        : color === "yellow"
+          ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+          : "bg-red-500/20 text-red-400 border-red-500/30"
+    return (
+      <Badge className={`${cls} flex items-center gap-1`}>
+        {score}%
+      </Badge>
+    )
+  }
+
   return (
     <div className="container mx-auto max-w-7xl h-full overflow-hidden">
       <FadeIn delay={100}>
@@ -292,7 +309,24 @@ export default function ApplicantsPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
+                                {applicant.score !== undefined && applicant.score !== null && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div>{getScoreBadge(applicant.score)}</div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="bg-dark-700 border-dark-600 max-w-xs">
+                                        <p className="text-sm text-white font-semibold mb-1">Fit Score</p>
+                                        {applicant.score_reasons?.map((r: string, idx: number) => (
+                                          <p key={idx} className="text-xs text-gray-300">• {r}</p>
+                                        ))}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
                               <div className="flex items-center text-xs text-gray-400 mt-1">
                                 <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
                                 <span className="truncate">Applied {applicant.appliedDate}</span>
@@ -386,7 +420,7 @@ export default function ApplicantsPage() {
                         size="sm"
                         onClick={async () => {
                           try {
-                            await fetch("/api/ping", {
+                            await fetch("/api/invite", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
@@ -397,7 +431,7 @@ export default function ApplicantsPage() {
                         }}
                         icon={<Brain className="w-4 h-4 mr-2" />}
                       >
-                        Ping
+                        Invite
                       </AnimatedButton>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -481,6 +515,22 @@ export default function ApplicantsPage() {
 
                 <ScrollArea className="flex-1 min-h-0">
                   <div className="p-6 space-y-6">
+                    {/* Fit Score */}
+                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                          <Brain className="w-5 h-5 text-purple-400" /> Fit Score: {selectedApplicant.score}%
+                        </h3>
+                        {selectedApplicant.score_reasons?.length > 0 && (
+                          <ul className="list-disc list-inside space-y-1 text-gray-300">
+                            {selectedApplicant.score_reasons.map((r: string, idx: number) => (
+                              <li key={idx}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
                     {/* Video Introduction */}
                     {selectedApplicant.videoUrl && (
                       <div>

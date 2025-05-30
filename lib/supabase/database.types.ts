@@ -29,6 +29,8 @@ export type Database = {
           updated_at: string
           user_id: string | null
           video_url: string | null
+          score: number | null
+          score_reasons: string[] | null
         }
         Insert: {
           applied_date?: string
@@ -49,6 +51,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           video_url?: string | null
+          score?: number | null
+          score_reasons?: string[] | null
         }
         Update: {
           applied_date?: string
@@ -69,6 +73,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           video_url?: string | null
+          score?: number | null
+          score_reasons?: string[] | null
         }
         Relationships: [
           {
