@@ -22,8 +22,6 @@ import {
   Briefcase,
   CheckCircle,
   PauseCircle,
-  Brain,
-  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -47,14 +45,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { deleteJob, duplicateJob, updateJob } from "@/app/actions/jobs"
 import type { Database } from "@/lib/supabase/database.types"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function JobsPage() {
-  type Job = Database["public"]["Tables"]["jobs"]["Row"] & {
-    posted?: string | null
-    expires?: string | null
-  }
+  type Job = Database["public"]["Tables"]["jobs"]["Row"]
 
   const [jobs, setJobs] = useState<Job[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -62,11 +55,6 @@ export default function JobsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [matchingJobId, setMatchingJobId] = useState<number | null>(null)
-  const [matchDialogOpen, setMatchDialogOpen] = useState(false)
-  const [matchedReps, setMatchedReps] = useState<any[]>([])
-  const [selectedRep, setSelectedRep] = useState<any | null>(null)
-  const [matchedJobId, setMatchedJobId] = useState<number | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -198,27 +186,6 @@ export default function JobsPage() {
     }
   }
 
-  const handleAIMatch = async (id: number) => {
-    try {
-      setMatchingJobId(id)
-      const res = await fetch("/api/ai-match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "AI match failed")
-
-      setMatchedReps(data.matches || [])
-      setMatchedJobId(id)
-      setMatchDialogOpen(true)
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" })
-    } finally {
-      setMatchingJobId(null)
-    }
-  }
-
   if (loading) {
     return (
       <div className="container mx-auto max-w-7xl py-12">
@@ -319,7 +286,6 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
-                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -355,7 +321,6 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
-                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -385,7 +350,6 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
-                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -415,7 +379,6 @@ export default function JobsPage() {
                         onDelete={handleDeleteJob}
                         onDuplicate={handleDuplicateJob}
                         onChangeStatus={handleChangeStatus}
-                        onMatch={handleAIMatch}
                       />
                     ))
                   ) : (
@@ -458,108 +421,49 @@ export default function JobsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* AI Match Results Dialog */}
-      <Dialog open={matchDialogOpen} onOpenChange={(v) => { setMatchDialogOpen(v); if(!v) setSelectedRep(null) }}>
-        <DialogContent className="bg-dark-800 border-dark-600 max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-white">AI-Selected Candidates</DialogTitle>
-          </DialogHeader>
-
-          {selectedRep ? (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border border-dark-600">
-                  <AvatarImage src={selectedRep.avatar_url || "/placeholder.svg"} />
-                  <AvatarFallback>{selectedRep.name?.[0] || "?"}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{selectedRep.name || selectedRep.email}</h3>
-                  <p className="text-gray-400 text-sm">{selectedRep.email}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <AnimatedButton
-                  variant="outline"
-                  onClick={() => setSelectedRep(null)}
-                >
-                  Back
-                </AnimatedButton>
-                <AnimatedButton
-                  variant="purple"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch("/api/ping", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ repId: selectedRep.id, jobId: matchedJobId }),
-                      })
-                      const { conversationId } = await res.json()
-                      router.push(`/recruiter/messages/${conversationId}`)
-                    } catch (err) {
-                      toast({ title: "Error", description: "Failed to poke", variant: "destructive" })
-                    }
-                  }}
-                >
-                  Poke
-                </AnimatedButton>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {matchedReps.length === 0 ? (
-                <p className="text-gray-400">No matches found.</p>
-              ) : (
-                matchedReps.map((rep: any) => (
-                  <button
-                    key={rep.id}
-                    onClick={() => setSelectedRep(rep)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-dark-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 border border-dark-600">
-                        <AvatarImage src={rep.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback>{rep.name?.[0] || "?"}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-white text-sm">{rep.name || rep.email}</span>
-                    </div>
-                    <AnimatedButton variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedRep(rep) }}>View</AnimatedButton>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
 
 interface JobCardProps {
-  job: {
-    id: number
-    title: string
-    status: "active" | "draft" | "paused"
-    applicants: number
-    views: number
-    posted: string
-    expires: string
-    industry: string
-    priceRange: string
-    leadSource: string
-    commissionStructure: string
-    teamSize: string
-  }
+  job: Database["public"]["Tables"]["jobs"]["Row"]
   onDelete: (id: number) => void
   onDuplicate: (id: number) => void
   onChangeStatus: (id: number, status: "active" | "paused" | "draft") => void
-  onMatch: (id: number) => void
 }
 
-function JobCard({ job, onDelete, onDuplicate, onChangeStatus, onMatch }: JobCardProps) {
+function JobCard({ job, onDelete, onDuplicate, onChangeStatus }: JobCardProps) {
+  const router = useRouter()
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) return "Today"
+    if (diffInDays === 1) return "Yesterday"
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`
+    return `${Math.floor(diffInDays / 365)} years ago`
+  }
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Check if the click was on a button or inside a button
+    const target = e.target as HTMLElement
+    const isButton = target.closest('button') || target.closest('a')
+    
+    if (!isButton) {
+      router.push(`/recruiter/jobs/${job.id}/applicants`)
+    }
+  }
+
   return (
-    <AnimatedCard variant="hover-glow" className="p-6">
+    <AnimatedCard 
+      variant="hover-glow" 
+      className="p-6 cursor-pointer transition-all hover:scale-[1.01]"
+      onClick={handleCardClick}
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
@@ -584,10 +488,10 @@ function JobCard({ job, onDelete, onDuplicate, onChangeStatus, onMatch }: JobCar
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 mb-4">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4">
             <div className="flex items-center text-sm text-gray-400">
               <Users className="w-4 h-4 mr-2 text-purple-400" />
-              <span>{job.applicants} applicants</span>
+              <span>{job.applicants_count} applicants</span>
             </div>
             <div className="flex items-center text-sm text-gray-400">
               <Eye className="w-4 h-4 mr-2 text-purple-400" />
@@ -595,33 +499,20 @@ function JobCard({ job, onDelete, onDuplicate, onChangeStatus, onMatch }: JobCar
             </div>
             <div className="flex items-center text-sm text-gray-400">
               <Clock className="w-4 h-4 mr-2 text-purple-400" />
-              <span>Posted: {job.posted}</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-400">
-              <Clock className="w-4 h-4 mr-2 text-purple-400" />
-              <span>Expires: {job.expires}</span>
+              <span>Posted {formatDate(job.created_at)}</span>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.industry}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.priceRange}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.leadSource}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.commissionStructure}</Badge>
-            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.teamSize}</Badge>
+            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.price_range}</Badge>
+            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.lead_source}</Badge>
+            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.commission_structure}</Badge>
+            <Badge className="bg-dark-700 text-gray-300 border-dark-600">{job.team_size}</Badge>
           </div>
         </div>
 
         <div className="flex items-center space-x-2 self-end md:self-center">
-          <AnimatedButton
-            variant="outline"
-            size="sm"
-            onClick={() => onMatch(job.id)}
-            isLoading={false}
-            icon={<Brain className="w-4 h-4" />}
-          >
-            AI Match
-          </AnimatedButton>
           <Link href={`/recruiter/jobs/${job.id}/applicants`}>
             <AnimatedButton variant="outline" size="sm">
               <Users className="w-4 h-4 mr-2" />
