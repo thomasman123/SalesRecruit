@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   Mail,
   Play,
+  Send,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ import {
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
+import { toast } from "@/components/ui/use-toast"
 
 export default function ApplicantsPage() {
   const params = useParams()
@@ -371,18 +373,8 @@ export default function ApplicantsPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
-                      <AnimatedButton variant="outline" size="sm">
-                        <Mail className="w-4 h-4 mr-2" />
-                        Email
-                      </AnimatedButton>
-                      <Link href={`/recruiter/messages?user=${selectedApplicant.user?.id}`}>
-                        <AnimatedButton variant="outline" size="sm">
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Message
-                        </AnimatedButton>
-                      </Link>
                       <AnimatedButton
-                        variant="outline"
+                        variant="purple"
                         size="sm"
                         onClick={async () => {
                           try {
@@ -391,11 +383,20 @@ export default function ApplicantsPage() {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
                             })
+                            toast({
+                              title: "Invite sent",
+                              description: "The sales rep has been notified about this opportunity.",
+                            })
                           } catch (err) {
                             console.error(err)
+                            toast({
+                              title: "Failed to send invite",
+                              description: "Please try again later.",
+                              variant: "destructive",
+                            })
                           }
                         }}
-                        icon={<Brain className="w-4 h-4 mr-2" />}
+                        icon={<Send className="w-4 h-4" />}
                       >
                         Invite
                       </AnimatedButton>
@@ -623,29 +624,34 @@ export default function ApplicantsPage() {
                 </ScrollArea>
 
                 <div className="p-6 border-t border-dark-600 flex-shrink-0">
-                  <div className="flex justify-between">
+                  <div className="flex justify-center">
                     <AnimatedButton
-                      variant="outline"
-                      onClick={() => handleStatusChange(selectedApplicant.id, "rejected")}
+                      variant="purple"
+                      size="lg"
+                      onClick={async () => {
+                        try {
+                          await fetch("/api/invite", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ repId: selectedApplicant.user?.id || selectedApplicant.user_id, jobId }),
+                          })
+                          toast({
+                            title: "Invite sent",
+                            description: "The sales rep has been notified about this opportunity.",
+                          })
+                        } catch (err) {
+                          console.error(err)
+                          toast({
+                            title: "Failed to send invite",
+                            description: "Please try again later.",
+                            variant: "destructive",
+                          })
+                        }
+                      }}
+                      icon={<Send className="w-5 h-5" />}
                     >
-                      <XCircle className="w-4 h-4 mr-2 text-red-400" />
-                      Reject
+                      Invite Candidate
                     </AnimatedButton>
-                    <div className="space-x-2">
-                      <Link href={`/recruiter/messages?user=${selectedApplicant.user?.id}`}>
-                        <AnimatedButton variant="outline">
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Message
-                        </AnimatedButton>
-                      </Link>
-                      <AnimatedButton
-                        variant="purple"
-                        onClick={() => handleStatusChange(selectedApplicant.id, "hired")}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Hire Candidate
-                      </AnimatedButton>
-                    </div>
                   </div>
                 </div>
               </AnimatedCard>
