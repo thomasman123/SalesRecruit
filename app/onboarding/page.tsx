@@ -14,6 +14,7 @@ import { ArrowRight, ArrowLeft, Briefcase, Target, Wrench, Brain, Video, CheckCi
 import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 const TOTAL_SECTIONS = 5
 
@@ -22,6 +23,7 @@ export default function OnboardingPage() {
   const [currentSection, setCurrentSection] = useState(1)
   const [formData, setFormData] = useState({
     // Section 1: Basic Performance
+    role: "",
     highestTicket: "",
 
     // Section 2: Sales Style
@@ -53,6 +55,7 @@ export default function OnboardingPage() {
         if (metadata.onboarding_in_progress) {
           // Restore form data from metadata
           setFormData({
+            role: metadata.role || "",
             highestTicket: metadata.highestTicket || "",
             salesProcess: metadata.salesProcess || "",
             crmExperience: metadata.crmExperience || "",
@@ -104,8 +107,8 @@ export default function OnboardingPage() {
 
   const sectionValidators: Record<number, () => boolean> = {
     1: () => {
-      const { highestTicket } = formData
-      return highestTicket.trim().length >= 50
+      const { role, highestTicket } = formData
+      return Boolean(role) && highestTicket.trim().length >= 50
     },
     2: () => {
       const { salesProcess } = formData
@@ -290,6 +293,38 @@ export default function OnboardingPage() {
               {/* Section 1: Basic Performance */}
               {currentSection === 1 && (
                 <div className="space-y-6">
+                  <div>
+                    <Label className="text-white mb-2 block">
+                      What's your primary role in sales?
+                    </Label>
+                    <p className="text-sm text-gray-400 mb-3">
+                      Select the role that best describes your current position
+                    </p>
+                    <Select
+                      value={formData.role}
+                      onValueChange={(value) => handleInputChange("role", value)}
+                      required
+                    >
+                      <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-dark-700 border-dark-600">
+                        <SelectItem
+                          value="sdr"
+                          className="text-white hover:bg-dark-600 transition-colors duration-200"
+                        >
+                          SDR/Appointment Setter
+                        </SelectItem>
+                        <SelectItem
+                          value="ae"
+                          className="text-white hover:bg-dark-600 transition-colors duration-200"
+                        >
+                          AE/Closer
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div>
                     <Label className="text-white mb-2 block">
                       What's the highest-ticket offer you've personally closed?
