@@ -52,10 +52,11 @@ export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState<any[]>([])
   const [selectedApplicant, setSelectedApplicant] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  const [sortByScore, setSortByScore] = useState(false)
   const [notes, setNotes] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [scoringInProgress, setScoringInProgress] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -80,34 +81,17 @@ export default function ApplicantsPage() {
   const filteredApplicants = applicants.filter((applicant) => {
     const name = applicant.user?.name || applicant.name || ""
     if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    if (activeTab === "new" && applicant.status !== "new") return false
-    if (activeTab === "reviewing" && applicant.status !== "reviewing") return false
-    if (activeTab === "interviewing" && applicant.status !== "interviewing") return false
-    if (activeTab === "hired" && applicant.status !== "hired") return false
-    if (activeTab === "rejected" && applicant.status !== "rejected") return false
-    if (activeTab === "starred" && !applicant.starred) return false
     return true
-  })
-
-  const handleStarToggle = async (id: number) => {
-    try {
-      const applicant = applicants.find(a => a.id === id)
-      if (!applicant) return
-      
-      const { error } = await supabase
-        .from("applicants")
-        .update({ starred: !applicant.starred })
-        .eq("id", id)
-      
-      if (error) throw error
-      
-      setApplicants((prev) =>
-        prev.map((applicant) => (applicant.id === id ? { ...applicant, starred: !applicant.starred } : applicant)),
-      )
-    } catch (err: any) {
-      console.error("Failed to update starred status:", err)
+  }).sort((a, b) => {
+    if (sortByScore) {
+      // Sort by score descending (highest first)
+      const scoreA = a.score ?? 0
+      const scoreB = b.score ?? 0
+      return scoreB - scoreA
     }
-  }
+    // Default: sort by date (most recent first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
 
   const handleStatusChange = async (id: number, status: string) => {
     try {
@@ -142,6 +126,37 @@ export default function ApplicantsPage() {
       } catch (err: any) {
         console.error("Failed to save notes:", err)
       }
+    }
+  }
+
+  const handleScoreApplicant = async (applicantId: number) => {
+    try {
+      setScoringInProgress(applicantId)
+      const res = await fetch("/api/score-applicant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicantId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Scoring failed")
+      
+      // Update the applicant in state with the new score
+      setApplicants((prev) =>
+        prev.map((applicant) => 
+          applicant.id === applicantId 
+            ? { ...applicant, score: data.score, score_reasons: data.reasons }
+            : applicant
+        )
+      )
+      
+      // If this is the selected applicant, update it too
+      if (selectedApplicant?.id === applicantId) {
+        setSelectedApplicant((prev: any) => ({ ...prev, score: data.score, score_reasons: data.reasons }))
+      }
+    } catch (err: any) {
+      console.error("Failed to score applicant:", err)
+    } finally {
+      setScoringInProgress(null)
     }
   }
 
@@ -236,49 +251,17 @@ export default function ApplicantsPage() {
                 />
               </div>
 
-              <Tabs defaultValue="all" onValueChange={setActiveTab}>
-                <TabsList className="bg-dark-700 p-1 w-full grid grid-cols-3 mb-4">
-                  <TabsTrigger
-                    value="all"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    All
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="starred"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    Starred
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="new"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    New
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsList className="bg-dark-700 p-1 w-full grid grid-cols-3">
-                  <TabsTrigger
-                    value="reviewing"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    Reviewing
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="interviewing"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    Interviewing
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="hired"
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-400 rounded-md transition-all duration-300 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
-                  >
-                    Hired
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-400">Recent Applicants ({filteredApplicants.length})</h3>
+                <AnimatedButton
+                  variant={sortByScore ? "purple" : "outline"}
+                  size="sm"
+                  onClick={() => setSortByScore(!sortByScore)}
+                  icon={<Brain className="w-4 h-4" />}
+                >
+                  {sortByScore ? "Top Rated" : "Sort by AI Score"}
+                </AnimatedButton>
+              </div>
             </div>
 
             <AnimatedCard variant="hover-glow" className="flex-1 min-h-0">
@@ -309,52 +292,43 @@ export default function ApplicantsPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
+                                  <div className="flex items-center text-xs text-gray-400 mt-1">
+                                    <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                                    <span className="truncate">Applied {applicant.applied_date ? new Date(applicant.applied_date).toLocaleDateString() : 'Recently'}</span>
+                                  </div>
+                                </div>
                                 {applicant.score !== undefined && applicant.score !== null && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div>{getScoreBadge(applicant.score)}</div>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="bg-dark-700 border-dark-600 max-w-xs">
-                                        <p className="text-sm text-white font-semibold mb-1">Fit Score</p>
-                                        {applicant.score_reasons?.map((r: string, idx: number) => (
-                                          <p key={idx} className="text-xs text-gray-300">• {r}</p>
-                                        ))}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold text-white">{applicant.score}%</div>
+                                    <div className="text-xs text-gray-400">AI Score</div>
+                                  </div>
+                                )}
+                                {(applicant.score === undefined || applicant.score === null) && (
+                                  <AnimatedButton
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleScoreApplicant(applicant.id)
+                                    }}
+                                    isLoading={scoringInProgress === applicant.id}
+                                    icon={<Brain className="w-3 h-3" />}
+                                  >
+                                    Score
+                                  </AnimatedButton>
                                 )}
                               </div>
-                              <div className="flex items-center text-xs text-gray-400 mt-1">
-                                <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
-                                <span className="truncate">Applied {applicant.appliedDate}</span>
-                              </div>
+                              {applicant.score_reasons && applicant.score_reasons.length > 0 && (
+                                <div className="mt-2 text-xs text-gray-400">
+                                  <div className="line-clamp-2">
+                                    {applicant.score_reasons[0]}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleStarToggle(applicant.id)
-                            }}
-                            className={cn(
-                              "p-1 rounded-lg transition-all duration-300 flex-shrink-0",
-                              applicant.starred
-                                ? "text-yellow-400 bg-yellow-400/10 hover:bg-yellow-400/20"
-                                : "text-gray-400 hover:text-yellow-400 hover:bg-dark-700",
-                            )}
-                          >
-                            <Star className={cn("w-4 h-4", applicant.starred && "fill-current")} />
-                          </button>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center text-xs text-gray-400 min-w-0 flex-1">
-                            <User className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{applicant.location}</span>
-                          </div>
-                          <div className="flex-shrink-0 ml-2">
-                            {getStatusBadge(applicant.status)}
                           </div>
                         </div>
                       </div>
@@ -366,9 +340,7 @@ export default function ApplicantsPage() {
                       <p className="text-gray-400 mb-6">
                         {searchQuery
                           ? "No applicants match your search criteria"
-                          : activeTab === "all"
-                            ? "You don't have any applicants yet"
-                            : `You don't have any ${activeTab} applicants`}
+                          : "You don't have any applicants yet"}
                       </p>
                     </div>
                   )}
@@ -398,10 +370,8 @@ export default function ApplicantsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h2 className="text-2xl font-bold text-white truncate">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
-                          {selectedApplicant.starred && <Star className="w-5 h-5 text-yellow-400 fill-current flex-shrink-0" />}
                         </div>
                         <p className="text-gray-400 truncate">{selectedApplicant.location}</p>
-                        <div className="flex items-center mt-2">{getStatusBadge(selectedApplicant.status)}</div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
@@ -475,19 +445,6 @@ export default function ApplicantsPage() {
                             <XCircle className="mr-2 h-4 w-4 text-red-400" />
                             <span>Mark as Rejected</span>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-dark-600" />
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStarToggle(selectedApplicant.id)}
-                          >
-                            <Star
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedApplicant.starred ? "text-yellow-400 fill-current" : "text-gray-400",
-                              )}
-                            />
-                            <span>{selectedApplicant.starred ? "Remove Star" : "Add Star"}</span>
-                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -516,19 +473,57 @@ export default function ApplicantsPage() {
                 <ScrollArea className="flex-1 min-h-0">
                   <div className="p-6 space-y-6">
                     {/* Fit Score */}
-                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                          <Brain className="w-5 h-5 text-purple-400" /> Fit Score: {selectedApplicant.score}%
-                        </h3>
+                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined ? (
+                      <AnimatedCard className="p-6 bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-purple-500/30">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-xl font-semibold text-white mb-1 flex items-center gap-2">
+                              <Brain className="w-6 h-6 text-purple-400" /> AI Match Score
+                            </h3>
+                            <p className="text-sm text-gray-400">Automated fit assessment for this role</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-4xl font-bold text-white">{selectedApplicant.score}%</div>
+                            <div className={cn(
+                              "text-sm font-medium mt-1",
+                              selectedApplicant.score >= 75 ? "text-green-400" :
+                              selectedApplicant.score >= 50 ? "text-yellow-400" : "text-red-400"
+                            )}>
+                              {selectedApplicant.score >= 75 ? "Excellent Match" :
+                               selectedApplicant.score >= 50 ? "Good Match" : "Fair Match"}
+                            </div>
+                          </div>
+                        </div>
                         {selectedApplicant.score_reasons?.length > 0 && (
-                          <ul className="list-disc list-inside space-y-1 text-gray-300">
-                            {selectedApplicant.score_reasons.map((r: string, idx: number) => (
-                              <li key={idx}>{r}</li>
-                            ))}
-                          </ul>
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Key Factors:</h4>
+                            <div className="space-y-2">
+                              {selectedApplicant.score_reasons.map((r: string, idx: number) => (
+                                <div key={idx} className="flex items-start gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
+                                  <p className="text-sm text-gray-300">{r}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
-                      </div>
+                      </AnimatedCard>
+                    ) : (
+                      <AnimatedCard className="p-6 bg-dark-800 border-dark-600">
+                        <div className="text-center">
+                          <Brain className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                          <h3 className="text-lg font-semibold text-white mb-2">No AI Score Yet</h3>
+                          <p className="text-sm text-gray-400 mb-4">Generate an AI assessment for this applicant</p>
+                          <AnimatedButton
+                            variant="purple"
+                            onClick={() => handleScoreApplicant(selectedApplicant.id)}
+                            isLoading={scoringInProgress === selectedApplicant.id}
+                            icon={<Brain className="w-4 h-4" />}
+                          >
+                            Generate AI Score
+                          </AnimatedButton>
+                        </div>
+                      </AnimatedCard>
                     )}
 
                     {/* Video Introduction */}
