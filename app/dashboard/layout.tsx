@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/dashboard/invites",
       icon: <Send className="h-5 w-5" />,
       current: pathname === "/dashboard/invites",
-      show: userData?.role === "user",
+      show: userData?.role === "sales-professional",
     },
     {
       name: "Network",

@@ -54,11 +54,24 @@ Job Details:
 Click here to schedule your interview at a time that works for you.
 `
 
+    // Get recruiter details
+    const { data: recruiter } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single()
+
     await supabase.from("notifications").insert({
       user_id: repId,
       title: `Interview Invitation: ${jobDetails?.title}`,
       body: notificationBody.trim(),
       href: `/dashboard/invites`,
+      metadata: {
+        type: 'interview_invitation',
+        jobId: jobId,
+        recruiterName: recruiter?.name || 'Recruiter',
+        recruiterId: user.id
+      }
     })
 
     // Notify recruiter as confirmation

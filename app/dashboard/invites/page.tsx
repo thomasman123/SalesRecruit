@@ -74,29 +74,49 @@ export default function InvitesPage() {
         const parsedInvites = notifications.map((notif) => {
           // Extract job details from the notification body
           const body = notif.body || ""
-          const titleMatch = body.match(/invited to interview for (.+?)!/)
-          const dateMatch = body.match(/📅 Date: (.+)/)
-          const timeMatch = body.match(/⏰ Time: (.+)/)
-          const companyMatch = body.match(/• Company: (.+)/)
-          const priceMatch = body.match(/• Price Range: (.+)/)
-          const industryMatch = body.match(/• Industry: (.+)/)
-          const locationMatch = body.match(/• Location: (.+)/)
-          const commissionMatch = body.match(/• Commission: (.+)/)
-          const messageMatch = body.match(/Message from recruiter:\n(.+)/)
+          const title = notif.title || ""
+          
+          // Extract job title from notification title
+          const titleMatch = title.match(/Interview Invitation: (.+)/)
+          const jobTitle = titleMatch ? titleMatch[1] : "Unknown Position"
+          
+          // Parse the body more reliably
+          const lines = body.split('\n').map(line => line.trim())
+          
+          let company = "Unknown Company"
+          let priceRange = "Not specified"
+          let industry = "Not specified"
+          let remote = false
+          let commission = "Not specified"
+          
+          lines.forEach(line => {
+            if (line.startsWith('• Company:')) {
+              company = line.replace('• Company:', '').trim()
+            } else if (line.startsWith('• Price Range:')) {
+              priceRange = line.replace('• Price Range:', '').trim()
+            } else if (line.startsWith('• Industry:')) {
+              industry = line.replace('• Industry:', '').trim()
+            } else if (line.startsWith('• Location:')) {
+              const location = line.replace('• Location:', '').trim()
+              remote = location.includes('Remote')
+            } else if (line.startsWith('• Commission:')) {
+              commission = line.replace('• Commission:', '').trim()
+            }
+          })
 
           return {
             id: notif.id,
-            jobId: 0, // We'll need to extract this from the notification
-            jobTitle: titleMatch ? titleMatch[1] : "Unknown Position",
-            company: companyMatch ? companyMatch[1] : "Unknown Company",
-            priceRange: priceMatch ? priceMatch[1] : "Not specified",
-            industry: industryMatch ? industryMatch[1] : "Not specified",
-            remote: locationMatch ? locationMatch[1].includes("Remote") : false,
-            commission: commissionMatch ? commissionMatch[1] : "Not specified",
-            recruiterName: "Recruiter", // We'll need to extract this
-            scheduledDate: dateMatch ? dateMatch[1] : undefined,
-            scheduledTime: timeMatch ? timeMatch[1] : undefined,
-            message: messageMatch ? messageMatch[1] : undefined,
+            jobId: 0,
+            jobTitle,
+            company,
+            priceRange,
+            industry,
+            remote,
+            commission,
+            recruiterName: "Recruiter",
+            scheduledDate: undefined,
+            scheduledTime: undefined,
+            message: undefined,
             notificationId: notif.id,
           }
         })
