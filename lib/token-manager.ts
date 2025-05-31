@@ -35,12 +35,15 @@ export const getUserTokens = async (userId: string): Promise<TokenData | null> =
 
     if (!connection) return null
 
-    // Decrypt tokens
-    const accessToken = connection.encrypted 
+    // Check if tokens are encrypted
+    const isEncrypted = connection.encrypted === true
+    
+    // Decrypt tokens if encrypted
+    const accessToken = isEncrypted
       ? decryptToken(connection.access_token)
       : connection.access_token
     
-    const refreshToken = connection.encrypted
+    const refreshToken = isEncrypted
       ? decryptToken(connection.refresh_token)
       : connection.refresh_token
 
@@ -48,7 +51,7 @@ export const getUserTokens = async (userId: string): Promise<TokenData | null> =
       accessToken,
       refreshToken,
       expiryDate: connection.token_expiry ? new Date(connection.token_expiry).getTime() : 0,
-      encrypted: connection.encrypted || false,
+      encrypted: isEncrypted,
     }
 
     // Check if token is expired or will expire in the next 5 minutes
