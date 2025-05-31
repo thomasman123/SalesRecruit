@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { FadeIn } from "@/components/ui/fade-in"
@@ -20,7 +20,7 @@ import { getSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "@/components/ui/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 
-export default function CalendarPage() {
+function CalendarPageContent() {
   const [isConnected, setIsConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
@@ -398,5 +398,25 @@ export default function CalendarPage() {
         </AnimatedCard>
       </FadeIn>
     </div>
+  )
+}
+
+// Loading fallback component
+function CalendarPageLoading() {
+  return (
+    <div className="container mx-auto max-w-7xl py-12">
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-dark-700 rounded w-1/4"></div>
+        <div className="h-4 bg-dark-700 rounded w-1/2"></div>
+      </div>
+    </div>
+  )
+}
+
+export default function CalendarPage() {
+  return (
+    <Suspense fallback={<CalendarPageLoading />}>
+      <CalendarPageContent />
+    </Suspense>
   )
 } 
