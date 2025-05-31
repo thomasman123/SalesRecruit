@@ -238,7 +238,7 @@ export default function ApplicantsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl h-full overflow-hidden">
+    <div className="container mx-auto max-w-7xl h-screen overflow-hidden flex flex-col">
       <FadeIn delay={100}>
         <div className="flex items-center mb-8">
           <Link
@@ -254,7 +254,7 @@ export default function ApplicantsPage() {
         </div>
       </FadeIn>
 
-      <div className="flex gap-4 min-h-0 overflow-hidden">
+      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
         {/* Left Panel - Applicant List */}
         <FadeIn delay={200}>
           <div className="w-96 flex flex-col flex-shrink-0">
@@ -283,8 +283,8 @@ export default function ApplicantsPage() {
               </div>
             </div>
 
-            <AnimatedCard variant="hover-glow" className="flex-1 min-h-0">
-              <ScrollArea className="h-[calc(100vh-24rem)]">
+            <AnimatedCard variant="hover-glow" className="flex-1 min-h-0 flex flex-col">
+              <ScrollArea className="flex-1 overflow-y-auto">
                 <div className="p-2">
                   {filteredApplicants.length > 0 ? (
                     filteredApplicants.map((applicant) => (
@@ -373,7 +373,7 @@ export default function ApplicantsPage() {
         <FadeIn delay={300}>
           <div className="flex-1 min-w-0">
             {selectedApplicant ? (
-              <AnimatedCard variant="hover-glow" className="h-[calc(100vh-12rem)] min-h-0 overflow-hidden flex flex-col">
+              <AnimatedCard variant="hover-glow" className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-dark-600 flex-shrink-0">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-4 min-w-0 flex-1">
@@ -639,7 +639,7 @@ export default function ApplicantsPage() {
                 </div>
               </AnimatedCard>
             ) : (
-              <AnimatedCard variant="hover-glow" className="h-[calc(100vh-12rem)] flex items-center justify-center">
+              <AnimatedCard variant="hover-glow" className="flex-1 flex items-center justify-center">
                 <div className="text-center p-12">
                   <Users className="h-16 w-16 text-gray-500 mx-auto mb-6" />
                   <h2 className="text-2xl font-bold text-white mb-4">Select an Applicant</h2>
