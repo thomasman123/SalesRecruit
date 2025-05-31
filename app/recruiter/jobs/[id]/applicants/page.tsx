@@ -708,10 +708,14 @@ export default function ApplicantsPage() {
                     jobDetails: {
                       title: jobDetails?.title,
                       company: jobDetails?.company_overview,
+                      company_overview: jobDetails?.company_overview,
                       priceRange: jobDetails?.price_range,
+                      price_range: jobDetails?.price_range,
                       industry: jobDetails?.industry,
                       remote: jobDetails?.remote_compatible,
+                      remote_compatible: jobDetails?.remote_compatible,
                       commission: jobDetails?.commission_structure,
+                      commission_structure: jobDetails?.commission_structure,
                     }
                   }
 

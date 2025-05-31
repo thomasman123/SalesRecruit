@@ -45,11 +45,11 @@ export async function POST(request: Request) {
 You've been invited to interview for ${jobDetails?.title}!
 
 Job Details:
-• Company: ${jobDetails?.company}
-• Price Range: ${jobDetails?.priceRange}
-• Industry: ${jobDetails?.industry}
-• Location: ${jobDetails?.remote ? 'Remote' : 'On-site'}
-• Commission: ${jobDetails?.commission}
+• Company: ${jobDetails?.company || jobDetails?.company_overview || 'N/A'}
+• Price Range: ${jobDetails?.priceRange || jobDetails?.price_range || 'Not specified'}
+• Industry: ${jobDetails?.industry || 'Not specified'}
+• Location: ${jobDetails?.remote || jobDetails?.remote_compatible ? 'Remote' : 'On-site'}
+• Commission: ${jobDetails?.commission || jobDetails?.commission_structure || 'Not specified'}
 
 Click here to schedule your interview at a time that works for you.
 `
@@ -70,6 +70,12 @@ Click here to schedule your interview at a time that works for you.
       metadata: {
         type: 'interview_invitation',
         jobId: jobId,
+        jobTitle: jobDetails?.title || 'Unknown Position',
+        company: jobDetails?.company || jobDetails?.company_overview || 'Unknown Company',
+        priceRange: jobDetails?.priceRange || jobDetails?.price_range || 'Not specified',
+        industry: jobDetails?.industry || 'Not specified',
+        remote: jobDetails?.remote || jobDetails?.remote_compatible || false,
+        commission: jobDetails?.commission || jobDetails?.commission_structure || 'Not specified',
         recruiterName: recruiter?.name || 'Recruiter',
         recruiterId: user.id,
         applicantId: applicant.id

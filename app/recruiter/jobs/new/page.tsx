@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Save, Upload, Building2, DollarSign, Briefcase } from "lucide-react"
+import { ArrowLeft, Save, Upload, Building2, DollarSign, Briefcase, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { createJob } from "@/app/actions/jobs"
 import { useToast } from "@/components/ui/use-toast"
@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/use-toast"
 export default function NewJobPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     industry: "",
@@ -45,6 +46,9 @@ export default function NewJobPage() {
   }
 
   const handleSaveAsDraft = async () => {
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
     try {
       await createJob({
         ...formData,
@@ -59,10 +63,14 @@ export default function NewJobPage() {
         description: err.message.length >= 60 ? err.message : undefined,
         variant: "destructive",
       })
+      setIsSubmitting(false)
     }
   }
 
   const handlePublish = async () => {
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
     try {
       await createJob({
         ...formData,
@@ -77,6 +85,7 @@ export default function NewJobPage() {
         description: err.message.length >= 60 ? err.message : undefined,
         variant: "destructive",
       })
+      setIsSubmitting(false)
     }
   }
 
@@ -112,6 +121,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="e.g., Senior Closer - Executive Coaching"
                 variant="glow"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -120,7 +130,7 @@ export default function NewJobPage() {
                 <Label htmlFor="industry" className="text-white">
                   Industry
                 </Label>
-                <Select value={formData.industry} onValueChange={(value) => handleInputChange("industry", value)}>
+                <Select value={formData.industry} onValueChange={(value) => handleInputChange("industry", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
@@ -151,7 +161,7 @@ export default function NewJobPage() {
                 <Label htmlFor="role" className="text-white">
                   Role
                 </Label>
-                <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
+                <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
@@ -170,7 +180,7 @@ export default function NewJobPage() {
                 <Label htmlFor="country" className="text-white">
                   Country
                 </Label>
-                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -192,7 +202,7 @@ export default function NewJobPage() {
                 <Label htmlFor="price_range" className="text-white">
                   Offer Price Range
                 </Label>
-                <Select value={formData.price_range} onValueChange={(value) => handleInputChange("price_range", value)}>
+                <Select value={formData.price_range} onValueChange={(value) => handleInputChange("price_range", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select price range" />
                   </SelectTrigger>
@@ -214,7 +224,7 @@ export default function NewJobPage() {
                 <Label htmlFor="lead_source" className="text-white">
                   Lead Source
                 </Label>
-                <Select value={formData.lead_source} onValueChange={(value) => handleInputChange("lead_source", value)}>
+                <Select value={formData.lead_source} onValueChange={(value) => handleInputChange("lead_source", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select lead source" />
                   </SelectTrigger>
@@ -239,6 +249,7 @@ export default function NewJobPage() {
                 <Select
                   value={formData.commission_structure}
                   onValueChange={(value) => handleInputChange("commission_structure", value)}
+                  disabled={isSubmitting}
                 >
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select commission structure" />
@@ -261,7 +272,7 @@ export default function NewJobPage() {
                 <Label htmlFor="team_size" className="text-white">
                   Team Size / Sales Infra
                 </Label>
-                <Select value={formData.team_size} onValueChange={(value) => handleInputChange("team_size", value)}>
+                <Select value={formData.team_size} onValueChange={(value) => handleInputChange("team_size", value)} disabled={isSubmitting}>
                   <SelectTrigger className="border-dark-600 bg-dark-700 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-500/50">
                     <SelectValue placeholder="Select team size" />
                   </SelectTrigger>
@@ -287,6 +298,7 @@ export default function NewJobPage() {
                     checked={formData.remote_compatible}
                     onCheckedChange={(checked) => handleInputChange("remote_compatible", !!checked)}
                     className="border-dark-600 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+                    disabled={isSubmitting}
                   />
                   <Label
                     htmlFor="remote"
@@ -319,6 +331,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("company_overview", e.target.value)}
                 placeholder="Describe your company, mission, and what makes it unique..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -332,6 +345,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("what_you_sell", e.target.value)}
                 placeholder="Describe the product/service, target audience, and value proposition..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -345,6 +359,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("sales_process", e.target.value)}
                 placeholder="Describe your sales process, tools used, and typical sales cycle..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -358,6 +373,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("whats_provided", e.target.value.split("\n").filter(Boolean))}
                 placeholder="List all resources, tools, and support provided to the sales rep..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -371,6 +387,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("not_for", e.target.value)}
                 placeholder="Describe who would NOT be a good fit for this role..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -395,6 +412,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("commission_breakdown", e.target.value)}
                 placeholder="Detail the commission structure, average earnings, and examples of top performer earnings..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -408,6 +426,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("ramp_time", e.target.value)}
                 placeholder="e.g., 2-3 weeks to first close, 6-8 weeks to full productivity"
                 variant="glow"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -421,6 +440,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("working_hours", e.target.value)}
                 placeholder="e.g., Flexible hours, but most calls happen 10am-6pm EST"
                 variant="glow"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -434,6 +454,7 @@ export default function NewJobPage() {
                 onChange={(e) => handleInputChange("video_url", e.target.value)}
                 placeholder="e.g., https://www.loom.com/share/your-video-id"
                 variant="glow"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -441,7 +462,7 @@ export default function NewJobPage() {
               <Upload className="w-12 h-12 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400 mb-2">Or upload your video directly</p>
               <p className="text-sm text-gray-500">MP4, MOV, or WebM (max 100MB)</p>
-              <AnimatedButton variant="outline" className="mt-4">
+              <AnimatedButton variant="outline" className="mt-4" disabled={isSubmitting}>
                 Choose File
               </AnimatedButton>
             </div>
@@ -451,12 +472,36 @@ export default function NewJobPage() {
 
       <FadeIn delay={500}>
         <div className="flex justify-between mb-16">
-          <AnimatedButton variant="outline" onClick={handleSaveAsDraft}>
-            <Save className="w-4 h-4 mr-2" />
-            Save as Draft
+          <AnimatedButton 
+            variant="outline" 
+            onClick={handleSaveAsDraft}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save as Draft
+              </>
+            )}
           </AnimatedButton>
-          <AnimatedButton variant="purple" onClick={handlePublish}>
-            Publish Job
+          <AnimatedButton 
+            variant="purple" 
+            onClick={handlePublish}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              "Publish Job"
+            )}
           </AnimatedButton>
         </div>
       </FadeIn>

@@ -83,19 +83,19 @@ export default function InvitesPage() {
           
           // Extract job title from notification title
           const titleMatch = title.match(/Interview Invitation: (.+)/)
-          const jobTitle = titleMatch ? titleMatch[1] : "Unknown Position"
+          const jobTitle = metadata.jobTitle || (titleMatch ? titleMatch[1] : "Unknown Position")
           
-          // If we have metadata, use it (newer notifications)
-          if (metadata.type === 'interview_invitation') {
+          // If we have complete metadata, use it (newer notifications)
+          if (metadata.type === 'interview_invitation' && metadata.company) {
             return {
               id: notif.id,
               jobId: metadata.jobId || 0,
               jobTitle,
-              company: "Unknown Company", // We'll parse from body
-              priceRange: "Not specified",
-              industry: "Not specified",
-              remote: false,
-              commission: "Not specified",
+              company: metadata.company || "Unknown Company",
+              priceRange: metadata.priceRange || "Not specified",
+              industry: metadata.industry || "Not specified",
+              remote: metadata.remote || false,
+              commission: metadata.commission || "Not specified",
               recruiterName: metadata.recruiterName || "Recruiter",
               scheduledDate: undefined,
               scheduledTime: undefined,
@@ -106,7 +106,7 @@ export default function InvitesPage() {
             }
           }
           
-          // Parse the body for all notifications to get job details
+          // Otherwise, parse the body for all notifications to get job details (older notifications)
           const lines = body.split('\n').map((line: string) => line.trim())
           
           let company = "Unknown Company"
@@ -116,17 +116,17 @@ export default function InvitesPage() {
           let commission = "Not specified"
           
           lines.forEach((line: string) => {
-            if (line.startsWith('• Company:')) {
-              company = line.replace('• Company:', '').trim()
-            } else if (line.startsWith('• Price Range:')) {
-              priceRange = line.replace('• Price Range:', '').trim()
-            } else if (line.startsWith('• Industry:')) {
-              industry = line.replace('• Industry:', '').trim()
-            } else if (line.startsWith('• Location:')) {
-              const location = line.replace('• Location:', '').trim()
-              remote = location.includes('Remote')
-            } else if (line.startsWith('• Commission:')) {
-              commission = line.replace('• Commission:', '').trim()
+            if (line.includes('Company:')) {
+              company = line.split('Company:')[1]?.trim() || "Unknown Company"
+            } else if (line.includes('Price Range:')) {
+              priceRange = line.split('Price Range:')[1]?.trim() || "Not specified"
+            } else if (line.includes('Industry:')) {
+              industry = line.split('Industry:')[1]?.trim() || "Not specified"
+            } else if (line.includes('Location:')) {
+              const location = line.split('Location:')[1]?.trim() || ""
+              remote = location.toLowerCase().includes('remote')
+            } else if (line.includes('Commission:')) {
+              commission = line.split('Commission:')[1]?.trim() || "Not specified"
             }
           })
 
@@ -187,9 +187,10 @@ export default function InvitesPage() {
       if (!selectedInvite.applicantId || !selectedInvite.recruiterId) {
         toast({
           title: "Missing information",
-          description: "This invitation is missing required details. Please try again.",
+          description: "This invitation is missing required details. Please contact the recruiter for assistance.",
           variant: "destructive",
         })
+        setBooking(false)
         return
       }
 
