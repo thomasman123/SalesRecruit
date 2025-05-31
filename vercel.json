@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/calendar/refresh-tokens",
+      "schedule": "0 * * * *"
+    }
+  ],
+  "functions": {
+    "app/api/calendar/refresh-tokens/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/calendar/events/route.ts": {
+      "maxDuration": 30
+    }
+  }
+} 

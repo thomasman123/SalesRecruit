@@ -14,13 +14,16 @@ import {
   AlertCircle,
   Link as LinkIcon,
   Settings,
+  Loader2,
 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "@/components/ui/use-toast"
+import { useSearchParams, useRouter } from "next/navigation"
 
 export default function CalendarPage() {
   const [isConnected, setIsConnected] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [connecting, setConnecting] = useState(false)
   const [availability, setAvailability] = useState({
     monday: { enabled: true, start: "09:00", end: "17:00" },
     tuesday: { enabled: true, start: "09:00", end: "17:00" },
@@ -32,48 +35,77 @@ export default function CalendarPage() {
   })
 
   const supabase = getSupabaseClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
+    // Check for OAuth callback params
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+
+    if (success === 'connected') {
+      toast({
+        title: "Calendar connected!",
+        description: "Your Google Calendar has been successfully connected.",
+      })
+      // Clear query params
+      router.replace('/dashboard/calendar')
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        auth_failed: "Google authentication failed. Please try again.",
+        invalid_request: "Invalid request. Please try again.",
+        save_failed: "Failed to save calendar connection. Please try again.",
+        callback_failed: "Something went wrong. Please try again.",
+      }
+      
+      toast({
+        title: "Connection failed",
+        description: errorMessages[error] || "Failed to connect calendar. Please try again.",
+        variant: "destructive",
+      })
+      // Clear query params
+      router.replace('/dashboard/calendar')
+    }
+
     checkCalendarConnection()
-  }, [])
+  }, [searchParams, router])
 
   const checkCalendarConnection = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // TODO: Uncomment when calendar_connections table is available in types
       // Check if user has connected their calendar
-      // const { data: connection } = await supabase
-      //   .from("calendar_connections")
-      //   .select("*")
-      //   .eq("user_id", user.id)
-      //   .single()
+      const { data: connection } = await (supabase as any)
+        .from("calendar_connections")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("provider", "google")
+        .single()
 
-      // setIsConnected(!!connection)
+      setIsConnected(!!connection)
 
-      // TODO: Uncomment when calendar_availability table is available in types
       // Load availability settings
-      // const { data: availabilityData } = await supabase
-      //   .from("calendar_availability")
-      //   .select("*")
-      //   .eq("user_id", user.id)
+      const { data: availabilityData } = await (supabase as any)
+        .from("calendar_availability")
+        .select("*")
+        .eq("user_id", user.id)
 
-      // if (availabilityData && availabilityData.length > 0) {
-      //   const newAvailability = { ...availability }
-      //   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      if (availabilityData && availabilityData.length > 0) {
+        const newAvailability = { ...availability }
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         
-      //   availabilityData.forEach((day: any) => {
-      //     const dayName = days[day.day_of_week] as keyof typeof availability
-      //     newAvailability[dayName] = {
-      //       enabled: day.is_available,
-      //       start: day.start_time.slice(0, 5),
-      //       end: day.end_time.slice(0, 5),
-      //     }
-      //   })
+        availabilityData.forEach((day: any) => {
+          const dayName = days[day.day_of_week] as keyof typeof availability
+          newAvailability[dayName] = {
+            enabled: day.is_available,
+            start: day.start_time.slice(0, 5),
+            end: day.end_time.slice(0, 5),
+          }
+        })
         
-      //   setAvailability(newAvailability)
-      // }
+        setAvailability(newAvailability)
+      }
     } catch (error) {
       console.error("Error checking calendar connection:", error)
     } finally {
@@ -82,12 +114,53 @@ export default function CalendarPage() {
   }
 
   const handleConnectCalendar = async () => {
-    // In a real implementation, this would redirect to Google OAuth
-    // For now, we'll simulate the connection
-    toast({
-      title: "Coming soon",
-      description: "Google Calendar integration will be available soon.",
-    })
+    setConnecting(true)
+    try {
+      const response = await fetch('/api/auth/google')
+      const data = await response.json()
+      
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('Failed to get auth URL')
+      }
+    } catch (error) {
+      console.error('Error connecting calendar:', error)
+      toast({
+        title: "Connection failed",
+        description: "Failed to connect to Google Calendar. Please try again.",
+        variant: "destructive",
+      })
+      setConnecting(false)
+    }
+  }
+
+  const handleDisconnectCalendar = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await (supabase as any)
+        .from("calendar_connections")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("provider", "google")
+
+      if (error) throw error
+
+      setIsConnected(false)
+      toast({
+        title: "Calendar disconnected",
+        description: "Your Google Calendar has been disconnected.",
+      })
+    } catch (error: any) {
+      console.error("Error disconnecting calendar:", error)
+      toast({
+        title: "Error",
+        description: "Failed to disconnect calendar. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSaveAvailability = async () => {
@@ -95,29 +168,28 @@ export default function CalendarPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // TODO: Uncomment when calendar_availability table is available in types
-      // const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       
       // Delete existing availability
-      // await supabase
-      //   .from("calendar_availability")
-      //   .delete()
-      //   .eq("user_id", user.id)
+      await (supabase as any)
+        .from("calendar_availability")
+        .delete()
+        .eq("user_id", user.id)
 
       // Insert new availability
-      // const availabilityData = Object.entries(availability).map(([day, settings], index) => ({
-      //   user_id: user.id,
-      //   day_of_week: days.indexOf(day),
-      //   start_time: settings.start,
-      //   end_time: settings.end,
-      //   is_available: settings.enabled,
-      // }))
+      const availabilityData = Object.entries(availability).map(([day, settings], index) => ({
+        user_id: user.id,
+        day_of_week: days.indexOf(day),
+        start_time: settings.start + ':00',
+        end_time: settings.end + ':00',
+        is_available: settings.enabled,
+      }))
 
-      // const { error } = await supabase
-      //   .from("calendar_availability")
-      //   .insert(availabilityData)
+      const { error } = await (supabase as any)
+        .from("calendar_availability")
+        .insert(availabilityData)
 
-      // if (error) throw error
+      if (error) throw error
 
       toast({
         title: "Availability saved",
@@ -190,11 +262,15 @@ export default function CalendarPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-purple-400" />
-                    Two-way sync with Google Calendar
+                    Email invites sent to all participants
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-purple-400" />
-                    Availability checking
+                    Google Meet links automatically added
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-purple-400" />
+                    Two-way sync with Google Calendar
                   </li>
                 </ul>
               </div>
@@ -204,9 +280,10 @@ export default function CalendarPage() {
                   variant="purple"
                   className="w-full"
                   onClick={handleConnectCalendar}
-                  icon={<LinkIcon className="w-4 h-4" />}
+                  disabled={connecting}
+                  icon={connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <LinkIcon className="w-4 h-4" />}
                 >
-                  Connect Google Calendar
+                  {connecting ? "Connecting..." : "Connect Google Calendar"}
                 </AnimatedButton>
               )}
 
@@ -214,7 +291,7 @@ export default function CalendarPage() {
                 <AnimatedButton
                   variant="outline"
                   className="w-full"
-                  onClick={() => setIsConnected(false)}
+                  onClick={handleDisconnectCalendar}
                 >
                   Disconnect Calendar
                 </AnimatedButton>

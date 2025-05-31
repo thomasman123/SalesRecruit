@@ -91,6 +91,29 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Handle Vercel Cron authentication
+  if (request.nextUrl.pathname === '/api/calendar/refresh-tokens') {
+    const authHeader = request.headers.get('authorization')
+    
+    // Vercel Cron sends a special header
+    if (process.env.VERCEL) {
+      const cronSecret = process.env.CRON_SECRET
+      
+      // Check for Vercel's cron authorization
+      if (request.headers.get('x-vercel-cron-auth') === process.env.CRON_SECRET) {
+        // Add the authorization header for our API
+        const headers = new Headers(request.headers)
+        headers.set('authorization', `Bearer ${cronSecret}`)
+        
+        return NextResponse.next({
+          request: {
+            headers,
+          },
+        })
+      }
+    }
+  }
+
   return response
 }
 

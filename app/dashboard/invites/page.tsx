@@ -15,6 +15,7 @@ import {
   Users,
   Send,
   CheckCircle,
+  Video,
 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -50,6 +51,7 @@ export default function InvitesPage() {
   const [selectedTime, setSelectedTime] = useState("")
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [recruiterAvailability, setRecruiterAvailability] = useState<any>(null)
+  const [booking, setBooking] = useState(false)
   
   const supabase = getSupabaseClient()
   const router = useRouter()
@@ -176,6 +178,7 @@ export default function InvitesPage() {
   const handleConfirmBooking = async () => {
     if (!selectedInvite || !selectedDate || !selectedTime) return
 
+    setBooking(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -190,17 +193,36 @@ export default function InvitesPage() {
         return
       }
 
+      // Get user emails for calendar invites
+      const { data: recruiterData } = await supabase
+        .from("users")
+        .select("email, name")
+        .eq("id", selectedInvite.recruiterId)
+        .single()
+
+      const { data: salesRepData } = await supabase
+        .from("users")
+        .select("email, name")
+        .eq("id", user.id)
+        .single()
+
+      const { data: applicantData } = await supabase
+        .from("applicants")
+        .select("name")
+        .eq("id", parseInt(selectedInvite.applicantId as string))
+        .single()
+
       // Create scheduled interview record
       const scheduledDateTime = new Date(selectedDate)
       const [hours, minutes] = selectedTime.split(':')
       scheduledDateTime.setHours(parseInt(hours), parseInt(minutes))
 
       // Use type assertion for the table that's not in the types yet
-      const { error: scheduleError } = await (supabase as any)
+      const { data: interview, error: scheduleError } = await (supabase as any)
         .from("scheduled_interviews")
         .insert({
           job_id: selectedInvite.jobId,
-          applicant_id: selectedInvite.applicantId,
+          applicant_id: parseInt(selectedInvite.applicantId as string),
           recruiter_id: selectedInvite.recruiterId,
           sales_rep_id: user.id,
           scheduled_date: selectedDate.toISOString().split('T')[0],
@@ -208,10 +230,75 @@ export default function InvitesPage() {
           duration_minutes: 30,
           status: 'scheduled'
         })
+        .select()
+        .single()
 
       if (scheduleError) {
         console.error("Error scheduling interview:", scheduleError)
         throw scheduleError
+      }
+
+      // Create calendar events if users have connected calendars
+      if (recruiterData && salesRepData && recruiterData.email && salesRepData.email) {
+        try {
+          const response = await fetch('/api/calendar/events', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              recruiterId: selectedInvite.recruiterId,
+              salesRepId: user.id,
+              jobTitle: selectedInvite.jobTitle,
+              company: selectedInvite.company,
+              scheduledDate: selectedDate.toISOString().split('T')[0],
+              scheduledTime: selectedTime,
+              durationMinutes: 30,
+              applicantName: applicantData?.name || 'Applicant',
+              recruiterName: recruiterData.name || selectedInvite.recruiterName,
+              recruiterEmail: recruiterData.email,
+              salesRepEmail: salesRepData.email,
+            }),
+          })
+
+          const calendarResult = await response.json()
+          
+          if (calendarResult.meetingLink) {
+            // Update the interview with the meeting link
+            await (supabase as any)
+              .from("scheduled_interviews")
+              .update({ meeting_link: calendarResult.meetingLink })
+              .eq("id", interview.id)
+
+            toast({
+              title: "Interview booked!",
+              description: (
+                <div className="space-y-2">
+                  <p>Your interview is scheduled for {selectedDate.toLocaleDateString()} at {selectedTime}</p>
+                  <p className="text-sm">Calendar invites have been sent to all participants.</p>
+                </div>
+              ) as any, // Type workaround for custom ReactNode content
+            })
+          } else {
+            toast({
+              title: "Interview booked!",
+              description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+            })
+          }
+        } catch (calendarError) {
+          console.error("Error creating calendar events:", calendarError)
+          // Still show success even if calendar events fail
+          toast({
+            title: "Interview booked!",
+            description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+          })
+        }
+      } else {
+        // No email data available, just show basic success
+        toast({
+          title: "Interview booked!",
+          description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+        })
       }
 
       // Mark notification as read
@@ -225,15 +312,10 @@ export default function InvitesPage() {
         await supabase.from("notifications").insert({
           user_id: selectedInvite.recruiterId,
           title: "Interview Scheduled",
-          body: `${user.user_metadata?.full_name || 'Sales rep'} has scheduled an interview for ${selectedInvite.jobTitle} on ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+          body: `${user.user_metadata?.full_name || salesRepData?.name || 'Sales rep'} has scheduled an interview for ${selectedInvite.jobTitle} on ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
           href: `/recruiter/jobs/${selectedInvite.jobId}/applicants`
         })
       }
-
-      toast({
-        title: "Interview booked!",
-        description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
-      })
 
       setBookingDialogOpen(false)
       fetchInvites() // Refresh the list
@@ -244,6 +326,8 @@ export default function InvitesPage() {
         description: "Please try again later",
         variant: "destructive",
       })
+    } finally {
+      setBooking(false)
     }
   }
 
@@ -334,6 +418,10 @@ export default function InvitesPage() {
                           <Clock className="w-4 h-4 mr-2 text-purple-400" />
                           <span>{invite.scheduledTime}</span>
                         </div>
+                        <div className="flex items-center">
+                          <Video className="w-4 h-4 mr-2 text-purple-400" />
+                          <span>Google Meet</span>
+                        </div>
                       </div>
                     ) : (
                       <AnimatedButton
@@ -401,6 +489,24 @@ export default function InvitesPage() {
                 </ScrollArea>
               </div>
             </div>
+
+            <div className="p-4 bg-dark-700 rounded-lg">
+              <h4 className="text-sm font-medium text-white mb-2">What happens next?</h4>
+              <ul className="space-y-1 text-sm text-gray-400">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-purple-400 mt-0.5" />
+                  <span>Calendar invites will be sent to all participants</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-purple-400 mt-0.5" />
+                  <span>A Google Meet link will be automatically created</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-purple-400 mt-0.5" />
+                  <span>The recruiter will be notified of your selection</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -410,10 +516,10 @@ export default function InvitesPage() {
             <AnimatedButton
               variant="purple"
               onClick={handleConfirmBooking}
-              disabled={!selectedDate || !selectedTime}
+              disabled={!selectedDate || !selectedTime || booking}
               icon={<Send className="w-4 h-4" />}
             >
-              Confirm Booking
+              {booking ? "Scheduling..." : "Confirm Booking"}
             </AnimatedButton>
           </div>
         </DialogContent>
