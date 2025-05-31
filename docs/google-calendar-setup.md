@@ -112,13 +112,52 @@ Google OAuth has rate limits per client ID. To scale beyond these limits:
 
 ## Automatic Token Refresh
 
-### Cron Job Setup
-Set up a cron job to call the token refresh endpoint hourly:
+### Note for Vercel Hobby Plan Users
+The Vercel hobby plan only supports daily cron jobs. You have several options:
+
+1. **Manual Refresh (Recommended for Hobby)**
+   - Tokens are automatically refreshed when users access the calendar
+   - The system refreshes tokens 5 minutes before expiration
+   - No cron job needed for small user bases
+
+2. **Daily Cron Job**
+   - Add this to `vercel.json` for daily refresh:
+   ```json
+   {
+     "crons": [{
+       "path": "/api/calendar/refresh-tokens",
+       "schedule": "0 0 * * *"
+     }]
+   }
+   ```
+
+3. **External Cron Service**
+   - Use services like Cron-job.org or EasyCron
+   - Call your refresh endpoint with the auth header
+
+4. **Upgrade to Vercel Pro**
+   - Enables hourly cron jobs as originally designed
+
+### Manual Token Refresh
+You can manually trigger token refresh anytime:
 
 ```bash
-# Example cron job (crontab -e)
-0 * * * * curl -X POST https://yourdomain.com/api/calendar/refresh-tokens \
+curl -X POST https://yourdomain.com/api/calendar/refresh-tokens \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+### Cron Job Setup (Pro Plan)
+For Vercel Pro plans, add to `vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/calendar/refresh-tokens",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
 ```
 
 ### Monitoring Token Health
@@ -206,7 +245,7 @@ To debug calendar issues:
 ## Production Checklist
 
 - [ ] Set up multiple OAuth client IDs for scaling
-- [ ] Configure cron job for token refresh
+- [ ] Configure cron job for token refresh (or use alternatives on Hobby plan)
 - [ ] Enable monitoring for token health
 - [ ] Set up error alerting
 - [ ] Test token refresh flow
