@@ -137,12 +137,12 @@ export default function OpportunitiesPage() {
   // Derived Data
   // -----------------------------
   const filterOptions = {
-    industries: ["Coaching", "Agency", "SaaS", "Fitness", "E-commerce", "Real Estate"],
+    industries: ["Biz Opp", "B2B Enterprise", "Coaching", "Agency", "SaaS", "Solar", "D2D", "Fitness", "Real Estate"],
     roles: ["SDR/Appointment Setter", "AE/Closer"],
-    priceRanges: ["$1-3K", "$3-10K", "$10K+"],
-    leadSources: ["Inbound", "Outbound", "Hybrid"],
+    priceRanges: ["1-3k", "3-6k", "6-10k", "10-15k", "15k+"],
+    leadSources: ["Paid Traffic", "Cold Calling", "Hybrid"],
     commissionStructures: ["100% Commission", "Base + Commission", "Draw Against Commission"],
-    teamSizes: ["Solo closer", "Setters in place", "Full team"],
+    teamSizes: ["Startup (1-2 reps)", "Scaling (2-6 reps)", "Established (6+ reps)"],
     countries: ["United States", "Canada", "United Kingdom", "Australia", "Germany", "France", "India", "Brazil", "Remote"],
   }
 

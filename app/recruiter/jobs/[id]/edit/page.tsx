@@ -26,6 +26,8 @@ export default function EditJobPage() {
     id: 0,
     title: "",
     industry: "",
+    role: "AE/Closer",
+    country: "",
     price_range: "",
     lead_source: "",
     commission_structure: "",
@@ -34,7 +36,6 @@ export default function EditJobPage() {
     company_overview: "",
     what_you_sell: "",
     sales_process: "",
-    whats_provided: [] as string[],
     not_for: "",
     commission_breakdown: "",
     ramp_time: "",
@@ -73,6 +74,8 @@ export default function EditJobPage() {
             id: data.id,
             title: data.title,
             industry: data.industry,
+            role: data.role || "AE/Closer",
+            country: data.country || "",
             price_range: data.price_range,
             lead_source: data.lead_source,
             commission_structure: data.commission_structure,
@@ -81,7 +84,6 @@ export default function EditJobPage() {
             company_overview: data.company_overview || "",
             what_you_sell: data.what_you_sell || "",
             sales_process: data.sales_process || "",
-            whats_provided: data.whats_provided || [],
             not_for: data.not_for || "",
             commission_breakdown: data.commission_breakdown || "",
             ramp_time: data.ramp_time || "",
@@ -121,6 +123,7 @@ export default function EditJobPage() {
 
       await updateJob(formData.id, {
         ...formData,
+        role: formData.role as "AE/Closer" | "SDR/Appointment Setter",
         video_url: formData.video_url?.trim() ? formData.video_url : null,
       })
 
@@ -275,6 +278,12 @@ export default function EditJobPage() {
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent className="bg-dark-700 border-dark-600">
+                    <SelectItem value="Biz Opp" className="text-white hover:bg-dark-600">
+                      Biz Opp
+                    </SelectItem>
+                    <SelectItem value="B2B Enterprise" className="text-white hover:bg-dark-600">
+                      B2B Enterprise
+                    </SelectItem>
                     <SelectItem value="Coaching" className="text-white hover:bg-dark-600">
                       Coaching
                     </SelectItem>
@@ -284,11 +293,14 @@ export default function EditJobPage() {
                     <SelectItem value="SaaS" className="text-white hover:bg-dark-600">
                       SaaS
                     </SelectItem>
+                    <SelectItem value="Solar" className="text-white hover:bg-dark-600">
+                      Solar
+                    </SelectItem>
+                    <SelectItem value="D2D" className="text-white hover:bg-dark-600">
+                      D2D
+                    </SelectItem>
                     <SelectItem value="Fitness" className="text-white hover:bg-dark-600">
                       Fitness
-                    </SelectItem>
-                    <SelectItem value="E-commerce" className="text-white hover:bg-dark-600">
-                      E-commerce
                     </SelectItem>
                     <SelectItem value="Real Estate" className="text-white hover:bg-dark-600">
                       Real Estate
@@ -306,14 +318,20 @@ export default function EditJobPage() {
                     <SelectValue placeholder="Select price range" />
                   </SelectTrigger>
                   <SelectContent className="bg-dark-700 border-dark-600">
-                    <SelectItem value="$1-3K" className="text-white hover:bg-dark-600">
-                      $1-3K
+                    <SelectItem value="1-3k" className="text-white hover:bg-dark-600">
+                      1-3k
                     </SelectItem>
-                    <SelectItem value="$3-10K" className="text-white hover:bg-dark-600">
-                      $3-10K
+                    <SelectItem value="3-6k" className="text-white hover:bg-dark-600">
+                      3-6k
                     </SelectItem>
-                    <SelectItem value="$10K+" className="text-white hover:bg-dark-600">
-                      $10K+
+                    <SelectItem value="6-10k" className="text-white hover:bg-dark-600">
+                      6-10k
+                    </SelectItem>
+                    <SelectItem value="10-15k" className="text-white hover:bg-dark-600">
+                      10-15k
+                    </SelectItem>
+                    <SelectItem value="15k+" className="text-white hover:bg-dark-600">
+                      15k+
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -328,11 +346,11 @@ export default function EditJobPage() {
                     <SelectValue placeholder="Select lead source" />
                   </SelectTrigger>
                   <SelectContent className="bg-dark-700 border-dark-600">
-                    <SelectItem value="Inbound" className="text-white hover:bg-dark-600">
-                      Inbound
+                    <SelectItem value="Paid Traffic" className="text-white hover:bg-dark-600">
+                      Paid Traffic
                     </SelectItem>
-                    <SelectItem value="Outbound" className="text-white hover:bg-dark-600">
-                      Outbound
+                    <SelectItem value="Cold Calling" className="text-white hover:bg-dark-600">
+                      Cold Calling
                     </SelectItem>
                     <SelectItem value="Hybrid" className="text-white hover:bg-dark-600">
                       Hybrid
@@ -375,14 +393,14 @@ export default function EditJobPage() {
                     <SelectValue placeholder="Select team size" />
                   </SelectTrigger>
                   <SelectContent className="bg-dark-700 border-dark-600">
-                    <SelectItem value="Solo closer" className="text-white hover:bg-dark-600">
-                      Solo closer
+                    <SelectItem value="Startup (1-2 reps)" className="text-white hover:bg-dark-600">
+                      Startup (1-2 reps)
                     </SelectItem>
-                    <SelectItem value="Setters in place" className="text-white hover:bg-dark-600">
-                      Setters in place
+                    <SelectItem value="Scaling (2-6 reps)" className="text-white hover:bg-dark-600">
+                      Scaling (2-6 reps)
                     </SelectItem>
-                    <SelectItem value="Full team" className="text-white hover:bg-dark-600">
-                      Full team
+                    <SelectItem value="Established (6+ reps)" className="text-white hover:bg-dark-600">
+                      Established (6+ reps)
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -453,19 +471,6 @@ export default function EditJobPage() {
                 value={formData.sales_process}
                 onChange={(e) => handleInputChange("sales_process", e.target.value)}
                 placeholder="Describe your sales process, tools used, and typical sales cycle..."
-                className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="whats_provided" className="text-white">
-                What's Provided (leads, CRM, script, training, etc.)
-              </Label>
-              <Textarea
-                id="whats_provided"
-                value={formData.whats_provided.join("\n")}
-                onChange={(e) => handleInputChange("whats_provided", e.target.value.split("\n").filter(Boolean))}
-                placeholder="List all resources, tools, and support provided to the sales rep..."
                 className="min-h-[100px] bg-dark-700 border-dark-600 text-white placeholder:text-gray-500 focus:border-purple-500"
               />
             </div>
