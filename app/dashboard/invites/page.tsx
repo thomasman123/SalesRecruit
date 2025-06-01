@@ -183,7 +183,14 @@ export default function InvitesPage() {
           const data = await response.json()
           console.log('Available slots response:', data)
           setAvailableSlots(data.availableSlots || [])
-          setAvailabilityMessage(data.message || "")
+          if (data.debug) {
+            console.log('Debug info:', data.debug)
+            setAvailabilityMessage(
+              `${data.message || ""} (Debug: Recruiter has ${data.debug.recruiterRecordsCount} records, Sales rep has ${data.debug.salesRepRecordsCount} records for day ${data.debug.dayOfWeek})`
+            )
+          } else {
+            setAvailabilityMessage(data.message || "")
+          }
         } else {
           console.error('Failed to fetch availability:', response.status)
           setAvailabilityMessage("Failed to fetch availability. Please try again.")
@@ -235,7 +242,14 @@ export default function InvitesPage() {
         const data = await response.json()
         console.log('Available slots response:', data)
         setAvailableSlots(data.availableSlots || [])
-        setAvailabilityMessage(data.message || "")
+        if (data.debug) {
+          console.log('Debug info:', data.debug)
+          setAvailabilityMessage(
+            `${data.message || ""} (Debug: Recruiter has ${data.debug.recruiterRecordsCount} records, Sales rep has ${data.debug.salesRepRecordsCount} records for day ${data.debug.dayOfWeek})`
+          )
+        } else {
+          setAvailabilityMessage(data.message || "")
+        }
       } else {
         console.error('Failed to fetch availability:', response.status)
         setAvailabilityMessage("Failed to fetch availability. Please try again.")

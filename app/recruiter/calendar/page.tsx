@@ -145,30 +145,52 @@ function RecruiterCalendarPageContent() {
   const handleSaveAvailability = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save availability.",
+          variant: "destructive",
+        })
+        return
+      }
 
       const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       
-      // Delete existing availability
-      await supabase
-        .from("calendar_availability")
-        .delete()
-        .eq("user_id", user.id)
-
-      // Insert new availability
-      const availabilityData = Object.entries(availability).map(([day, settings], index) => ({
+      console.log('Saving availability for user:', user.id)
+      
+      // Prepare the availability data
+      const availabilityData = Object.entries(availability).map(([day, settings]) => ({
         user_id: user.id,
         day_of_week: days.indexOf(day),
         start_time: settings.start + ':00',
         end_time: settings.end + ':00',
         is_available: settings.enabled,
       }))
+      
+      console.log('Availability data to save:', availabilityData)
 
-      const { error } = await supabase
+      // Use upsert instead of delete + insert to be safer
+      for (const dayData of availabilityData) {
+        const { error } = await supabase
+          .from("calendar_availability")
+          .upsert(dayData, {
+            onConflict: 'user_id,day_of_week',
+            ignoreDuplicates: false
+          })
+        
+        if (error) {
+          console.error('Error saving day', dayData.day_of_week, ':', error)
+          throw error
+        }
+      }
+
+      // Verify the save worked
+      const { data: savedData } = await supabase
         .from("calendar_availability")
-        .insert(availabilityData)
-
-      if (error) throw error
+        .select("*")
+        .eq("user_id", user.id)
+      
+      console.log('Saved availability records:', savedData?.length)
 
       toast({
         title: "Availability saved",
@@ -178,7 +200,7 @@ function RecruiterCalendarPageContent() {
       console.error("Error saving availability:", error)
       toast({
         title: "Error",
-        description: "Failed to save availability. Please try again.",
+        description: `Failed to save availability: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       })
     }

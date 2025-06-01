@@ -12,23 +12,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Get both users' availability settings
-    const { data: recruiterAvailability } = await supabase
+    const dayOfWeek = new Date(date).getDay()
+    console.log('Day of week for date', date, 'is:', dayOfWeek)
+
+    // First check if any availability exists for these users
+    const { data: allRecruiterAvailability } = await supabase
       .from('calendar_availability')
       .select('*')
       .eq('user_id', recruiterId)
-      .eq('day_of_week', new Date(date).getDay())
-      .single()
-
-    const { data: salesRepAvailability } = await supabase
+    
+    const { data: allSalesRepAvailability } = await supabase
       .from('calendar_availability')
       .select('*')
       .eq('user_id', salesRepId)
-      .eq('day_of_week', new Date(date).getDay())
+    
+    console.log('All recruiter availability records:', allRecruiterAvailability)
+    console.log('All sales rep availability records:', allSalesRepAvailability)
+
+    // Get both users' availability settings for specific day
+    const { data: recruiterAvailability, error: recruiterError } = await supabase
+      .from('calendar_availability')
+      .select('*')
+      .eq('user_id', recruiterId)
+      .eq('day_of_week', dayOfWeek)
       .single()
 
-    console.log('Recruiter availability:', recruiterAvailability)
-    console.log('Sales rep availability:', salesRepAvailability)
+    const { data: salesRepAvailability, error: salesRepError } = await supabase
+      .from('calendar_availability')
+      .select('*')
+      .eq('user_id', salesRepId)
+      .eq('day_of_week', dayOfWeek)
+      .single()
+
+    console.log('Recruiter availability for day', dayOfWeek, ':', recruiterAvailability)
+    console.log('Recruiter error:', recruiterError)
+    console.log('Sales rep availability for day', dayOfWeek, ':', salesRepAvailability)
+    console.log('Sales rep error:', salesRepError)
 
     // If either user has no availability for this day, return empty slots
     if (!recruiterAvailability?.is_available || !salesRepAvailability?.is_available) {
@@ -38,7 +57,14 @@ export async function POST(request: NextRequest) {
         message: !recruiterAvailability ? 'Recruiter has not set availability' : 
                  !salesRepAvailability ? 'Sales rep has not set availability' :
                  !recruiterAvailability.is_available ? 'Recruiter not available on this day' :
-                 'Sales rep not available on this day'
+                 'Sales rep not available on this day',
+        debug: {
+          recruiterId,
+          salesRepId,
+          dayOfWeek,
+          recruiterRecordsCount: allRecruiterAvailability?.length || 0,
+          salesRepRecordsCount: allSalesRepAvailability?.length || 0
+        }
       })
     }
 

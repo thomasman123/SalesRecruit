@@ -68,6 +68,7 @@ export default function ApplicantsPage() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [jobDetails, setJobDetails] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState(false)
+  const [invitedApplicants, setInvitedApplicants] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -89,6 +90,30 @@ export default function ApplicantsPage() {
           .single()
         if (jobError) throw jobError
         setJobDetails(jobData)
+
+        // Check which applicants have already been invited
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && data) {
+          // Get all user IDs from applicants
+          const userIds = data
+            .filter((applicant: any) => applicant.user_id)
+            .map((applicant: any) => applicant.user_id)
+
+          if (userIds.length > 0) {
+            // Check for existing interview invitations
+            const { data: invitations } = await supabase
+              .from("notifications")
+              .select("user_id, metadata")
+              .in("user_id", userIds)
+              .like("title", "%Interview Invitation%")
+              .eq("metadata->>jobId", jobId.toString())
+
+            if (invitations) {
+              const invited = new Set(invitations.map((inv: any) => inv.user_id))
+              setInvitedApplicants(invited)
+            }
+          }
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load applicants")
       } finally {
@@ -318,6 +343,12 @@ export default function ApplicantsPage() {
                                   <div className="flex items-center text-xs text-gray-400 mt-1">
                                     <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
                                     <span className="truncate">Applied {applicant.applied_date ? new Date(applicant.applied_date).toLocaleDateString() : 'Recently'}</span>
+                                    {applicant.user_id && invitedApplicants.has(applicant.user_id) && (
+                                      <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
+                                        Invited
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                                 {applicant.score !== undefined && applicant.score !== null && (
@@ -395,14 +426,22 @@ export default function ApplicantsPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
-                      <AnimatedButton
-                        variant="purple"
-                        size="sm"
-                        onClick={() => setInviteDialogOpen(true)}
-                        icon={<Send className="w-4 h-4" />}
-                      >
-                        Invite
-                      </AnimatedButton>
+                      {selectedApplicant.user_id && invitedApplicants.has(selectedApplicant.user_id) ? (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Already Invited
+                        </Badge>
+                      ) : (
+                        <AnimatedButton
+                          variant="purple"
+                          size="sm"
+                          onClick={() => setInviteDialogOpen(true)}
+                          icon={<Send className="w-4 h-4" />}
+                          disabled={!selectedApplicant.user_id}
+                        >
+                          Invite
+                        </AnimatedButton>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">
@@ -690,6 +729,17 @@ export default function ApplicantsPage() {
               variant="purple"
               onClick={async () => {
                 if (sendingInvite) return // Prevent double-click
+                
+                // Check if already invited
+                if (selectedApplicant?.user_id && invitedApplicants.has(selectedApplicant.user_id)) {
+                  toast({
+                    title: "Already invited",
+                    description: "This applicant has already been invited for an interview.",
+                    variant: "destructive",
+                  })
+                  return
+                }
+                
                 setSendingInvite(true)
                 try {
                   console.log("Selected applicant:", selectedApplicant)
@@ -740,6 +790,11 @@ export default function ApplicantsPage() {
                     description: "The candidate will be notified and can schedule their interview.",
                   })
                   setInviteDialogOpen(false)
+                  
+                  // Add to invited set
+                  if (selectedApplicant.user_id) {
+                    setInvitedApplicants(prev => new Set([...prev, selectedApplicant.user_id]))
+                  }
                 } catch (err) {
                   console.error("Error sending invitation:", err)
                   toast({
