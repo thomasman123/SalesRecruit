@@ -52,6 +52,7 @@ export default function InvitesPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [recruiterAvailability, setRecruiterAvailability] = useState<any>(null)
   const [booking, setBooking] = useState(false)
+  const [availabilityMessage, setAvailabilityMessage] = useState<string>("")
   
   const supabase = getSupabaseClient()
   const router = useRouter()
@@ -179,14 +180,20 @@ export default function InvitesPage() {
         })
 
         if (response.ok) {
-          const { availableSlots } = await response.json()
-          setAvailableSlots(availableSlots)
+          const data = await response.json()
+          console.log('Available slots response:', data)
+          setAvailableSlots(data.availableSlots || [])
+          setAvailabilityMessage(data.message || "")
         } else {
-          // Fallback to default slots if API fails
+          console.error('Failed to fetch availability:', response.status)
+          setAvailabilityMessage("Failed to fetch availability. Please try again.")
+          // Show some default slots if API fails
           generateAvailableSlots()
         }
       } catch (error) {
         console.error('Error fetching availability:', error)
+        setAvailabilityMessage("Error checking availability. Please try again.")
+        // Show some default slots if API fails
         generateAvailableSlots()
       }
     } else {
@@ -208,6 +215,12 @@ export default function InvitesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      console.log('Fetching availability for:', {
+        recruiterId: selectedInvite.recruiterId,
+        salesRepId: user.id,
+        date: selectedDate.toISOString().split('T')[0]
+      })
+
       const response = await fetch('/api/calendar/availability', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -219,11 +232,21 @@ export default function InvitesPage() {
       })
 
       if (response.ok) {
-        const { availableSlots } = await response.json()
-        setAvailableSlots(availableSlots)
+        const data = await response.json()
+        console.log('Available slots response:', data)
+        setAvailableSlots(data.availableSlots || [])
+        setAvailabilityMessage(data.message || "")
+      } else {
+        console.error('Failed to fetch availability:', response.status)
+        setAvailabilityMessage("Failed to fetch availability. Please try again.")
+        // Show some default slots if API fails
+        generateAvailableSlots()
       }
     } catch (error) {
       console.error('Error fetching availability:', error)
+      setAvailabilityMessage("Error checking availability. Please try again.")
+      // Show some default slots if API fails
+      generateAvailableSlots()
     }
   }
 
@@ -545,19 +568,32 @@ export default function InvitesPage() {
                 <Label className="text-gray-300 mb-2">Available Times</Label>
                 <ScrollArea className="h-[300px] border border-dark-600 rounded-lg p-2">
                   <div className="space-y-2">
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        onClick={() => setSelectedTime(slot)}
-                        className={`w-full p-3 rounded-lg text-sm transition-all ${
-                          selectedTime === slot
-                            ? "bg-purple-500 text-white"
-                            : "bg-dark-700 text-gray-300 hover:bg-dark-600"
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    ))}
+                    {availableSlots.length > 0 ? (
+                      availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => setSelectedTime(slot)}
+                          className={`w-full p-3 rounded-lg text-sm transition-all ${
+                            selectedTime === slot
+                              ? "bg-purple-500 text-white"
+                              : "bg-dark-700 text-gray-300 hover:bg-dark-600"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <Clock className="w-8 h-8 mb-2 opacity-50" />
+                        <p className="text-sm text-center">No available time slots for this date.</p>
+                        {availabilityMessage && (
+                          <p className="text-xs text-center mt-2 text-yellow-400">{availabilityMessage}</p>
+                        )}
+                        <p className="text-xs text-center mt-1">
+                          Make sure both users have set their availability in Calendar settings.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </div>

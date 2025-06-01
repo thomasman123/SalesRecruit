@@ -67,6 +67,7 @@ export default function ApplicantsPage() {
   const [scoringInProgress, setScoringInProgress] = useState<number | null>(null)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [jobDetails, setJobDetails] = useState<any>(null)
+  const [sendingInvite, setSendingInvite] = useState(false)
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -624,19 +625,6 @@ export default function ApplicantsPage() {
                     </div>
                   </div>
                 </ScrollArea>
-
-                <div className="p-6 border-t border-dark-600 flex-shrink-0">
-                  <div className="flex justify-center">
-                    <AnimatedButton
-                      variant="purple"
-                      size="lg"
-                      onClick={() => setInviteDialogOpen(true)}
-                      icon={<Send className="w-5 h-5" />}
-                    >
-                      Invite Candidate
-                    </AnimatedButton>
-                  </div>
-                </div>
               </AnimatedCard>
             ) : (
               <AnimatedCard variant="hover-glow" className="flex-1 flex items-center justify-center">
@@ -701,6 +689,8 @@ export default function ApplicantsPage() {
             <AnimatedButton
               variant="purple"
               onClick={async () => {
+                if (sendingInvite) return // Prevent double-click
+                setSendingInvite(true)
                 try {
                   console.log("Selected applicant:", selectedApplicant)
                   console.log("Selected applicant user_id:", selectedApplicant?.user_id)
@@ -711,6 +701,7 @@ export default function ApplicantsPage() {
                       description: "This applicant does not have a linked user account.",
                       variant: "destructive",
                     })
+                    setSendingInvite(false)
                     return
                   }
                   
@@ -756,11 +747,15 @@ export default function ApplicantsPage() {
                     description: err instanceof Error ? err.message : "Please try again later.",
                     variant: "destructive",
                   })
+                } finally {
+                  setSendingInvite(false)
                 }
               }}
+              disabled={sendingInvite}
+              isLoading={sendingInvite}
               icon={<Send className="w-4 h-4" />}
             >
-              Send Invitation
+              {sendingInvite ? "Sending..." : "Send Invitation"}
             </AnimatedButton>
           </div>
         </DialogContent>

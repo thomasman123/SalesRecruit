@@ -6,6 +6,8 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseClient()
     const { recruiterId, salesRepId, date } = await request.json()
     
+    console.log('Availability API called with:', { recruiterId, salesRepId, date })
+    
     if (!recruiterId || !salesRepId || !date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -25,9 +27,19 @@ export async function POST(request: NextRequest) {
       .eq('day_of_week', new Date(date).getDay())
       .single()
 
+    console.log('Recruiter availability:', recruiterAvailability)
+    console.log('Sales rep availability:', salesRepAvailability)
+
     // If either user has no availability for this day, return empty slots
     if (!recruiterAvailability?.is_available || !salesRepAvailability?.is_available) {
-      return NextResponse.json({ availableSlots: [] })
+      console.log('One or both users not available on this day')
+      return NextResponse.json({ 
+        availableSlots: [],
+        message: !recruiterAvailability ? 'Recruiter has not set availability' : 
+                 !salesRepAvailability ? 'Sales rep has not set availability' :
+                 !recruiterAvailability.is_available ? 'Recruiter not available on this day' :
+                 'Sales rep not available on this day'
+      })
     }
 
     // Get existing interviews for both users on this date
