@@ -60,3 +60,35 @@ export async function requireRecruiterRole() {
 
   return userDetails
 }
+
+export async function requireAdminRole() {
+  const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
+  const userDetails = await getUserDetails()
+
+  if (!userDetails || userDetails.role !== "admin") {
+    redirect("/")
+  }
+
+  return userDetails
+}
+
+export async function requireRecruiterOrAdminRole() {
+  const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
+  const userDetails = await getUserDetails()
+
+  if (!userDetails || (userDetails.role !== "recruiter" && userDetails.role !== "admin")) {
+    redirect("/dashboard")
+  }
+
+  return userDetails
+}

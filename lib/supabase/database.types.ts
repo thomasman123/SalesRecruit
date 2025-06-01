@@ -608,9 +608,82 @@ export type Database = {
           }
         ]
       }
+      activity_logs: {
+        Row: {
+          id: number
+          user_id: string
+          user_role: string
+          user_email: string
+          action_type: string
+          entity_type: string
+          entity_id: string | null
+          metadata: Json
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          user_role: string
+          user_email: string
+          action_type: string
+          entity_type: string
+          entity_id?: string | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          user_role?: string
+          user_email?: string
+          action_type?: string
+          entity_type?: string
+          entity_id?: string | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      admin_dashboard_stats: {
+        Row: {
+          total_recruiters: number
+          total_sales_professionals: number
+          total_admins: number
+          active_jobs: number
+          total_applicants: number
+          upcoming_interviews: number
+          messages_today: number
+          active_users_today: number
+        }
+      }
+      admin_user_activity_summary: {
+        Row: {
+          user_id: string
+          email: string
+          name: string
+          role: string
+          total_actions: number
+          last_activity: string | null
+          actions_today: number
+          actions_this_week: number
+        }
+      }
     }
     Functions: {
       record_notification_sent: {
@@ -627,6 +700,17 @@ export type Database = {
           p_user_id: string
           p_job_notifications_enabled: boolean
           p_notification_frequency: string
+        }
+        Returns: undefined
+      }
+      log_activity: {
+        Args: {
+          p_action_type: string
+          p_entity_type: string
+          p_entity_id?: string
+          p_metadata?: Json
+          p_ip_address?: string
+          p_user_agent?: string
         }
         Returns: undefined
       }

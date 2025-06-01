@@ -64,6 +64,16 @@ export async function middleware(request: NextRequest) {
     const role = user.user_metadata?.role as string | undefined
     const onboarded = user.user_metadata?.onboarded as boolean | undefined
 
+    // Admin routing
+    if (role === "admin") {
+      // Admins can access everything, but have their own dashboard
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL("/admin", request.url))
+      }
+      // Allow admins to access any page
+      return NextResponse.next()
+    }
+
     if (role === "recruiter" && pathname.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/recruiter", request.url))
     }
@@ -87,7 +97,8 @@ export async function middleware(request: NextRequest) {
 
     // Redirect based on role from root path
     if (pathname === '/') {
-      return NextResponse.redirect(new URL(role === 'recruiter' ? '/recruiter' : '/dashboard', request.url))
+      const redirectPath = role === 'recruiter' ? '/recruiter' : '/dashboard'
+      return NextResponse.redirect(new URL(redirectPath, request.url))
     }
   }
 

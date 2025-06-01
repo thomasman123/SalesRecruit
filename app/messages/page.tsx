@@ -60,7 +60,7 @@ export default function MessagesPage() {
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [role, setRole] = useState<'recruiter' | 'sales-professional' | null>(null);
+  const [role, setRole] = useState<'recruiter' | 'sales-professional' | 'admin' | null>(null);
   const [view, setView] = useState<'conversations' | 'applicants' | 'profile'>('conversations');
   const [searchQuery, setSearchQuery] = useState('');
   const { userData, isLoading } = useUser();
@@ -70,7 +70,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!isLoading && userData) {
-      setRole(userData.role as 'recruiter' | 'sales-professional');
+      setRole(userData.role as 'recruiter' | 'sales-professional' | 'admin');
     }
   }, [isLoading, userData]);
 
@@ -111,7 +111,7 @@ export default function MessagesPage() {
     }
   }, [selectedConversation]);
 
-  const fetchConversations = async (currentRole: 'recruiter' | 'sales-professional') => {
+  const fetchConversations = async (currentRole: 'recruiter' | 'sales-professional' | 'admin') => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 

@@ -3,7 +3,7 @@ import { Bell } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useNotifications } from "@/lib/hooks/use-notifications"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface NotificationCenterProps {
   sidebarExpanded?: boolean
@@ -11,14 +11,47 @@ interface NotificationCenterProps {
 
 export function NotificationCenter({ sidebarExpanded }: NotificationCenterProps) {
   const { notifications, unreadCount, markAllRead, markRead } = useNotifications()
+  const [isOpen, setIsOpen] = useState(false)
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
 
   // Scroll to top when new notifications added.
   useEffect(() => {
     // optional: we could scroll container to top.
   }, [notifications])
 
+  const handleNotificationClick = async (notificationId: string, href?: string) => {
+    // Prevent multiple clicks
+    if (processingIds.has(notificationId)) return
+    
+    setProcessingIds(prev => new Set(prev).add(notificationId))
+    
+    // Mark as read
+    await markRead(notificationId)
+    
+    // Small delay to ensure the update is processed
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    setProcessingIds(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(notificationId)
+      return newSet
+    })
+    
+    // If there's a link, navigate after marking as read
+    if (href) {
+      setIsOpen(false)
+      // Let the Link component handle navigation
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    await markAllRead()
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <button
           className={cn(
@@ -41,8 +74,9 @@ export function NotificationCenter({ sidebarExpanded }: NotificationCenterProps)
           <SheetTitle className="text-white">Notifications</SheetTitle>
           {unreadCount > 0 && (
             <button
-              onClick={markAllRead}
+              onClick={handleMarkAllRead}
               className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+              disabled={processingIds.size > 0}
             >
               Mark all read
             </button>
@@ -54,23 +88,48 @@ export function NotificationCenter({ sidebarExpanded }: NotificationCenterProps)
             <p className="p-4 text-sm text-gray-400">You're all caught up 🎉</p>
           ) : (
             notifications.map((n) => {
-              const NotificationWrapper = n.href ? Link : "div"
-              const props: any = n.href ? { href: n.href } : {}
-              return (
-                <NotificationWrapper
-                  key={n.id}
-                  {...props}
-                  onClick={() => markRead(n.id)}
-                  className={cn(
-                    "flex flex-col px-4 py-3 hover:bg-dark-700 transition-colors duration-300 focus:bg-dark-700 outline-none",
-                    !n.read && "bg-dark-700/40",
-                  )}
-                >
-                  <span className={cn("text-sm", n.read ? "text-gray-300" : "text-white font-medium")}>{n.title}</span>
-                  {n.body && <span className="text-xs text-gray-400 mt-0.5">{n.body}</span>}
-                  <span className="text-[10px] text-gray-500 mt-1">{new Date(n.created_at).toLocaleString()}</span>
-                </NotificationWrapper>
-              )
+              const isProcessing = processingIds.has(n.id)
+              if (n.href) {
+                return (
+                  <Link
+                    key={n.id}
+                    href={n.href}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNotificationClick(n.id, n.href)
+                      // Navigate after marking as read
+                      setTimeout(() => {
+                        window.location.href = n.href!
+                      }, 150)
+                    }}
+                    className={cn(
+                      "flex flex-col px-4 py-3 hover:bg-dark-700 transition-colors duration-300 focus:bg-dark-700 outline-none cursor-pointer",
+                      !n.read && "bg-dark-700/40",
+                      isProcessing && "opacity-50 cursor-wait"
+                    )}
+                  >
+                    <span className={cn("text-sm", n.read ? "text-gray-300" : "text-white font-medium")}>{n.title}</span>
+                    {n.body && <span className="text-xs text-gray-400 mt-0.5">{n.body}</span>}
+                    <span className="text-[10px] text-gray-500 mt-1">{new Date(n.created_at).toLocaleString()}</span>
+                  </Link>
+                )
+              } else {
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => !isProcessing && handleNotificationClick(n.id)}
+                    className={cn(
+                      "flex flex-col px-4 py-3 hover:bg-dark-700 transition-colors duration-300 focus:bg-dark-700 outline-none cursor-pointer",
+                      !n.read && "bg-dark-700/40",
+                      isProcessing && "opacity-50 cursor-wait"
+                    )}
+                  >
+                    <span className={cn("text-sm", n.read ? "text-gray-300" : "text-white font-medium")}>{n.title}</span>
+                    {n.body && <span className="text-xs text-gray-400 mt-0.5">{n.body}</span>}
+                    <span className="text-[10px] text-gray-500 mt-1">{new Date(n.created_at).toLocaleString()}</span>
+                  </div>
+                )
+              }
             })
           )}
         </div>

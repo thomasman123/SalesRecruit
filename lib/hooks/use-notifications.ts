@@ -34,7 +34,7 @@ export function useNotifications() {
         .order("created_at", { ascending: false })
       if (data) setNotifications(data as Notification[])
 
-      // Subscribe to realtime inserts for this user
+      // Subscribe to realtime changes for this user
       const channel = (supabase as any)
         .channel("notifications")
         .on(
@@ -48,6 +48,21 @@ export function useNotifications() {
           (payload: any) => {
             const newNotif = payload.new as Notification
             setNotifications((prev) => [newNotif, ...prev])
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            const updatedNotif = payload.new as Notification
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n))
+            )
           },
         )
         .subscribe()
@@ -68,17 +83,56 @@ export function useNotifications() {
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications])
 
   const markAllRead = async () => {
+    // Optimistically update UI
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    
     if (!notifications.length) return
-    await (supabase as any)
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", notifications[0].user_id)
+    
+    try {
+      const { error } = await (supabase as any)
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", notifications[0].user_id)
+        .eq("read", false) // Only update unread notifications
+      
+      if (error) {
+        console.error("Error marking all as read:", error)
+        // Revert optimistic update on error
+        const { data } = await (supabase as any)
+          .from("notifications")
+          .select("*")
+          .eq("user_id", notifications[0].user_id)
+          .order("created_at", { ascending: false })
+        if (data) setNotifications(data as Notification[])
+      }
+    } catch (error) {
+      console.error("Error marking all as read:", error)
+    }
   }
 
   const markRead = async (id: string) => {
+    // Find the notification to check if it's already read
+    const notification = notifications.find(n => n.id === id)
+    if (!notification || notification.read) return // Skip if already read
+    
+    // Optimistically update UI
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-    await (supabase as any).from("notifications").update({ read: true }).eq("id", id)
+    
+    try {
+      const { error } = await (supabase as any)
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", id)
+        .eq("read", false) // Only update if currently unread
+      
+      if (error) {
+        console.error("Error marking as read:", error)
+        // Revert optimistic update on error
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)))
+      }
+    } catch (error) {
+      console.error("Error marking as read:", error)
+    }
   }
 
   return {
