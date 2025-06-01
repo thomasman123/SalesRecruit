@@ -521,6 +521,21 @@ export default function InvitesPage() {
                 salesRepName: salesRepData.name || 'Sales Representative',
               }),
             }),
+            // Booking confirmation email to recruiter
+            fetch('/api/notifications/booking-confirmation', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recruiterEmail: recruiterData.email,
+                recruiterName: recruiterData.name || 'Recruiter',
+                salesProfessionalName: salesRepData.name || 'Sales Representative',
+                jobTitle: selectedInvite.jobTitle,
+                company: selectedInvite.company,
+                scheduledDate: selectedDate.toISOString().split('T')[0],
+                scheduledTime: selectedTime,
+                meetingLink: calendarResult.meetingLink,
+              }),
+            }),
           ]
 
           // Send emails in parallel

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { sendInvitationEmail } from "@/lib/email/resend"
 
 export async function POST(request: Request) {
   try {
@@ -85,6 +86,28 @@ Click here to schedule your interview at a time that works for you.
     if (notifError) {
       console.error("Error creating notification:", notifError)
       throw notifError
+    }
+
+    // Send email notification to the sales professional
+    if (salesRep.email) {
+      try {
+        await sendInvitationEmail({
+          to: salesRep.email,
+          salesProfessionalName: salesRep.name || 'Sales Professional',
+          jobTitle: jobDetails?.title || 'Unknown Position',
+          company: jobDetails?.company || jobDetails?.company_overview || 'Unknown Company',
+          industry: jobDetails?.industry || 'Not specified',
+          priceRange: jobDetails?.priceRange || jobDetails?.price_range || 'Not specified',
+          commission: jobDetails?.commission || jobDetails?.commission_structure || 'Not specified',
+          remote: jobDetails?.remote || jobDetails?.remote_compatible || false,
+          recruiterName: recruiter?.name || 'Recruiter',
+          message: body.message // Optional message from recruiter
+        })
+        console.log(`Invitation email sent to ${salesRep.email}`)
+      } catch (emailError) {
+        console.error("Error sending invitation email:", emailError)
+        // Don't throw error - email is supplementary to the notification
+      }
     }
 
     // Notify recruiter as confirmation

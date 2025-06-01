@@ -6,6 +6,8 @@ A modern platform connecting top sales talent with opportunities at leading comp
 
 - **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Email**: Resend (Email notifications)
+- **Calendar**: Google Calendar API (Interview scheduling)
 - **Deployment**: Vercel (Frontend), Supabase (Backend)
 
 ## Development Setup
@@ -20,6 +22,13 @@ A modern platform connecting top sales talent with opportunities at leading comp
    # .env.local
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   
+   # Email notifications (optional for development)
+   RESEND_API_KEY=your_resend_api_key
+   RESEND_FROM="Your App <notifications@yourdomain.com>"
+   
+   # For email links
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
    ```
 
 3. Run development server:
@@ -36,6 +45,9 @@ A modern platform connecting top sales talent with opportunities at leading comp
 3. Add environment variables in Vercel dashboard:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `RESEND_API_KEY`
+   - `RESEND_FROM`
+   - `NEXT_PUBLIC_APP_URL`
 
 ### Backend (Supabase)
 
@@ -45,6 +57,13 @@ A modern platform connecting top sales talent with opportunities at leading comp
    npx supabase link --project-ref your_project_ref
    npx supabase db push
    ```
+
+### Email Setup (Resend)
+
+1. Sign up at [resend.com](https://resend.com)
+2. Verify your domain
+3. Add API key to environment variables
+4. See `/docs/resend-email-setup.md` for detailed instructions
 
 Production URL: https://heliosrecruit.com
 
@@ -56,6 +75,11 @@ Production URL: https://heliosrecruit.com
 - **Applicant Tracking**: Review and manage job applications
 - **Messaging**: Built-in communication system
 - **Profile Management**: Comprehensive profile editing
+- **Email Notifications**: 
+  - Interview invitations to sales professionals
+  - Booking confirmations to recruiters
+  - Interview reminders (24-hour and 2-hour)
+- **Calendar Integration**: Google Calendar sync with automatic meeting links
 
 ## Contributing
 
