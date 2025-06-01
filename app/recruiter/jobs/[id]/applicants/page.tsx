@@ -75,7 +75,7 @@ export default function ApplicantsPage() {
         // Fetch applicants for this job
         const { data, error } = await supabase
           .from("applicants")
-          .select("*")
+          .select("*, user:users!user_id(*)")
           .eq("job_id", jobId)
         if (error) throw error
         setApplicants(data || [])
@@ -702,8 +702,20 @@ export default function ApplicantsPage() {
               variant="purple"
               onClick={async () => {
                 try {
+                  console.log("Selected applicant:", selectedApplicant)
+                  console.log("Selected applicant user_id:", selectedApplicant?.user_id)
+                  
+                  if (!selectedApplicant?.user_id) {
+                    toast({
+                      title: "Cannot send invitation",
+                      description: "This applicant does not have a linked user account.",
+                      variant: "destructive",
+                    })
+                    return
+                  }
+                  
                   const inviteData = {
-                    repId: selectedApplicant?.user?.id || selectedApplicant?.user_id,
+                    repId: selectedApplicant.user_id,
                     jobId,
                     jobDetails: {
                       title: jobDetails?.title,
@@ -719,11 +731,18 @@ export default function ApplicantsPage() {
                     }
                   }
 
-                  await fetch("/api/invite", {
+                  console.log("Sending invite data:", inviteData)
+
+                  const response = await fetch("/api/invite", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(inviteData),
                   })
+                  
+                  if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || "Failed to send invitation")
+                  }
 
                   toast({
                     title: "Invitation sent",
@@ -731,10 +750,10 @@ export default function ApplicantsPage() {
                   })
                   setInviteDialogOpen(false)
                 } catch (err) {
-                  console.error(err)
+                  console.error("Error sending invitation:", err)
                   toast({
                     title: "Failed to send invitation",
-                    description: "Please try again later.",
+                    description: err instanceof Error ? err.message : "Please try again later.",
                     variant: "destructive",
                   })
                 }

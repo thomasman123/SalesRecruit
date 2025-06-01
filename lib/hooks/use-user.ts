@@ -22,11 +22,28 @@ export function useUser() {
         const { data: { user } } = await supabase.auth.getUser()
         
         if (user) {
-          setUserData({
-            full_name: user.user_metadata.full_name || "User",
-            role: user.user_metadata.role || "sales-professional",
-            avatar_url: user.user_metadata.avatar_url
-          })
+          // Fetch user details from the users table
+          const { data: userDetails, error } = await supabase
+            .from("users")
+            .select("role, name")
+            .eq("id", user.id)
+            .single()
+
+          if (error) {
+            console.error("Error fetching user details:", error)
+            // Fallback to auth metadata if users table query fails
+            setUserData({
+              full_name: user.user_metadata.full_name || "User",
+              role: user.user_metadata.role || "sales-professional",
+              avatar_url: user.user_metadata.avatar_url
+            })
+          } else {
+            setUserData({
+              full_name: userDetails.name || user.user_metadata.full_name || "User",
+              role: userDetails.role || "sales-professional",
+              avatar_url: user.user_metadata.avatar_url
+            })
+          }
         }
       } catch (error) {
         console.error("Error loading user data:", error)

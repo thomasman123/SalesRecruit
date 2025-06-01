@@ -383,6 +383,7 @@ export type Database = {
           read: boolean | null
           title: string
           user_id: string
+          metadata: Record<string, any> | null
         }
         Insert: {
           body?: string | null
@@ -392,6 +393,7 @@ export type Database = {
           read?: boolean | null
           title: string
           user_id: string
+          metadata?: Record<string, any> | null
         }
         Update: {
           body?: string | null
@@ -401,6 +403,7 @@ export type Database = {
           read?: boolean | null
           title?: string
           user_id?: string
+          metadata?: Record<string, any> | null
         }
         Relationships: []
       }
