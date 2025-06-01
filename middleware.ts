@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 
   // Auth-guard and role routing rules ----------------------------------
   const pathname = request.nextUrl.pathname
-  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding") || pathname.startsWith("/messages")
+  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding") || pathname.startsWith("/messages") || pathname.startsWith("/admin")
   const isAuthPage = pathname === "/login" || pathname === "/signup"
   const isAuthCallback = pathname.startsWith("/auth/callback")
 
@@ -52,38 +52,53 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // If user is logged in, get their role from the database
+  let userRole: string | undefined
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    userRole = userData?.role
+  }
+
   // If user is logged in and trying to access auth pages
   if (user && isAuthPage) {
-    const role = user.user_metadata?.role as string | undefined
-    const redirectPath = role === "recruiter" ? "/recruiter" : "/dashboard"
+    const redirectPath = userRole === "recruiter" ? "/recruiter" : userRole === "admin" ? "/admin" : "/dashboard"
     return NextResponse.redirect(new URL(redirectPath, request.url))
   }
 
-  if (user) {
-    // Check the user's role from metadata (faster than extra DB query)
-    const role = user.user_metadata?.role as string | undefined
+  if (user && userRole) {
+    // Check the user's onboarded status from metadata
     const onboarded = user.user_metadata?.onboarded as boolean | undefined
 
     // Admin routing
-    if (role === "admin") {
+    if (userRole === "admin") {
       // Admins can access everything, but have their own dashboard
       if (pathname === '/') {
         return NextResponse.redirect(new URL("/admin", request.url))
       }
       // Allow admins to access any page
-      return NextResponse.next()
+      return response
     }
 
-    if (role === "recruiter" && pathname.startsWith("/dashboard")) {
+    // Restrict non-admins from accessing admin pages
+    if (userRole !== "admin" && pathname.startsWith("/admin")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+
+    if (userRole === "recruiter" && pathname.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/recruiter", request.url))
     }
 
-    if (role === "sales-professional" && pathname.startsWith("/recruiter")) {
+    if (userRole === "sales-professional" && pathname.startsWith("/recruiter")) {
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }
 
     // Enforce onboarding for sales professionals
-    if (role === "sales-professional") {
+    if (userRole === "sales-professional") {
       // If not onboarded, force to onboarding page (except if already there)
       if (!onboarded && !pathname.startsWith("/onboarding") && !pathname.startsWith("/reset-password")) {
         return NextResponse.redirect(new URL("/onboarding", request.url))
@@ -97,7 +112,7 @@ export async function middleware(request: NextRequest) {
 
     // Redirect based on role from root path
     if (pathname === '/') {
-      const redirectPath = role === 'recruiter' ? '/recruiter' : '/dashboard'
+      const redirectPath = userRole === 'recruiter' ? '/recruiter' : userRole === 'admin' ? '/admin' : '/dashboard'
       return NextResponse.redirect(new URL(redirectPath, request.url))
     }
   }
