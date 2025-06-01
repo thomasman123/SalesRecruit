@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
         endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
 
         const eventData: CalendarEventData = {
-          summary: `Interview: ${jobTitle} at ${company}`,
-          description: `Interview for ${jobTitle} position at ${company}.\n\nAttendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative`,
+          summary: `heliosrecruit.com interview with ${applicantName} and ${recruiterName}`,
+          description: `Interview for ${jobTitle} position at ${company}.\n\nAttendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative\n\nMeeting Link: Google Meet will be automatically generated`,
           startDateTime: startDateTime.toISOString(),
           endDateTime: endDateTime.toISOString(),
           attendees: [

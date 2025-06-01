@@ -19,6 +19,7 @@ import {
   LogOut,
   Users,
   MessageSquare,
+  Calendar,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -75,6 +76,12 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
       icon: <MessageSquare className="h-5 w-5" />,
       current: pathname === "/recruiter/messages" || pathname.startsWith("/recruiter/messages/"),
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
+    },
+    {
+      name: "Calendar",
+      href: "/recruiter/calendar",
+      icon: <Calendar className="h-5 w-5" />,
+      current: pathname === "/recruiter/calendar",
     },
   ]
 

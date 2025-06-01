@@ -437,6 +437,171 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_connections: {
+        Row: {
+          id: number
+          user_id: string
+          provider: string
+          access_token: string | null
+          refresh_token: string | null
+          token_expiry: string | null
+          calendar_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          provider?: string
+          access_token?: string | null
+          refresh_token?: string | null
+          token_expiry?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          provider?: string
+          access_token?: string | null
+          refresh_token?: string | null
+          token_expiry?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      calendar_availability: {
+        Row: {
+          id: number
+          user_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_available: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_available?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          is_available?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_availability_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      scheduled_interviews: {
+        Row: {
+          id: number
+          job_id: number
+          applicant_id: number
+          recruiter_id: string
+          sales_rep_id: string
+          scheduled_date: string
+          scheduled_time: string
+          duration_minutes: number
+          meeting_link: string | null
+          calendar_event_id: string | null
+          status: string
+          additional_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          job_id: number
+          applicant_id: number
+          recruiter_id: string
+          sales_rep_id: string
+          scheduled_date: string
+          scheduled_time: string
+          duration_minutes?: number
+          meeting_link?: string | null
+          calendar_event_id?: string | null
+          status?: string
+          additional_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          job_id?: number
+          applicant_id?: number
+          recruiter_id?: string
+          sales_rep_id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          duration_minutes?: number
+          meeting_link?: string | null
+          calendar_event_id?: string | null
+          status?: string
+          additional_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_interviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_interviews_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "applicants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_interviews_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_interviews_sales_rep_id_fkey"
+            columns: ["sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

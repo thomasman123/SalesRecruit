@@ -158,11 +158,73 @@ export default function InvitesPage() {
     }
   }
 
-  const handleBookTime = (invite: Invite) => {
+  const handleBookTime = async (invite: Invite) => {
     setSelectedInvite(invite)
     setBookingDialogOpen(true)
-    // TODO: Fetch recruiter's availability from calendar_availability table
-    generateAvailableSlots()
+    
+    // Fetch real availability from the API
+    if (invite.recruiterId && selectedDate) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const response = await fetch('/api/calendar/availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recruiterId: invite.recruiterId,
+            salesRepId: user.id,
+            date: selectedDate.toISOString().split('T')[0]
+          })
+        })
+
+        if (response.ok) {
+          const { availableSlots } = await response.json()
+          setAvailableSlots(availableSlots)
+        } else {
+          // Fallback to default slots if API fails
+          generateAvailableSlots()
+        }
+      } catch (error) {
+        console.error('Error fetching availability:', error)
+        generateAvailableSlots()
+      }
+    } else {
+      generateAvailableSlots()
+    }
+  }
+
+  // Update availability when date changes
+  useEffect(() => {
+    if (selectedInvite && selectedDate && bookingDialogOpen) {
+      fetchAvailableSlots()
+    }
+  }, [selectedDate, selectedInvite, bookingDialogOpen])
+
+  const fetchAvailableSlots = async () => {
+    if (!selectedInvite?.recruiterId || !selectedDate) return
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const response = await fetch('/api/calendar/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recruiterId: selectedInvite.recruiterId,
+          salesRepId: user.id,
+          date: selectedDate.toISOString().split('T')[0]
+        })
+      })
+
+      if (response.ok) {
+        const { availableSlots } = await response.json()
+        setAvailableSlots(availableSlots)
+      }
+    } catch (error) {
+      console.error('Error fetching availability:', error)
+    }
   }
 
   const generateAvailableSlots = () => {
@@ -180,8 +242,18 @@ export default function InvitesPage() {
 
     setBooking(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        console.error("Auth error:", authError)
+        toast({
+          title: "Authentication error",
+          description: "Please refresh the page and try again.",
+          variant: "destructive",
+        })
+        setBooking(false)
+        return
+      }
 
       // Check required fields
       if (!selectedInvite.applicantId || !selectedInvite.recruiterId) {
@@ -218,8 +290,8 @@ export default function InvitesPage() {
       const [hours, minutes] = selectedTime.split(':')
       scheduledDateTime.setHours(parseInt(hours), parseInt(minutes))
 
-      // Use type assertion for the table that's not in the types yet
-      const { data: interview, error: scheduleError } = await (supabase as any)
+      // Use the proper types for scheduled_interviews table
+      const { data: interview, error: scheduleError } = await supabase
         .from("scheduled_interviews")
         .insert({
           job_id: selectedInvite.jobId,
@@ -266,7 +338,7 @@ export default function InvitesPage() {
           
           if (calendarResult.meetingLink) {
             // Update the interview with the meeting link
-            await (supabase as any)
+            await supabase
               .from("scheduled_interviews")
               .update({ meeting_link: calendarResult.meetingLink })
               .eq("id", interview.id)
