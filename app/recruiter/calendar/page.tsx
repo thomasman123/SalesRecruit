@@ -169,19 +169,14 @@ function RecruiterCalendarPageContent() {
       
       console.log('Availability data to save:', availabilityData)
 
-      // Use upsert instead of delete + insert to be safer
-      for (const dayData of availabilityData) {
-        const { error } = await supabase
-          .from("calendar_availability")
-          .upsert(dayData, {
-            onConflict: 'user_id,day_of_week',
-            ignoreDuplicates: false
-          })
-        
-        if (error) {
-          console.error('Error saving day', dayData.day_of_week, ':', error)
-          throw error
-        }
+      // Use upsert - it will automatically handle conflicts based on unique constraints
+      const { data, error } = await supabase
+        .from("calendar_availability")
+        .upsert(availabilityData)
+      
+      if (error) {
+        console.error('Error saving availability:', error)
+        throw error
       }
 
       // Verify the save worked
