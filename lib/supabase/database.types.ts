@@ -538,6 +538,8 @@ export type Database = {
           additional_message: string | null
           created_at: string
           updated_at: string
+          day_reminder_sent: string | null
+          hour_reminder_sent: string | null
         }
         Insert: {
           id?: number
@@ -554,6 +556,8 @@ export type Database = {
           additional_message?: string | null
           created_at?: string
           updated_at?: string
+          day_reminder_sent?: string | null
+          hour_reminder_sent?: string | null
         }
         Update: {
           id?: number
@@ -570,6 +574,8 @@ export type Database = {
           additional_message?: string | null
           created_at?: string
           updated_at?: string
+          day_reminder_sent?: string | null
+          hour_reminder_sent?: string | null
         }
         Relationships: [
           {

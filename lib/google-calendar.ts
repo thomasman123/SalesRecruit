@@ -118,7 +118,11 @@ export const createCalendarEvent = async (
 
   const event = {
     summary: eventData.summary,
-    description: eventData.description,
+    description: eventData.description + '\n\n📅 Please accept this calendar invite to confirm your attendance.\n\n' +
+                 '💡 You will receive reminder emails:\n' +
+                 '• 1 day before the interview\n' +
+                 '• 2 hours before the interview\n\n' +
+                 '🔗 A Google Meet link will be automatically added to this event.',
     start: {
       dateTime: eventData.startDateTime,
       timeZone: 'America/New_York', // You might want to make this dynamic
@@ -133,10 +137,14 @@ export const createCalendarEvent = async (
       useDefault: false,
       overrides: [
         { method: 'email', minutes: 24 * 60 }, // 1 day before
-        { method: 'popup', minutes: 30 }, // 30 minutes before
+        { method: 'email', minutes: 2 * 60 },  // 2 hours before
+        { method: 'popup', minutes: 30 },      // 30 minutes before
       ],
     },
     conferenceData: eventData.conferenceData,
+    // Ensure guests can see other guests and modify the event
+    guestsCanSeeOtherGuests: true,
+    guestsCanModify: false,
   }
 
   const response = await calendar.events.insert({
@@ -144,6 +152,7 @@ export const createCalendarEvent = async (
     requestBody: event,
     conferenceDataVersion: eventData.conferenceData ? 1 : 0,
     sendUpdates: 'all', // Send email invites to all attendees
+    sendNotifications: true, // Ensure notifications are sent
   })
 
   return response.data

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { FadeIn } from "@/components/ui/fade-in"
@@ -16,6 +16,7 @@ import {
   Send,
   CheckCircle,
   Video,
+  Loader2,
 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -23,6 +24,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
+
+// Custom debounce function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
+  
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
 
 interface Invite {
   id: string
@@ -53,6 +67,8 @@ export default function InvitesPage() {
   const [recruiterAvailability, setRecruiterAvailability] = useState<any>(null)
   const [booking, setBooking] = useState(false)
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("")
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [availabilityCache] = useState<Map<string, string[]>>(new Map())
   
   const supabase = getSupabaseClient()
   const router = useRouter()
@@ -162,9 +178,26 @@ export default function InvitesPage() {
   const handleBookTime = async (invite: Invite) => {
     setSelectedInvite(invite)
     setBookingDialogOpen(true)
-    
-    // Fetch real availability from the API
-    if (invite.recruiterId && selectedDate) {
+    setLoadingSlots(false)
+    // Clear cache when opening a new booking dialog
+    availabilityCache.clear()
+  }
+
+  // Debounced availability fetching
+  const fetchAvailableSlots = useCallback(
+    debounce(async (invite: Invite, date: Date) => {
+      if (!invite?.recruiterId || !date) return
+
+      const dateKey = `${invite.recruiterId}-${date.toISOString().split('T')[0]}`
+      
+      // Check cache first
+      if (availabilityCache.has(dateKey)) {
+        setAvailableSlots(availabilityCache.get(dateKey) || [])
+        setLoadingSlots(false)
+        return
+      }
+
+      setLoadingSlots(true)
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
@@ -175,104 +208,41 @@ export default function InvitesPage() {
           body: JSON.stringify({
             recruiterId: invite.recruiterId,
             salesRepId: user.id,
-            date: selectedDate.toISOString().split('T')[0]
+            date: date.toISOString().split('T')[0]
           })
         })
 
         if (response.ok) {
           const data = await response.json()
-          console.log('Available slots response:', data)
-          setAvailableSlots(data.availableSlots || [])
-          if (data.debug) {
-            console.log('Debug info:', data.debug)
-            setAvailabilityMessage(
-              `${data.message || ""} (Debug: Recruiter has ${data.debug.recruiterRecordsCount} records, Sales rep has ${data.debug.salesRepRecordsCount} records for day ${data.debug.dayOfWeek})`
-            )
-          } else {
-            setAvailabilityMessage(data.message || "")
-          }
+          const slots = data.availableSlots || []
+          
+          // Cache the result
+          availabilityCache.set(dateKey, slots)
+          
+          setAvailableSlots(slots)
+          setAvailabilityMessage(data.message || "")
         } else {
           console.error('Failed to fetch availability:', response.status)
           setAvailabilityMessage("Failed to fetch availability. Please try again.")
-          // Show some default slots if API fails
-          generateAvailableSlots()
+          setAvailableSlots([])
         }
       } catch (error) {
         console.error('Error fetching availability:', error)
         setAvailabilityMessage("Error checking availability. Please try again.")
-        // Show some default slots if API fails
-        generateAvailableSlots()
+        setAvailableSlots([])
+      } finally {
+        setLoadingSlots(false)
       }
-    } else {
-      generateAvailableSlots()
-    }
-  }
+    }, 300), // 300ms debounce
+    [availabilityCache]
+  )
 
   // Update availability when date changes
   useEffect(() => {
     if (selectedInvite && selectedDate && bookingDialogOpen) {
-      fetchAvailableSlots()
+      fetchAvailableSlots(selectedInvite, selectedDate)
     }
-  }, [selectedDate, selectedInvite, bookingDialogOpen])
-
-  const fetchAvailableSlots = async () => {
-    if (!selectedInvite?.recruiterId || !selectedDate) return
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      console.log('Fetching availability for:', {
-        recruiterId: selectedInvite.recruiterId,
-        salesRepId: user.id,
-        date: selectedDate.toISOString().split('T')[0]
-      })
-
-      const response = await fetch('/api/calendar/availability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recruiterId: selectedInvite.recruiterId,
-          salesRepId: user.id,
-          date: selectedDate.toISOString().split('T')[0]
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Available slots response:', data)
-        setAvailableSlots(data.availableSlots || [])
-        if (data.debug) {
-          console.log('Debug info:', data.debug)
-          setAvailabilityMessage(
-            `${data.message || ""} (Debug: Recruiter has ${data.debug.recruiterRecordsCount} records, Sales rep has ${data.debug.salesRepRecordsCount} records for day ${data.debug.dayOfWeek})`
-          )
-        } else {
-          setAvailabilityMessage(data.message || "")
-        }
-      } else {
-        console.error('Failed to fetch availability:', response.status)
-        setAvailabilityMessage("Failed to fetch availability. Please try again.")
-        // Show some default slots if API fails
-        generateAvailableSlots()
-      }
-    } catch (error) {
-      console.error('Error fetching availability:', error)
-      setAvailabilityMessage("Error checking availability. Please try again.")
-      // Show some default slots if API fails
-      generateAvailableSlots()
-    }
-  }
-
-  const generateAvailableSlots = () => {
-    // For now, generate some mock available slots
-    const slots = []
-    for (let hour = 9; hour < 17; hour++) {
-      slots.push(`${hour}:00`)
-      slots.push(`${hour}:30`)
-    }
-    setAvailableSlots(slots)
-  }
+  }, [selectedDate, selectedInvite, bookingDialogOpen, fetchAvailableSlots])
 
   const handleConfirmBooking = async () => {
     if (!selectedInvite || !selectedDate || !selectedTime) return
@@ -379,22 +349,62 @@ export default function InvitesPage() {
               .from("scheduled_interviews")
               .update({ meeting_link: calendarResult.meetingLink })
               .eq("id", interview.id)
-
-            toast({
-              title: "Interview booked!",
-              description: (
-                <div className="space-y-2">
-                  <p>Your interview is scheduled for {selectedDate.toLocaleDateString()} at {selectedTime}</p>
-                  <p className="text-sm">Calendar invites have been sent to all participants.</p>
-                </div>
-              ) as any, // Type workaround for custom ReactNode content
-            })
-          } else {
-            toast({
-              title: "Interview booked!",
-              description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
-            })
           }
+
+          // Send custom email notifications to both participants
+          const emailPromises = [
+            // Email to recruiter
+            fetch('/api/notifications/interview-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'invitation',
+                interviewId: interview.id,
+                recipientEmail: recruiterData.email,
+                recipientName: recruiterData.name || 'Recruiter',
+                jobTitle: selectedInvite.jobTitle,
+                company: selectedInvite.company,
+                scheduledDate: selectedDate.toISOString().split('T')[0],
+                scheduledTime: selectedTime,
+                meetingLink: calendarResult.meetingLink,
+                recruiterName: recruiterData.name || 'Recruiter',
+                salesRepName: salesRepData.name || 'Sales Representative',
+              }),
+            }),
+            // Email to sales rep
+            fetch('/api/notifications/interview-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'invitation',
+                interviewId: interview.id,
+                recipientEmail: salesRepData.email,
+                recipientName: salesRepData.name || 'Sales Representative',
+                jobTitle: selectedInvite.jobTitle,
+                company: selectedInvite.company,
+                scheduledDate: selectedDate.toISOString().split('T')[0],
+                scheduledTime: selectedTime,
+                meetingLink: calendarResult.meetingLink,
+                recruiterName: recruiterData.name || 'Recruiter',
+                salesRepName: salesRepData.name || 'Sales Representative',
+              }),
+            }),
+          ]
+
+          // Send emails in parallel
+          await Promise.all(emailPromises)
+
+          toast({
+            title: "Interview booked!",
+            description: (
+              <div className="space-y-2">
+                <p>Your interview is scheduled for {selectedDate.toLocaleDateString()} at {selectedTime}</p>
+                <p className="text-sm">✅ Calendar invites sent</p>
+                <p className="text-sm">✅ Email notifications sent</p>
+                <p className="text-sm">✅ Reminder emails scheduled</p>
+              </div>
+            ) as any,
+          })
         } catch (calendarError) {
           console.error("Error creating calendar events:", calendarError)
           // Still show success even if calendar events fail
@@ -582,7 +592,12 @@ export default function InvitesPage() {
                 <Label className="text-gray-300 mb-2">Available Times</Label>
                 <ScrollArea className="h-[300px] border border-dark-600 rounded-lg p-2">
                   <div className="space-y-2">
-                    {availableSlots.length > 0 ? (
+                    {loadingSlots ? (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                        <p className="text-sm">Checking availability...</p>
+                      </div>
+                    ) : availableSlots.length > 0 ? (
                       availableSlots.map((slot) => (
                         <button
                           key={slot}

@@ -6,65 +6,39 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseClient()
     const { recruiterId, salesRepId, date } = await request.json()
     
-    console.log('Availability API called with:', { recruiterId, salesRepId, date })
-    
     if (!recruiterId || !salesRepId || !date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const dayOfWeek = new Date(date).getDay()
-    console.log('Day of week for date', date, 'is:', dayOfWeek)
 
-    // First check if any availability exists for these users
-    const { data: allRecruiterAvailability } = await supabase
-      .from('calendar_availability')
-      .select('*')
-      .eq('user_id', recruiterId)
-    
-    const { data: allSalesRepAvailability } = await supabase
-      .from('calendar_availability')
-      .select('*')
-      .eq('user_id', salesRepId)
-    
-    console.log('All recruiter availability records:', allRecruiterAvailability)
-    console.log('All sales rep availability records:', allSalesRepAvailability)
+    // Fetch both users' availability in parallel
+    const [recruiterResult, salesRepResult] = await Promise.all([
+      supabase
+        .from('calendar_availability')
+        .select('*')
+        .eq('user_id', recruiterId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_available', true)
+        .single(),
+      supabase
+        .from('calendar_availability')
+        .select('*')
+        .eq('user_id', salesRepId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_available', true)
+        .single()
+    ])
 
-    // Get both users' availability settings for specific day
-    const { data: recruiterAvailability, error: recruiterError } = await supabase
-      .from('calendar_availability')
-      .select('*')
-      .eq('user_id', recruiterId)
-      .eq('day_of_week', dayOfWeek)
-      .single()
+    const recruiterAvailability = recruiterResult.data
+    const salesRepAvailability = salesRepResult.data
 
-    const { data: salesRepAvailability, error: salesRepError } = await supabase
-      .from('calendar_availability')
-      .select('*')
-      .eq('user_id', salesRepId)
-      .eq('day_of_week', dayOfWeek)
-      .single()
-
-    console.log('Recruiter availability for day', dayOfWeek, ':', recruiterAvailability)
-    console.log('Recruiter error:', recruiterError)
-    console.log('Sales rep availability for day', dayOfWeek, ':', salesRepAvailability)
-    console.log('Sales rep error:', salesRepError)
-
-    // If either user has no availability for this day, return empty slots
-    if (!recruiterAvailability?.is_available || !salesRepAvailability?.is_available) {
-      console.log('One or both users not available on this day')
+    // If either user is not available on this day, return empty slots
+    if (!recruiterAvailability || !salesRepAvailability) {
       return NextResponse.json({ 
         availableSlots: [],
-        message: !recruiterAvailability ? 'Recruiter has not set availability' : 
-                 !salesRepAvailability ? 'Sales rep has not set availability' :
-                 !recruiterAvailability.is_available ? 'Recruiter not available on this day' :
-                 'Sales rep not available on this day',
-        debug: {
-          recruiterId,
-          salesRepId,
-          dayOfWeek,
-          recruiterRecordsCount: allRecruiterAvailability?.length || 0,
-          salesRepRecordsCount: allSalesRepAvailability?.length || 0
-        }
+        message: !recruiterAvailability ? 'Recruiter not available on this day' : 
+                 'Sales rep not available on this day'
       })
     }
 
@@ -86,7 +60,10 @@ export async function POST(request: NextRequest) {
     const overlapEnd = Math.min(recruiterEnd, salesRepEnd)
 
     if (overlapStart >= overlapEnd) {
-      return NextResponse.json({ availableSlots: [] })
+      return NextResponse.json({ 
+        availableSlots: [],
+        message: 'No overlapping availability between users'
+      })
     }
 
     // Generate 30-minute slots
@@ -111,16 +88,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Also check Google Calendar if users have connected calendars
-    const finalSlots = await checkGoogleCalendarAvailability(
-      supabase,
-      recruiterId,
-      salesRepId,
-      date,
-      slots
-    )
-
-    return NextResponse.json({ availableSlots: finalSlots })
+    return NextResponse.json({ availableSlots: slots })
   } catch (error) {
     console.error('Error fetching availability:', error)
     return NextResponse.json({ error: 'Failed to fetch availability' }, { status: 500 })
@@ -138,49 +106,4 @@ function formatTime(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
-}
-
-// Check Google Calendar for additional busy times
-async function checkGoogleCalendarAvailability(
-  supabase: any,
-  recruiterId: string,
-  salesRepId: string,
-  date: string,
-  slots: string[]
-): Promise<string[]> {
-  try {
-    // Check if users have calendar connections
-    const { data: connections } = await supabase
-      .from('calendar_connections')
-      .select('user_id')
-      .in('user_id', [recruiterId, salesRepId])
-      .eq('provider', 'google')
-
-    if (!connections || connections.length === 0) {
-      // No calendar connections, return original slots
-      return slots
-    }
-
-    // Call the calendar busy times API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/calendar/busy-times`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userIds: connections.map((c: any) => c.user_id),
-        date,
-        slots
-      })
-    })
-
-    if (!response.ok) {
-      console.error('Failed to check Google Calendar availability')
-      return slots
-    }
-
-    const { availableSlots } = await response.json()
-    return availableSlots || slots
-  } catch (error) {
-    console.error('Error checking Google Calendar:', error)
-    return slots // Return original slots if error
-  }
 } 
