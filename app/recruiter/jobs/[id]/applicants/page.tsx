@@ -51,6 +51,13 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "@/components/ui/use-toast"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function ApplicantsPage() {
   const params = useParams()
@@ -69,73 +76,75 @@ export default function ApplicantsPage() {
   const [jobDetails, setJobDetails] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState(false)
   const [invitedApplicants, setInvitedApplicants] = useState<Set<string>>(new Set())
+  const [statusFilter, setStatusFilter] = useState("all")
 
-  useEffect(() => {
-    const fetchApplicants = async () => {
-      setLoading(true)
-      try {
-        // Fetch applicants for this job
-        const { data, error } = await supabase
-          .from("applicants")
-          .select("*, user:users!user_id(*)")
-          .eq("job_id", jobId)
-        if (error) throw error
+  const fetchApplicants = async () => {
+    setLoading(true)
+    try {
+      // Fetch applicants for this job
+      const { data, error } = await supabase
+        .from("applicants")
+        .select("*, user:user_id(id, name, email, avatar_url)")
+        .eq("job_id", jobId)
+
+      if (!error && data) {
         setApplicants(data || [])
 
         // Fetch job details
-        const { data: jobData, error: jobError } = await supabase
+        const { data: job } = await supabase
           .from("jobs")
-          .select("*")
+          .select("title, company, company_overview, price_range, industry, remote_compatible, commission_structure")
           .eq("id", jobId)
           .single()
-        if (jobError) throw jobError
-        setJobDetails(jobData)
+
+        setJobDetails(job)
 
         // Check which applicants have already been invited
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user && data) {
+        const userIds = data.filter(a => a.user_id).map(a => a.user_id)
+        if (userIds.length > 0) {
           // Get all user IDs from applicants
-          const userIds = data
-            .filter((applicant: any) => applicant.user_id)
-            .map((applicant: any) => applicant.user_id)
+          const { data: notifications } = await supabase
+            .from("notifications")
+            .select("metadata")
+            .in("metadata->>repId", userIds)
+            .eq("metadata->>jobId", jobId)
+            .eq("metadata->>type", "interview_invitation")
 
-          if (userIds.length > 0) {
-            // Check for existing interview invitations
-            const { data: invitations } = await supabase
-              .from("notifications")
-              .select("user_id, metadata")
-              .in("user_id", userIds)
-              .like("title", "%Interview Invitation%")
-              .eq("metadata->>jobId", jobId.toString())
-
-            if (invitations) {
-              const invited = new Set(invitations.map((inv: any) => inv.user_id))
-              setInvitedApplicants(invited)
-            }
-          }
+          const invited = new Set(
+            notifications?.map(n => n.metadata?.repId).filter(Boolean) || []
+          )
+          setInvitedApplicants(invited)
         }
-      } catch (err: any) {
-        setError(err.message || "Failed to load applicants")
-      } finally {
-        setLoading(false)
+      } else {
+        throw error
       }
+    } catch (err: any) {
+      setError(err.message || "Failed to load applicants")
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchApplicants()
-  }, [jobId, supabase])
+  }, [jobId])
 
   const filteredApplicants = applicants.filter((applicant) => {
-    const name = applicant.user?.name || applicant.name || ""
-    if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    return true
+    const matchesSearch = searchQuery === "" ||
+      applicant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      applicant.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      applicant.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || applicant.status === statusFilter
+    
+    return matchesSearch && matchesStatus
   }).sort((a, b) => {
     if (sortByScore) {
-      // Sort by score descending (highest first)
-      const scoreA = a.score ?? 0
-      const scoreB = b.score ?? 0
-      return scoreB - scoreA
+      const scoreA = a.score ?? -1
+      const scoreB = b.score ?? -1
+      return scoreB - scoreA // Descending order
     }
-    // Default: sort by date (most recent first)
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    return 0
   })
 
   const handleStatusChange = async (id: number, status: string) => {
@@ -264,421 +273,465 @@ export default function ApplicantsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl h-screen overflow-hidden flex flex-col">
-      <FadeIn delay={100}>
-        <div className="flex items-center mb-8">
-          <Link
-            href="/recruiter/jobs"
-            className="mr-4 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors duration-300"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold text-white mb-2">Applicants</h1>
-            <p className="text-gray-400 truncate">{jobDetails?.title}</p>
+    <div className="container mx-auto max-w-7xl flex flex-col h-screen">
+      {loading && (
+        <div className="animate-pulse space-y-4 p-6">
+          <div className="h-8 bg-dark-700 rounded w-1/4"></div>
+          <div className="h-4 bg-dark-700 rounded w-1/2"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-32 bg-dark-700 rounded"></div>
+            <div className="h-32 bg-dark-700 rounded"></div>
           </div>
         </div>
-      </FadeIn>
+      )}
 
-      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
-        {/* Left Panel - Applicant List */}
-        <FadeIn delay={200}>
-          <div className="w-96 flex flex-col flex-shrink-0">
-            <div className="mb-4 flex-shrink-0">
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search applicants..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+      {error && (
+        <div className="text-center py-12">
+          <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Failed to Load</h2>
+          <p className="text-gray-400">{error}</p>
+        </div>
+      )}
 
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-400">Recent Applicants ({filteredApplicants.length})</h3>
-                <AnimatedButton
-                  variant={sortByScore ? "purple" : "outline"}
-                  size="sm"
-                  onClick={() => setSortByScore(!sortByScore)}
-                  icon={<Brain className="w-4 h-4" />}
-                >
-                  {sortByScore ? "Top Rated" : "Sort by AI Score"}
-                </AnimatedButton>
+      {!loading && !error && (
+        <>
+          {/* Header */}
+          <FadeIn delay={100}>
+            <div className="flex items-center mb-8 px-6 pt-6">
+              <Link
+                href="/recruiter/jobs"
+                className="mr-4 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors duration-300"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">Applicants</h1>
+                <p className="text-gray-400">{jobDetails?.title} at {jobDetails?.company}</p>
               </div>
             </div>
+          </FadeIn>
 
-            <AnimatedCard variant="hover-glow" className="flex-1 min-h-0 flex flex-col">
-              <ScrollArea className="flex-1 overflow-y-auto">
-                <div className="p-2">
-                  {filteredApplicants.length > 0 ? (
-                    filteredApplicants.map((applicant) => (
-                      <div
-                        key={applicant.id}
-                        className={cn(
-                          "p-4 rounded-lg cursor-pointer transition-all duration-300 mb-2",
-                          selectedApplicant?.id === applicant.id ? "bg-purple-500/20" : "hover:bg-dark-700 bg-dark-800",
-                        )}
-                        onClick={() => {
-                          setSelectedApplicant(applicant)
-                          setNotes(applicant.notes)
-                        }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 min-w-0 flex-1">
-                            <Avatar className="h-10 w-10 border border-dark-600 flex-shrink-0">
-                              <AvatarImage src={applicant.user?.avatar_url ?? applicant.avatar_url ?? "/placeholder.svg"} />
-                              <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                                {(applicant.user?.name ?? applicant.name)
-                                  .split(" ")
-                                  .map((n: string) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
-                                  <div className="flex items-center text-xs text-gray-400 mt-1">
-                                    <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
-                                    <span className="truncate">Applied {applicant.applied_date ? new Date(applicant.applied_date).toLocaleDateString() : 'Recently'}</span>
-                                    {applicant.user_id && invitedApplicants.has(applicant.user_id) && (
-                                      <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5">
-                                        <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
-                                        Invited
-                                      </Badge>
+          {/* Search Bar */}
+          <FadeIn delay={150}>
+            <div className="px-6 mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search applicants by name, location, or skills..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder:text-gray-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition-all duration-300"
+                />
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* Main Content - Split View */}
+          <div className="flex gap-6 flex-1 min-h-0 px-6 pb-6">
+            {/* Left Panel - Applicants List */}
+            <FadeIn delay={200}>
+              <div className="w-96 flex-shrink-0">
+                <AnimatedCard variant="hover-glow" className="h-full flex flex-col">
+                  <div className="p-4 border-b border-dark-600 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-400">Applicants ({filteredApplicants.length})</h3>
+                      <div className="flex items-center gap-2">
+                        <AnimatedButton
+                          variant={sortByScore ? "purple" : "outline"}
+                          size="sm"
+                          onClick={() => setSortByScore(!sortByScore)}
+                          icon={<Brain className="w-3 h-3" />}
+                        >
+                          {sortByScore ? "Top Rated" : "AI Score"}
+                        </AnimatedButton>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="w-28 h-8 text-xs bg-dark-700 border-dark-600 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-dark-700 border-dark-600">
+                            <SelectItem value="all" className="text-white hover:bg-dark-600">All</SelectItem>
+                            <SelectItem value="new" className="text-white hover:bg-dark-600">New</SelectItem>
+                            <SelectItem value="reviewing" className="text-white hover:bg-dark-600">Reviewing</SelectItem>
+                            <SelectItem value="interviewing" className="text-white hover:bg-dark-600">Interviewing</SelectItem>
+                            <SelectItem value="hired" className="text-white hover:bg-dark-600">Hired</SelectItem>
+                            <SelectItem value="rejected" className="text-white hover:bg-dark-600">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-3">
+                      {filteredApplicants.length > 0 ? (
+                        filteredApplicants.map((applicant) => (
+                          <div
+                            key={applicant.id}
+                            className={cn(
+                              "p-4 rounded-lg cursor-pointer transition-all duration-300 mb-2",
+                              selectedApplicant?.id === applicant.id ? "bg-purple-500/20" : "hover:bg-dark-700 bg-dark-800",
+                            )}
+                            onClick={() => {
+                              setSelectedApplicant(applicant)
+                              setNotes(applicant.notes)
+                            }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3 min-w-0 flex-1">
+                                <Avatar className="h-10 w-10 border border-dark-600 flex-shrink-0">
+                                  <AvatarImage src={applicant.user?.avatar_url ?? applicant.avatar_url ?? "/placeholder.svg"} />
+                                  <AvatarFallback className="bg-purple-500/20 text-purple-400">
+                                    {(applicant.user?.name ?? applicant.name)
+                                      .split(" ")
+                                      .map((n: string) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h3 className="text-white font-medium truncate">{applicant.user?.name ?? applicant.name}</h3>
+                                      <div className="flex items-center text-xs text-gray-400 mt-1">
+                                        <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                                        <span className="truncate">Applied {applicant.applied_date ? new Date(applicant.applied_date).toLocaleDateString() : 'Recently'}</span>
+                                        {applicant.user_id && invitedApplicants.has(applicant.user_id) && (
+                                          <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5">
+                                            <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
+                                            Invited
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {applicant.score !== undefined && applicant.score !== null && (
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold text-white">{applicant.score}%</div>
+                                        <div className="text-xs text-gray-400">AI Score</div>
+                                      </div>
+                                    )}
+                                    {(applicant.score === undefined || applicant.score === null) && (
+                                      <AnimatedButton
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleScoreApplicant(applicant.id)
+                                        }}
+                                        isLoading={scoringInProgress === applicant.id}
+                                        icon={<Brain className="w-3 h-3" />}
+                                      >
+                                        Score
+                                      </AnimatedButton>
                                     )}
                                   </div>
+                                  {applicant.score_reasons && applicant.score_reasons.length > 0 && (
+                                    <div className="mt-2 text-xs text-gray-400">
+                                      <div className="line-clamp-2">
+                                        {applicant.score_reasons[0]}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                                {applicant.score !== undefined && applicant.score !== null && (
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold text-white">{applicant.score}%</div>
-                                    <div className="text-xs text-gray-400">AI Score</div>
-                                  </div>
-                                )}
-                                {(applicant.score === undefined || applicant.score === null) && (
-                                  <AnimatedButton
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleScoreApplicant(applicant.id)
-                                    }}
-                                    isLoading={scoringInProgress === applicant.id}
-                                    icon={<Brain className="w-3 h-3" />}
-                                  >
-                                    Score
-                                  </AnimatedButton>
-                                )}
                               </div>
-                              {applicant.score_reasons && applicant.score_reasons.length > 0 && (
-                                <div className="mt-2 text-xs text-gray-400">
-                                  <div className="line-clamp-2">
-                                    {applicant.score_reasons[0]}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-white mb-2">No applicants found</h3>
-                      <p className="text-gray-400 mb-6">
-                        {searchQuery
-                          ? "No applicants match your search criteria"
-                          : "You don't have any applicants yet"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </AnimatedCard>
-          </div>
-        </FadeIn>
-
-        {/* Right Panel - Applicant Details */}
-        <FadeIn delay={300}>
-          <div className="flex-1 min-w-0">
-            {selectedApplicant ? (
-              <AnimatedCard variant="hover-glow" className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-dark-600 flex-shrink-0">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-4 min-w-0 flex-1">
-                      <Avatar className="h-16 w-16 border-2 border-dark-600 flex-shrink-0">
-                        <AvatarImage src={selectedApplicant.user?.avatar_url ?? selectedApplicant.avatar_url ?? "/placeholder.svg"} />
-                        <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
-                          {(selectedApplicant.user?.name ?? selectedApplicant.name)
-                            .split(" ")
-                            .map((n: string) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold text-white truncate">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
-                        </div>
-                        <p className="text-gray-400 truncate">{selectedApplicant.location}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0">
-                      {selectedApplicant.user_id && invitedApplicants.has(selectedApplicant.user_id) ? (
-                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Already Invited
-                        </Badge>
+                        ))
                       ) : (
-                        <AnimatedButton
-                          variant="purple"
-                          size="sm"
-                          onClick={() => setInviteDialogOpen(true)}
-                          icon={<Send className="w-4 h-4" />}
-                          disabled={!selectedApplicant.user_id}
-                        >
-                          Invite
-                        </AnimatedButton>
+                        <div className="text-center py-12">
+                          <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-white mb-2">No applicants found</h3>
+                          <p className="text-gray-400 mb-6">
+                            {searchQuery
+                              ? "No applicants match your search criteria"
+                              : "You don't have any applicants yet"}
+                          </p>
+                        </div>
                       )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">
-                            <MoreHorizontal className="w-5 h-5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStatusChange(selectedApplicant.id, "new")}
-                          >
-                            <Clock className="mr-2 h-4 w-4 text-blue-400" />
-                            <span>Mark as New</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStatusChange(selectedApplicant.id, "reviewing")}
-                          >
-                            <Eye className="mr-2 h-4 w-4 text-yellow-400" />
-                            <span>Mark as Reviewing</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStatusChange(selectedApplicant.id, "interviewing")}
-                          >
-                            <Calendar className="mr-2 h-4 w-4 text-purple-400" />
-                            <span>Mark as Interviewing</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStatusChange(selectedApplicant.id, "hired")}
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
-                            <span>Mark as Hired</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="hover:bg-dark-600 cursor-pointer"
-                            onClick={() => handleStatusChange(selectedApplicant.id, "rejected")}
-                          >
-                            <XCircle className="mr-2 h-4 w-4 text-red-400" />
-                            <span>Mark as Rejected</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
-                  </div>
+                  </ScrollArea>
+                </AnimatedCard>
+              </div>
+            </FadeIn>
 
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="flex items-center text-sm text-gray-400 min-w-0">
-                      <Briefcase className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">{selectedApplicant.experience}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-400 min-w-0">
-                      <DollarSign className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">Highest ticket: {selectedApplicant.highestTicket}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-400 min-w-0">
-                      <Target className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">Style: {selectedApplicant.salesStyle}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-400 min-w-0">
-                      <Wrench className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
-                      <span className="truncate">Tools: {selectedApplicant.tools}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <ScrollArea className="flex-1 min-h-0">
-                  <div className="p-6 space-y-6">
-                    {/* Fit Score */}
-                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined ? (
-                      <AnimatedCard className="p-6 bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-purple-500/30">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="text-xl font-semibold text-white mb-1 flex items-center gap-2">
-                              <Brain className="w-6 h-6 text-purple-400" /> AI Match Score
-                            </h3>
-                            <p className="text-sm text-gray-400">Automated fit assessment for this role</p>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-4xl font-bold text-white">{selectedApplicant.score}%</div>
-                            <div className={cn(
-                              "text-sm font-medium mt-1",
-                              selectedApplicant.score >= 75 ? "text-green-400" :
-                              selectedApplicant.score >= 50 ? "text-yellow-400" : "text-red-400"
-                            )}>
-                              {selectedApplicant.score >= 75 ? "Excellent Match" :
-                               selectedApplicant.score >= 50 ? "Good Match" : "Fair Match"}
+            {/* Right Panel - Applicant Details */}
+            <FadeIn delay={300}>
+              <div className="flex-1 min-w-0">
+                {selectedApplicant ? (
+                  <AnimatedCard variant="hover-glow" className="h-full overflow-hidden flex flex-col">
+                    <div className="p-6 border-b border-dark-600 flex-shrink-0">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-4 min-w-0 flex-1">
+                          <Avatar className="h-16 w-16 border-2 border-dark-600 flex-shrink-0">
+                            <AvatarImage src={selectedApplicant.user?.avatar_url ?? selectedApplicant.avatar_url ?? "/placeholder.svg"} />
+                            <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
+                              {(selectedApplicant.user?.name ?? selectedApplicant.name)
+                                .split(" ")
+                                .map((n: string) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h2 className="text-2xl font-bold text-white truncate">{selectedApplicant.user?.name ?? selectedApplicant.name}</h2>
                             </div>
+                            <p className="text-gray-400 truncate">{selectedApplicant.location}</p>
                           </div>
                         </div>
-                        {selectedApplicant.score_reasons?.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-300 mb-2">Key Factors:</h4>
-                            <div className="space-y-2">
-                              {selectedApplicant.score_reasons.map((r: string, idx: number) => (
-                                <div key={idx} className="flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-                                  <p className="text-sm text-gray-300">{r}</p>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          {selectedApplicant.user_id && invitedApplicants.has(selectedApplicant.user_id) ? (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Already Invited
+                            </Badge>
+                          ) : (
+                            <AnimatedButton
+                              variant="purple"
+                              size="sm"
+                              onClick={() => setInviteDialogOpen(true)}
+                              icon={<Send className="w-4 h-4" />}
+                              disabled={!selectedApplicant.user_id}
+                            >
+                              Invite
+                            </AnimatedButton>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-700 transition-colors">
+                                <MoreHorizontal className="w-5 h-5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 bg-dark-700 border-dark-600 text-white">
+                              <DropdownMenuItem
+                                className="hover:bg-dark-600 cursor-pointer"
+                                onClick={() => handleStatusChange(selectedApplicant.id, "new")}
+                              >
+                                <Clock className="mr-2 h-4 w-4 text-blue-400" />
+                                <span>Mark as New</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="hover:bg-dark-600 cursor-pointer"
+                                onClick={() => handleStatusChange(selectedApplicant.id, "reviewing")}
+                              >
+                                <Eye className="mr-2 h-4 w-4 text-yellow-400" />
+                                <span>Mark as Reviewing</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="hover:bg-dark-600 cursor-pointer"
+                                onClick={() => handleStatusChange(selectedApplicant.id, "interviewing")}
+                              >
+                                <Calendar className="mr-2 h-4 w-4 text-purple-400" />
+                                <span>Mark as Interviewing</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="hover:bg-dark-600 cursor-pointer"
+                                onClick={() => handleStatusChange(selectedApplicant.id, "hired")}
+                              >
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
+                                <span>Mark as Hired</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="hover:bg-dark-600 cursor-pointer"
+                                onClick={() => handleStatusChange(selectedApplicant.id, "rejected")}
+                              >
+                                <XCircle className="mr-2 h-4 w-4 text-red-400" />
+                                <span>Mark as Rejected</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mt-6">
+                        <div className="flex items-center text-sm text-gray-400 min-w-0">
+                          <Briefcase className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                          <span className="truncate">{selectedApplicant.experience}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-400 min-w-0">
+                          <DollarSign className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                          <span className="truncate">Highest ticket: {selectedApplicant.highestTicket}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-400 min-w-0">
+                          <Target className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                          <span className="truncate">Style: {selectedApplicant.salesStyle}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-400 min-w-0">
+                          <Wrench className="w-4 h-4 mr-2 text-purple-400 flex-shrink-0" />
+                          <span className="truncate">Tools: {selectedApplicant.tools}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ScrollArea className="flex-1">
+                      <div className="p-6 space-y-6">
+                        {/* Fit Score */}
+                        {selectedApplicant.score !== null && selectedApplicant.score !== undefined ? (
+                          <AnimatedCard className="p-6 bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-purple-500/30">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <h3 className="text-xl font-semibold text-white mb-1 flex items-center gap-2">
+                                  <Brain className="w-6 h-6 text-purple-400" /> AI Match Score
+                                </h3>
+                                <p className="text-sm text-gray-400">Automated fit assessment for this role</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-4xl font-bold text-white">{selectedApplicant.score}%</div>
+                                <div className={cn(
+                                  "text-sm font-medium mt-1",
+                                  selectedApplicant.score >= 75 ? "text-green-400" :
+                                  selectedApplicant.score >= 50 ? "text-yellow-400" : "text-red-400"
+                                )}>
+                                  {selectedApplicant.score >= 75 ? "Excellent Match" :
+                                   selectedApplicant.score >= 50 ? "Good Match" : "Fair Match"}
                                 </div>
-                              ))}
+                              </div>
+                            </div>
+                            {selectedApplicant.score_reasons?.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Key Factors:</h4>
+                                <div className="space-y-2">
+                                  {selectedApplicant.score_reasons.map((r: string, idx: number) => (
+                                    <div key={idx} className="flex items-start gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
+                                      <p className="text-sm text-gray-300">{r}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </AnimatedCard>
+                        ) : (
+                          <AnimatedCard className="p-6 bg-dark-800 border-dark-600">
+                            <div className="text-center">
+                              <Brain className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                              <h3 className="text-lg font-semibold text-white mb-2">No AI Score Yet</h3>
+                              <p className="text-sm text-gray-400 mb-4">Generate an AI assessment for this applicant</p>
+                              <AnimatedButton
+                                variant="purple"
+                                onClick={() => handleScoreApplicant(selectedApplicant.id)}
+                                isLoading={scoringInProgress === selectedApplicant.id}
+                                icon={<Brain className="w-4 h-4" />}
+                              >
+                                Generate AI Score
+                              </AnimatedButton>
+                            </div>
+                          </AnimatedCard>
+                        )}
+
+                        {/* Video Introduction */}
+                        {selectedApplicant.videoUrl && (
+                          <div>
+                            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                              <Video className="w-5 h-5 mr-2 text-purple-400" />
+                              Video Introduction
+                            </h3>
+                            <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center group cursor-pointer hover:bg-dark-600 transition-colors">
+                              <div className="text-center">
+                                <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-500/30 transition-colors">
+                                  <Play className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <p className="text-sm text-gray-400">Watch video introduction</p>
+                              </div>
                             </div>
                           </div>
                         )}
-                      </AnimatedCard>
-                    ) : (
-                      <AnimatedCard className="p-6 bg-dark-800 border-dark-600">
-                        <div className="text-center">
-                          <Brain className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                          <h3 className="text-lg font-semibold text-white mb-2">No AI Score Yet</h3>
-                          <p className="text-sm text-gray-400 mb-4">Generate an AI assessment for this applicant</p>
-                          <AnimatedButton
-                            variant="purple"
-                            onClick={() => handleScoreApplicant(selectedApplicant.id)}
-                            isLoading={scoringInProgress === selectedApplicant.id}
-                            icon={<Brain className="w-4 h-4" />}
-                          >
-                            Generate AI Score
-                          </AnimatedButton>
-                        </div>
-                      </AnimatedCard>
-                    )}
 
-                    {/* Video Introduction */}
-                    {selectedApplicant.videoUrl && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                          <Video className="w-5 h-5 mr-2 text-purple-400" />
-                          Video Introduction
-                        </h3>
-                        <div className="aspect-video bg-dark-700 rounded-lg flex items-center justify-center group cursor-pointer hover:bg-dark-600 transition-colors">
-                          <div className="text-center">
-                            <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-500/30 transition-colors">
-                              <Play className="w-6 h-6 text-purple-400" />
+                        {/* Background and Performance */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                            <Briefcase className="w-5 h-5 mr-2 text-purple-400" />
+                            Background and Performance
+                          </h3>
+                          <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
+                            <p className="text-gray-300 text-sm leading-relaxed break-words">
+                              {selectedApplicant.experience}. Highest ticket sale was {selectedApplicant.highestTicket}.
+                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
+                              labore et dolore magna aliqua.
+                            </p>
+                          </AnimatedCard>
+                        </div>
+
+                        {/* Sales Style */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                            <Target className="w-5 h-5 mr-2 text-purple-400" />
+                            Sales Style and Approach
+                          </h3>
+                          <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
+                            <p className="text-gray-300 text-sm leading-relaxed break-words">
+                              {selectedApplicant.salesStyle}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                              do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                              nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                            </p>
+                          </AnimatedCard>
+                        </div>
+
+                        {/* Tools and Self-Management */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                            <Wrench className="w-5 h-5 mr-2 text-purple-400" />
+                            Tools and Self-Management
+                          </h3>
+                          <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
+                            <p className="text-gray-300 text-sm leading-relaxed break-words">
+                              Proficient with {selectedApplicant.tools}. Lorem ipsum dolor sit amet, consectetur adipiscing
+                              elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                            </p>
+                          </AnimatedCard>
+                        </div>
+
+                        {/* Drive and Mindset */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                            <Brain className="w-5 h-5 mr-2 text-purple-400" />
+                            Drive and Mindset
+                          </h3>
+                          <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
+                            <p className="text-gray-300 text-sm leading-relaxed break-words">
+                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
+                              labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                              laboris nisi ut aliquip ex ea commodo consequat.
+                            </p>
+                          </AnimatedCard>
+                        </div>
+
+                        {/* Notes */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                            <MessageSquare className="w-5 h-5 mr-2 text-purple-400" />
+                            Recruiter Notes
+                          </h3>
+                          <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
+                            <textarea
+                              value={notes}
+                              onChange={(e) => setNotes(e.target.value)}
+                              placeholder="Add notes about this candidate..."
+                              className="w-full bg-dark-700 border border-dark-600 rounded-lg p-3 text-white placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 min-h-[100px] resize-none"
+                            />
+                            <div className="flex justify-end mt-2">
+                              <AnimatedButton variant="outline" size="sm" onClick={handleSaveNotes}>
+                                Save Notes
+                              </AnimatedButton>
                             </div>
-                            <p className="text-sm text-gray-400">Watch video introduction</p>
-                          </div>
+                          </AnimatedCard>
                         </div>
                       </div>
-                    )}
-
-                    {/* Background and Performance */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <Briefcase className="w-5 h-5 mr-2 text-purple-400" />
-                        Background and Performance
-                      </h3>
-                      <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed break-words">
-                          {selectedApplicant.experience}. Highest ticket sale was {selectedApplicant.highestTicket}.
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-                          labore et dolore magna aliqua.
-                        </p>
-                      </AnimatedCard>
+                    </ScrollArea>
+                  </AnimatedCard>
+                ) : (
+                  <AnimatedCard variant="hover-glow" className="flex-1 flex items-center justify-center">
+                    <div className="text-center p-12">
+                      <Users className="h-16 w-16 text-gray-500 mx-auto mb-6" />
+                      <h2 className="text-2xl font-bold text-white mb-4">Select an Applicant</h2>
+                      <p className="text-gray-400 max-w-md mx-auto">
+                        Click on an applicant from the list to view their details, update their status, or add notes.
+                      </p>
                     </div>
-
-                    {/* Sales Style */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <Target className="w-5 h-5 mr-2 text-purple-400" />
-                        Sales Style and Approach
-                      </h3>
-                      <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed break-words">
-                          {selectedApplicant.salesStyle}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                          do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-                          nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                        </p>
-                      </AnimatedCard>
-                    </div>
-
-                    {/* Tools and Self-Management */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <Wrench className="w-5 h-5 mr-2 text-purple-400" />
-                        Tools and Self-Management
-                      </h3>
-                      <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed break-words">
-                          Proficient with {selectedApplicant.tools}. Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                        </p>
-                      </AnimatedCard>
-                    </div>
-
-                    {/* Drive and Mindset */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <Brain className="w-5 h-5 mr-2 text-purple-400" />
-                        Drive and Mindset
-                      </h3>
-                      <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <p className="text-gray-300 text-sm leading-relaxed break-words">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-                          labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                          laboris nisi ut aliquip ex ea commodo consequat.
-                        </p>
-                      </AnimatedCard>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                        <MessageSquare className="w-5 h-5 mr-2 text-purple-400" />
-                        Recruiter Notes
-                      </h3>
-                      <AnimatedCard className="p-4 bg-dark-800 border-dark-600">
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Add notes about this candidate..."
-                          className="w-full bg-dark-700 border border-dark-600 rounded-lg p-3 text-white placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-300 min-h-[100px] resize-none"
-                        />
-                        <div className="flex justify-end mt-2">
-                          <AnimatedButton variant="outline" size="sm" onClick={handleSaveNotes}>
-                            Save Notes
-                          </AnimatedButton>
-                        </div>
-                      </AnimatedCard>
-                    </div>
-                  </div>
-                </ScrollArea>
-              </AnimatedCard>
-            ) : (
-              <AnimatedCard variant="hover-glow" className="flex-1 flex items-center justify-center">
-                <div className="text-center p-12">
-                  <Users className="h-16 w-16 text-gray-500 mx-auto mb-6" />
-                  <h2 className="text-2xl font-bold text-white mb-4">Select an Applicant</h2>
-                  <p className="text-gray-400 max-w-md mx-auto">
-                    Click on an applicant from the list to view their details, update their status, or add notes.
-                  </p>
-                </div>
-              </AnimatedCard>
-            )}
+                  </AnimatedCard>
+                )}
+              </div>
+            </FadeIn>
           </div>
-        </FadeIn>
-      </div>
+        </>
+      )}
 
       {/* Invite Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
