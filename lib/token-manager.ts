@@ -146,6 +146,7 @@ export const withFreshTokens = async <T>(
   try {
     const client = await createAuthorizedClientForUser(userId)
     if (!client) {
+      console.error(`No OAuth client available for user ${userId} - user may not have Google Calendar connected`)
       throw new Error('No OAuth client available')
     }
 
@@ -166,7 +167,7 @@ export const withFreshTokens = async <T>(
     }
     
     console.error('Error in withFreshTokens:', error)
-    return null
+    throw error // Re-throw to let caller handle
   }
 }
 

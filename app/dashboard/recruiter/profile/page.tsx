@@ -8,10 +8,32 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Save, Upload } from "lucide-react"
+import { ArrowLeft, Save, Upload, Globe } from "lucide-react"
 import Link from "next/link"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+// Common timezone list
+const TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (New York)" },
+  { value: "America/Chicago", label: "Central Time (Chicago)" },
+  { value: "America/Denver", label: "Mountain Time (Denver)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
+  { value: "America/Phoenix", label: "Arizona Time (Phoenix)" },
+  { value: "America/Anchorage", label: "Alaska Time (Anchorage)" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time (Honolulu)" },
+  { value: "America/Toronto", label: "Eastern Time (Toronto)" },
+  { value: "America/Vancouver", label: "Pacific Time (Vancouver)" },
+  { value: "Europe/London", label: "GMT (London)" },
+  { value: "Europe/Paris", label: "Central European Time (Paris)" },
+  { value: "Europe/Berlin", label: "Central European Time (Berlin)" },
+  { value: "Asia/Tokyo", label: "Japan Time (Tokyo)" },
+  { value: "Asia/Shanghai", label: "China Time (Shanghai)" },
+  { value: "Asia/Singapore", label: "Singapore Time" },
+  { value: "Australia/Sydney", label: "Australian Eastern Time (Sydney)" },
+  { value: "Pacific/Auckland", label: "New Zealand Time (Auckland)" },
+]
 
 export default function RecruiterProfilePage() {
   const [formData, setFormData] = useState({
@@ -21,6 +43,7 @@ export default function RecruiterProfilePage() {
     phone: "",
     company: "",
     title: "",
+    timezone: "America/New_York",
     bio: "",
     avatarUrl: "",
   })
@@ -35,6 +58,13 @@ export default function RecruiterProfilePage() {
         const { data: { user }, error } = await supabase.auth.getUser()
         if (error) throw error
         if (user) {
+          // Also fetch timezone from users table
+          const { data: userData } = await supabase
+            .from('users')
+            .select('timezone')
+            .eq('id', user.id)
+            .single()
+          
           setFormData((prev) => ({
             ...prev,
             firstName: user.user_metadata?.first_name || "",
@@ -43,6 +73,7 @@ export default function RecruiterProfilePage() {
             phone: user.user_metadata?.phone || "",
             company: user.user_metadata?.company || "",
             title: user.user_metadata?.title || "",
+            timezone: userData?.timezone || user.user_metadata?.timezone || "America/New_York",
             bio: user.user_metadata?.bio || "",
             avatarUrl: user.user_metadata?.avatar_url || "",
           }))
@@ -83,6 +114,8 @@ export default function RecruiterProfilePage() {
   const handleSave = async () => {
     try {
       const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("No user found")
 
       const updates: any = {
         data: {
@@ -92,6 +125,7 @@ export default function RecruiterProfilePage() {
           phone: formData.phone,
           company: formData.company,
           title: formData.title,
+          timezone: formData.timezone,
           bio: formData.bio,
           avatar_url: formData.avatarUrl,
         },
@@ -103,6 +137,17 @@ export default function RecruiterProfilePage() {
 
       const { error } = await supabase.auth.updateUser(updates)
       if (error) throw error
+
+      // Also update timezone in users table
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ 
+          timezone: formData.timezone,
+          name: `${formData.firstName} ${formData.lastName}`.trim()
+        })
+        .eq('id', user.id)
+      
+      if (dbError) throw dbError
 
       toast({ title: "Profile updated", description: "Your profile has been saved successfully." })
     } catch (err: any) {
@@ -213,6 +258,29 @@ export default function RecruiterProfilePage() {
                   onChange={(e) => handleInputChange("title", e.target.value)}
                   variant="glow"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="timezone" className="text-gray-300 text-sm">
+                  Timezone
+                </Label>
+                <Select value={formData.timezone} onValueChange={(value) => handleInputChange("timezone", value)}>
+                  <SelectTrigger className="w-full bg-dark-700 border-dark-600 text-white hover:border-purple-500 focus:border-purple-500">
+                    <Globe className="h-4 w-4 mr-2 text-purple-400" />
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dark-700 border-dark-600">
+                    {TIMEZONES.map((timezone) => (
+                      <SelectItem 
+                        key={timezone.value} 
+                        value={timezone.value}
+                        className="text-gray-300 hover:bg-dark-600 hover:text-white focus:bg-dark-600 focus:text-white"
+                      >
+                        {timezone.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

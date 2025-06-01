@@ -4,26 +4,15 @@ import { useState, useEffect, useCallback } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { FadeIn } from "@/components/ui/fade-in"
+import { Calendar, Clock, Users, Briefcase, MapPin, DollarSign, CheckCircle, Video, Send, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { 
-  Calendar,
-  Clock,
-  MapPin,
-  DollarSign,
-  Briefcase,
-  Users,
-  Send,
-  CheckCircle,
-  Video,
-  Loader2,
-} from "lucide-react"
-import { getSupabaseClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useToast } from "@/hooks/use-toast"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 // Custom debounce function
 function debounce<T extends (...args: any[]) => any>(
@@ -69,9 +58,17 @@ export default function InvitesPage() {
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("")
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [availabilityCache] = useState<Map<string, string[]>>(new Map())
+  const [checkingConnection, setCheckingConnection] = useState<string | null>(null)
+  const [timezoneInfo, setTimezoneInfo] = useState<{
+    recruiterTimezone?: string
+    salesRepTimezone?: string
+    timezoneNote?: string
+  }>({})
+  const [currentTime, setCurrentTime] = useState(new Date())
   
   const supabase = getSupabaseClient()
   const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchInvites()
@@ -176,11 +173,69 @@ export default function InvitesPage() {
   }
 
   const handleBookTime = async (invite: Invite) => {
-    setSelectedInvite(invite)
-    setBookingDialogOpen(true)
-    setLoadingSlots(false)
-    // Clear cache when opening a new booking dialog
-    availabilityCache.clear()
+    // First check if both users have calendar connected
+    setCheckingConnection(invite.id)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const checkResponse = await fetch('/api/calendar/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: [invite.recruiterId, user.id]
+        })
+      })
+
+      const checkResult = await checkResponse.json()
+
+      if (!checkResult.allConnected) {
+        // Determine which user needs to connect
+        const currentUserNeedsConnection = checkResult.usersWithoutConnection.includes(user.id)
+        const recruiterNeedsConnection = checkResult.usersWithoutConnection.includes(invite.recruiterId)
+
+        let message = ''
+        if (currentUserNeedsConnection && recruiterNeedsConnection) {
+          message = 'Both you and the recruiter need to connect Google Calendar to schedule interviews.'
+        } else if (currentUserNeedsConnection) {
+          message = 'You need to connect your Google Calendar to schedule interviews. Please go to Calendar Settings.'
+        } else if (recruiterNeedsConnection) {
+          message = 'The recruiter needs to connect their Google Calendar before interviews can be scheduled.'
+        }
+
+        toast({
+          title: "Google Calendar Required",
+          description: message,
+          variant: "destructive",
+          action: currentUserNeedsConnection ? (
+            <AnimatedButton
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/dashboard/calendar'}
+            >
+              Go to Settings
+            </AnimatedButton>
+          ) : undefined
+        })
+        return
+      }
+
+      // If both have calendar connected, proceed to show the dialog
+      setSelectedInvite(invite)
+      setBookingDialogOpen(true)
+      setLoadingSlots(false)
+      // Clear cache when opening a new booking dialog
+      availabilityCache.clear()
+    } catch (error) {
+      console.error("Error checking calendar connections:", error)
+      toast({
+        title: "Error",
+        description: "Failed to check calendar connections. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setCheckingConnection(null)
+    }
   }
 
   // Debounced availability fetching
@@ -221,6 +276,15 @@ export default function InvitesPage() {
           
           setAvailableSlots(slots)
           setAvailabilityMessage(data.message || "")
+          
+          // Store timezone information
+          if (data.recruiterTimezone || data.salesRepTimezone) {
+            setTimezoneInfo({
+              recruiterTimezone: data.recruiterTimezone,
+              salesRepTimezone: data.salesRepTimezone,
+              timezoneNote: data.timezoneNote
+            })
+          }
         } else {
           console.error('Failed to fetch availability:', response.status)
           setAvailabilityMessage("Failed to fetch availability. Please try again.")
@@ -243,6 +307,37 @@ export default function InvitesPage() {
       fetchAvailableSlots(selectedInvite, selectedDate)
     }
   }, [selectedDate, selectedInvite, bookingDialogOpen, fetchAvailableSlots])
+
+  // Update current time every second when booking dialog is open
+  useEffect(() => {
+    if (bookingDialogOpen) {
+      const interval = setInterval(() => {
+        setCurrentTime(new Date())
+      }, 1000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [bookingDialogOpen])
+
+  // Helper function to format time in a specific timezone
+  const formatTimeInTimezone = (date: Date, timezone: string) => {
+    try {
+      return date.toLocaleTimeString('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
+    } catch (error) {
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
+    }
+  }
 
   const handleConfirmBooking = async () => {
     if (!selectedInvite || !selectedDate || !selectedTime) return
@@ -343,6 +438,43 @@ export default function InvitesPage() {
 
           const calendarResult = await response.json()
           
+          // Check if calendar creation actually succeeded
+          if (!response.ok) {
+            // Handle specific error cases
+            if (calendarResult.requiresConnection) {
+              // Delete the scheduled interview since we can't create calendar events
+              await supabase
+                .from("scheduled_interviews")
+                .delete()
+                .eq("id", interview.id)
+
+              toast({
+                title: "Booking Failed",
+                description: calendarResult.details || "All participants must have their Google Calendar connected to schedule interviews.",
+                variant: "destructive",
+                action: (
+                  <AnimatedButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.location.href = '/dashboard/calendar'}
+                  >
+                    Connect Calendar
+                  </AnimatedButton>
+                )
+              })
+              setBookingDialogOpen(false)
+              return
+            } else {
+              // Other calendar errors - still delete the interview
+              await supabase
+                .from("scheduled_interviews")
+                .delete()
+                .eq("id", interview.id)
+
+              throw new Error(calendarResult.details || 'Failed to create calendar events')
+            }
+          }
+          
           if (calendarResult.meetingLink) {
             // Update the interview with the meeting link
             await supabase
@@ -394,31 +526,49 @@ export default function InvitesPage() {
           // Send emails in parallel
           await Promise.all(emailPromises)
 
+          // Only show success if calendar events were actually created
           toast({
-            title: "Interview booked!",
+            title: "Interview booked successfully!",
             description: (
               <div className="space-y-2">
                 <p>Your interview is scheduled for {selectedDate.toLocaleDateString()} at {selectedTime}</p>
                 <p className="text-sm">✅ Calendar invites sent</p>
                 <p className="text-sm">✅ Email notifications sent</p>
-                <p className="text-sm">✅ Reminder emails scheduled</p>
+                {calendarResult.meetingLink && <p className="text-sm">✅ Google Meet link created</p>}
               </div>
             ) as any,
           })
         } catch (calendarError) {
           console.error("Error creating calendar events:", calendarError)
-          // Still show success even if calendar events fail
+          
+          // Delete the scheduled interview since calendar creation failed
+          await supabase
+            .from("scheduled_interviews")
+            .delete()
+            .eq("id", interview.id)
+
           toast({
-            title: "Interview booked!",
-            description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+            title: "Booking failed",
+            description: calendarError instanceof Error ? calendarError.message : "Failed to create calendar events. Please ensure both you and the recruiter have connected Google Calendar.",
+            variant: "destructive",
           })
+          setBookingDialogOpen(false)
+          return
         }
       } else {
-        // No email data available, just show basic success
+        // This shouldn't happen since we check connections upfront, but handle it
+        await supabase
+          .from("scheduled_interviews")
+          .delete()
+          .eq("id", interview.id)
+
         toast({
-          title: "Interview booked!",
-          description: `Your interview is scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+          title: "Booking failed",
+          description: "Unable to retrieve user information. Please try again.",
+          variant: "destructive",
         })
+        setBookingDialogOpen(false)
+        return
       }
 
       // Mark notification as read
@@ -547,9 +697,10 @@ export default function InvitesPage() {
                       <AnimatedButton
                         variant="purple"
                         onClick={() => handleBookTime(invite)}
-                        icon={<Calendar className="w-4 h-4" />}
+                        disabled={checkingConnection === invite.id}
+                        icon={checkingConnection === invite.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
                       >
-                        Book Interview Time
+                        {checkingConnection === invite.id ? "Checking..." : "Book Interview Time"}
                       </AnimatedButton>
                     )}
                   </div>
@@ -571,6 +722,27 @@ export default function InvitesPage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {timezoneInfo.recruiterTimezone && timezoneInfo.salesRepTimezone && 
+             timezoneInfo.recruiterTimezone !== timezoneInfo.salesRepTimezone && (
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-400" />
+                    <span className="text-gray-300">Your time ({timezoneInfo.salesRepTimezone}):</span>
+                    <span className="text-white font-mono">
+                      {formatTimeInTimezone(currentTime, timezoneInfo.salesRepTimezone || 'America/New_York')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-300">Recruiter time ({timezoneInfo.recruiterTimezone}):</span>
+                    <span className="text-white font-mono">
+                      {formatTimeInTimezone(currentTime, timezoneInfo.recruiterTimezone || 'America/New_York')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <Label className="text-gray-300 mb-2">Select Date</Label>
@@ -590,6 +762,19 @@ export default function InvitesPage() {
 
               <div>
                 <Label className="text-gray-300 mb-2">Available Times</Label>
+                {timezoneInfo.recruiterTimezone && timezoneInfo.recruiterTimezone !== timezoneInfo.salesRepTimezone && (
+                  <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-blue-400" />
+                      <span className="text-blue-300">
+                        Recruiter timezone: {timezoneInfo.recruiterTimezone}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Times are shown in your timezone ({timezoneInfo.salesRepTimezone})
+                    </p>
+                  </div>
+                )}
                 <ScrollArea className="h-[300px] border border-dark-600 rounded-lg p-2">
                   <div className="space-y-2">
                     {loadingSlots ? (

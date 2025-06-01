@@ -30,12 +30,60 @@ export async function POST(request: NextRequest) {
     // Get user IDs to create events for
     const userIds = [recruiterId, salesRepId].filter(Boolean)
     
+    // First, check if ALL users have calendar connections AND get their timezones
+    const connectionAndTimezoneChecks = await Promise.all(
+      userIds.map(async (userId) => {
+        const [connectionResult, userResult] = await Promise.all([
+          (supabase as any)
+            .from('calendar_connections')
+            .select('id, user_id')
+            .eq('user_id', userId)
+            .eq('provider', 'google')
+            .single(),
+          supabase
+            .from('users')
+            .select('timezone')
+            .eq('id', userId)
+            .single()
+        ])
+        
+        return {
+          userId,
+          hasConnection: !!connectionResult.data,
+          timezone: userResult.data?.timezone || 'America/New_York'
+        }
+      })
+    )
+    
+    // Check if any user doesn't have a connection
+    const usersWithoutConnection = connectionAndTimezoneChecks.filter(check => !check.hasConnection)
+    
+    if (usersWithoutConnection.length > 0) {
+      // Return error with details about which users need to connect
+      return NextResponse.json({
+        error: 'Google Calendar not connected',
+        details: 'All participants must have their Google Calendar connected to schedule interviews.',
+        usersWithoutConnection: usersWithoutConnection.map(u => u.userId),
+        requiresConnection: true
+      }, { status: 400 })
+    }
+    
+    // Get timezone for each user
+    const userTimezones = connectionAndTimezoneChecks.reduce((acc, check) => {
+      acc[check.userId] = check.timezone
+      return acc
+    }, {} as Record<string, string>)
+    
     // Create calendar events for each connected user
     const results = []
+    let hasAnyError = false
     
     for (const userId of userIds) {
       try {
-        // Prepare event data
+        // Get user's timezone
+        const userTimezone = userTimezones[userId]
+        
+        // Prepare event data with timezone-aware dates
         const startDateTime = new Date(`${scheduledDate} ${scheduledTime}`)
         const endDateTime = new Date(startDateTime)
         endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
@@ -45,6 +93,7 @@ export async function POST(request: NextRequest) {
           description: `Interview for ${jobTitle} position at ${company}.\n\nAttendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative\n\nMeeting Link: Google Meet will be automatically generated`,
           startDateTime: startDateTime.toISOString(),
           endDateTime: endDateTime.toISOString(),
+          timeZone: userTimezone, // Use the user's timezone
           attendees: [
             { email: recruiterEmail, displayName: recruiterName },
             { email: salesRepEmail, displayName: 'Sales Representative' },
@@ -72,16 +121,18 @@ export async function POST(request: NextRequest) {
             status: 'success',
           })
         } else {
-          // User doesn't have calendar connected or token refresh failed
+          // This shouldn't happen since we checked connections above, but handle it
+          hasAnyError = true
           results.push({
             userId,
-            status: 'no_connection',
-            error: 'No calendar connection or token refresh failed',
+            status: 'error',
+            error: 'Failed to create calendar event',
           })
         }
 
       } catch (error) {
         console.error(`Error creating calendar event for user ${userId}:`, error)
+        hasAnyError = true
         results.push({
           userId,
           status: 'error',
@@ -90,7 +141,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update scheduled interview with meeting link if we got one
+    // If any calendar creation failed, return error
+    if (hasAnyError) {
+      return NextResponse.json({
+        error: 'Failed to create calendar events',
+        details: 'Unable to create calendar events for all participants. Please ensure all users have properly connected their Google Calendar.',
+        results
+      }, { status: 500 })
+    }
+
+    // Update scheduled interview with meeting link
     const successfulResults = results.filter(r => r.status === 'success')
     const meetingLink = successfulResults.find(r => r.meetingLink)?.meetingLink
     const calendarEventId = successfulResults.find(r => r.eventId)?.eventId
@@ -109,13 +169,11 @@ export async function POST(request: NextRequest) {
         .eq('scheduled_time', scheduledTime)
     }
 
-    // Return detailed results for transparency
+    // Return success only if ALL events were created successfully
     const summary = {
       success: true,
       totalUsers: userIds.length,
       successful: successfulResults.length,
-      failed: results.filter(r => r.status === 'error').length,
-      noConnection: results.filter(r => r.status === 'no_connection').length,
       results,
       meetingLink,
     }

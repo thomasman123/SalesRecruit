@@ -100,6 +100,7 @@ export interface CalendarEventData {
   endDateTime: string
   attendees: { email: string; displayName?: string }[]
   location?: string
+  timeZone?: string  // Add timezone parameter
   conferenceData?: {
     createRequest: {
       requestId: string
@@ -116,6 +117,9 @@ export const createCalendarEvent = async (
 ) => {
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
+  // Use provided timezone or default to user's timezone
+  const timeZone = eventData.timeZone || 'America/New_York'
+
   const event = {
     summary: eventData.summary,
     description: eventData.description + '\n\n📅 Please accept this calendar invite to confirm your attendance.\n\n' +
@@ -125,11 +129,11 @@ export const createCalendarEvent = async (
                  '🔗 A Google Meet link will be automatically added to this event.',
     start: {
       dateTime: eventData.startDateTime,
-      timeZone: 'America/New_York', // You might want to make this dynamic
+      timeZone: timeZone,
     },
     end: {
       dateTime: eventData.endDateTime,
-      timeZone: 'America/New_York',
+      timeZone: timeZone,
     },
     attendees: eventData.attendees,
     location: eventData.location,
