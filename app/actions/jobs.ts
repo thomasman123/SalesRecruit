@@ -22,7 +22,7 @@ const jobSchema = z.object({
   commission_breakdown: z.string().optional().nullable(),
   ramp_time: z.string().optional().nullable(),
   working_hours: z.string().optional().nullable(),
-  video_url: z.string().url().optional().nullable(),
+  video_url: z.union([z.string().url(), z.literal("")]).optional().nullable(),
 })
 
 type JobInput = z.infer<typeof jobSchema>
