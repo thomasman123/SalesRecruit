@@ -26,7 +26,7 @@ import { AnimatedInput } from "@/components/ui/animated-input"
 interface Recruiter {
   id: string
   email: string
-  full_name: string
+  name: string
   avatar_url: string | null
   created_at: string
   full_access: boolean
@@ -48,7 +48,7 @@ export default function AdminRecruitersPage() {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, avatar_url, created_at, full_access')
+        .select('id, email, name, avatar_url, created_at, full_access')
         .eq('role', 'recruiter')
         .order('created_at', { ascending: false })
 
@@ -57,7 +57,7 @@ export default function AdminRecruitersPage() {
         // If full_access column doesn't exist, fetch without it
         const { data: fallbackData } = await supabase
           .from('users')
-          .select('id, email, full_name, avatar_url, created_at')
+          .select('id, email, name, avatar_url, created_at')
           .eq('role', 'recruiter')
           .order('created_at', { ascending: false })
         
@@ -120,13 +120,13 @@ export default function AdminRecruitersPage() {
   }
 
   const filteredRecruiters = recruiters.filter(recruiter =>
-    recruiter.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    recruiter.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     recruiter.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-7xl py-12">
+      <div className="container mx-auto py-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-dark-700 rounded w-1/4"></div>
           <div className="h-4 bg-dark-700 rounded w-1/2"></div>
@@ -141,7 +141,7 @@ export default function AdminRecruitersPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl">
+    <div className="container mx-auto">
       <FadeIn delay={0}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Manage Recruiters</h1>
@@ -184,12 +184,12 @@ export default function AdminRecruitersPage() {
                       <Avatar className="h-12 w-12 border border-dark-600">
                         <AvatarImage src={recruiter.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-purple-500/20 text-purple-400">
-                          {recruiter.full_name?.split(" ").map(n => n[0]).join("") || "R"}
+                          {recruiter.name?.split(" ").map(n => n[0]).join("") || "R"}
                         </AvatarFallback>
                       </Avatar>
                       
                       <div>
-                        <h3 className="text-lg font-semibold text-white">{recruiter.full_name || 'Unknown'}</h3>
+                        <h3 className="text-lg font-semibold text-white">{recruiter.name || 'Unknown'}</h3>
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <div className="flex items-center gap-1">
                             <Mail className="w-3 h-3" />

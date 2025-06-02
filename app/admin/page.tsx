@@ -1,5 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server"
-import { Card } from "@/components/ui/card"
+import { AnimatedCard } from "@/components/ui/animated-card"
+import { AnimatedIcon } from "@/components/ui/animated-icon"
+import { FadeIn } from "@/components/ui/fade-in"
 import { 
   Users, 
   Briefcase, 
@@ -8,7 +10,8 @@ import {
   MessageSquare,
   TrendingUp,
   Activity,
-  Clock
+  Clock,
+  ArrowRight
 } from "lucide-react"
 import Link from "next/link"
 
@@ -44,56 +47,56 @@ export default async function AdminDashboard() {
       value: stats?.total_recruiters || 0,
       icon: Users,
       href: "/admin/users?role=recruiter",
-      color: "text-blue-500"
+      color: "from-blue-500 to-blue-600"
     },
     {
       title: "Sales Professionals",
       value: stats?.total_sales_professionals || 0,
       icon: UserCheck,
       href: "/admin/users?role=sales-professional",
-      color: "text-green-500"
+      color: "from-green-500 to-green-600"
     },
     {
       title: "Active Jobs",
       value: stats?.active_jobs || 0,
       icon: Briefcase,
       href: "/admin/jobs",
-      color: "text-purple-500"
+      color: "from-purple-500 to-purple-600"
     },
     {
       title: "Total Applicants",
       value: stats?.total_applicants || 0,
       icon: UserCheck,
       href: "/admin/applicants",
-      color: "text-orange-500"
+      color: "from-orange-500 to-orange-600"
     },
     {
       title: "Upcoming Interviews",
       value: stats?.upcoming_interviews || 0,
       icon: Calendar,
       href: "/admin/interviews",
-      color: "text-indigo-500"
+      color: "from-indigo-500 to-indigo-600"
     },
     {
       title: "Messages Today",
       value: stats?.messages_today || 0,
       icon: MessageSquare,
       href: "/admin/messages",
-      color: "text-pink-500"
+      color: "from-pink-500 to-pink-600"
     },
     {
       title: "Active Users Today",
       value: stats?.active_users_today || 0,
       icon: Activity,
       href: "/admin/activity",
-      color: "text-cyan-500"
+      color: "from-cyan-500 to-cyan-600"
     },
     {
       title: "Total Admins",
       value: stats?.total_admins || 0,
       icon: Users,
       href: "/admin/users?role=admin",
-      color: "text-red-500"
+      color: "from-red-500 to-red-600"
     }
   ]
 
@@ -129,102 +132,116 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-        <p className="text-gray-400">Monitor all platform activity and manage users</p>
-      </div>
+      <FadeIn delay={0}>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+          <p className="text-gray-400">Monitor all platform activity and manage users</p>
+        </div>
+      </FadeIn>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => (
-          <Link key={stat.title} href={stat.href}>
-            <Card className="p-6 bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">{stat.title}</p>
-                  <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+        {statCards.map((stat, index) => (
+          <FadeIn key={stat.title} delay={100 + index * 50}>
+            <Link href={stat.href}>
+              <AnimatedCard variant="hover-lift" className="p-6 cursor-pointer group">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">{stat.title}</p>
+                    <p className="text-2xl font-bold text-white mt-1">{stat.value.toLocaleString()}</p>
+                  </div>
+                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                    <AnimatedIcon variant="scale" size="sm" className="text-white">
+                      <stat.icon className="w-6 h-6" />
+                    </AnimatedIcon>
+                  </div>
                 </div>
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-            </Card>
-          </Link>
+              </AnimatedCard>
+            </Link>
+          </FadeIn>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
-        <Card className="bg-gray-900 border-gray-800">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
-              <Link href="/admin/activity" className="text-sm text-purple-400 hover:text-purple-300">
-                View all →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {recentActivity && recentActivity.length > 0 ? (
-                recentActivity.map((activity: any) => (
-                  <div key={activity.id} className="flex items-start gap-3 text-sm">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-gray-300">{activity.user_email}</span>
-                        <span className="text-gray-500">({activity.user_role})</span>
-                      </div>
-                      <div className="text-gray-400">
-                        {formatActionType(activity.action_type)} - {activity.entity_type}
-                        {activity.metadata?.title && (
-                          <span className="text-gray-300"> "{activity.metadata.title}"</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        {formatTimeAgo(activity.created_at)}
+        <FadeIn delay={600}>
+          <AnimatedCard variant="hover-glow" className="h-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
+                <Link href="/admin/activity" className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 group">
+                  View all 
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {recentActivity && recentActivity.length > 0 ? (
+                  recentActivity.map((activity: any) => (
+                    <div key={activity.id} className="flex items-start gap-3 text-sm p-3 rounded-lg hover:bg-dark-700 transition-colors">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0 animate-pulse" />
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-medium text-gray-300">{activity.user_email}</span>
+                          <span className="text-gray-500 text-xs">({activity.user_role})</span>
+                        </div>
+                        <div className="text-gray-400">
+                          {formatActionType(activity.action_type)} - {activity.entity_type}
+                          {activity.metadata?.title && (
+                            <span className="text-gray-300"> "{activity.metadata.title}"</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {formatTimeAgo(activity.created_at)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No recent activity</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-gray-500">No recent activity</p>
+                )}
+              </div>
             </div>
-          </div>
-        </Card>
+          </AnimatedCard>
+        </FadeIn>
 
         {/* Active Users */}
-        <Card className="bg-gray-900 border-gray-800">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Most Active Users</h2>
-              <Link href="/admin/users" className="text-sm text-purple-400 hover:text-purple-300">
-                View all →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {userActivity && userActivity.length > 0 ? (
-                userActivity.map((user: any) => (
-                  <div key={user.user_id} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-300">{user.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {user.email} • {user.role}
+        <FadeIn delay={700}>
+          <AnimatedCard variant="hover-glow" className="h-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Most Active Users</h2>
+                <Link href="/admin/users" className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 group">
+                  View all 
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {userActivity && userActivity.length > 0 ? (
+                  userActivity.map((user: any) => (
+                    <div key={user.user_id} className="flex items-center justify-between p-3 rounded-lg hover:bg-dark-700 transition-colors">
+                      <div>
+                        <div className="font-medium text-gray-300">{user.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {user.email} • {user.role}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-300">
+                          {user.actions_today} today
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {user.total_actions} total
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-300">
-                        {user.actions_today} today
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {user.total_actions} total
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No user activity data</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-gray-500">No user activity data</p>
+                )}
+              </div>
             </div>
-          </div>
-        </Card>
+          </AnimatedCard>
+        </FadeIn>
       </div>
     </div>
   )

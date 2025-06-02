@@ -33,10 +33,10 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-dark-900">
       <AdminNavigation />
-      <main className="ml-64">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="lg:ml-64">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </div>
       </main>
