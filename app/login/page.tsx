@@ -61,13 +61,35 @@ export default function LoginPage() {
       // Wait for session to be established
       await new Promise(resolve => setTimeout(resolve, 1000))
 
+      // Get user role from the database directly
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
+
+      const role = userData?.role || 'sales-professional'
+      console.log("Login - User role:", role)
+
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       })
 
-      // Redirect to the redirect page which will handle proper navigation
-      window.location.replace("/redirect")
+      // Direct navigation based on role
+      if (role === "recruiter") {
+        router.push("/recruiter")
+      } else if (role === "admin") {
+        router.push("/admin") 
+      } else {
+        // For sales professionals, check if onboarded
+        const onboarded = data.user.user_metadata?.onboarded
+        if (onboarded) {
+          router.push("/dashboard")
+        } else {
+          router.push("/onboarding")
+        }
+      }
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
