@@ -133,14 +133,22 @@ export default function NewJobPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input
-                      id="industry"
+                    <Label htmlFor="industry">Type</Label>
+                    <Select
                       value={formData.industry}
-                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      placeholder="e.g., SaaS, FinTech, Healthcare"
+                      onValueChange={(value) => setFormData({ ...formData, industry: value })}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Biz Opp">Biz Opp</SelectItem>
+                        <SelectItem value="B2B Enterprise">B2B Enterprise</SelectItem>
+                        <SelectItem value="Solar">Solar</SelectItem>
+                        <SelectItem value="D2D">D2D</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -161,14 +169,23 @@ export default function NewJobPage() {
                 <h2 className="text-xl font-semibold text-white">Compensation</h2>
                 
                 <div>
-                  <Label htmlFor="price_range">Price Range</Label>
-                  <Input
-                    id="price_range"
+                  <Label htmlFor="price_range">Offer Price Range</Label>
+                  <Select
                     value={formData.price_range}
-                    onChange={(e) => setFormData({ ...formData, price_range: e.target.value })}
-                    placeholder="e.g., $70,000 - $120,000 OTE"
+                    onValueChange={(value) => setFormData({ ...formData, price_range: value })}
                     required
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select price range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1-3k">$1-3k</SelectItem>
+                      <SelectItem value="3-6k">$3-6k</SelectItem>
+                      <SelectItem value="6-10k">$6-10k</SelectItem>
+                      <SelectItem value="10-15k">$10-15k</SelectItem>
+                      <SelectItem value="15k+">$15k+</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -201,24 +218,38 @@ export default function NewJobPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="lead_source">Lead Source</Label>
-                    <Input
-                      id="lead_source"
+                    <Select
                       value={formData.lead_source}
-                      onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
-                      placeholder="e.g., Inbound, Outbound, Mixed"
+                      onValueChange={(value) => setFormData({ ...formData, lead_source: value })}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select lead source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Paid Traffic">Paid Traffic</SelectItem>
+                        <SelectItem value="Cold Calling">Cold Calling</SelectItem>
+                        <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
                     <Label htmlFor="team_size">Team Size</Label>
-                    <Input
-                      id="team_size"
+                    <Select
                       value={formData.team_size}
-                      onChange={(e) => setFormData({ ...formData, team_size: e.target.value })}
-                      placeholder="e.g., 10-20 people"
+                      onValueChange={(value) => setFormData({ ...formData, team_size: value })}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Startup (1-2 reps)">Startup (1-2 reps)</SelectItem>
+                        <SelectItem value="Scaling (2-6 reps)">Scaling (2-6 reps)</SelectItem>
+                        <SelectItem value="Established (6+ reps)">Established (6+ reps)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
