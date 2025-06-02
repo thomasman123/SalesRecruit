@@ -41,9 +41,10 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname === "/login" || pathname === "/signup"
   const isAuthCallback = pathname.startsWith("/auth/callback")
   const isLandingPage = pathname === "/hire" || pathname === "/rep"
+  const isTestPage = pathname === "/test-auth" || pathname.startsWith("/api/debug-auth")
 
-  // Allow auth callback to proceed without redirection
-  if (isAuthCallback) {
+  // Allow test pages and auth callback to proceed without redirection
+  if (isAuthCallback || isTestPage) {
     return response
   }
 
@@ -68,11 +69,23 @@ export async function middleware(request: NextRequest) {
       .single()
     
     userRole = userData?.role
+
+    // Debug logging
+    console.log("Middleware - User ID:", user.id)
+    console.log("Middleware - User Role:", userRole)
+    console.log("Middleware - Path:", pathname)
   }
 
   // If user is logged in and trying to access auth pages or landing pages
   if (user && (isAuthPage || isLandingPage)) {
+    // If no role found, default to sales-professional
+    if (!userRole) {
+      console.warn("No role found for user, defaulting to sales-professional")
+      userRole = "sales-professional"
+    }
+    
     const redirectPath = userRole === "recruiter" ? "/recruiter" : userRole === "admin" ? "/admin" : "/dashboard"
+    console.log("Redirecting to:", redirectPath)
     return NextResponse.redirect(new URL(redirectPath, request.url))
   }
 

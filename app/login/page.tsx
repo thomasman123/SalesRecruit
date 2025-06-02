@@ -58,33 +58,46 @@ export default function LoginPage() {
         return
       }
 
-      // Get user role from metadata first
-      const role = data.user?.user_metadata?.role
+      // Wait a moment for the session to be established
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Ensure the session is set before redirecting
+      // Get the session again to ensure it's properly set
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError || !session) {
-        throw new Error("Failed to get session")
+        throw new Error("Failed to establish session")
       }
 
-      // Set the session explicitly
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      })
+      // Get user role from the database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
 
-      if (role === "recruiter") {
-        router.push("/recruiter")
-      } else {
-        router.push("/dashboard")
+      if (userError || !userData) {
+        console.error("Failed to get user role:", userError)
+        throw new Error("Failed to get user information")
       }
+
+      const role = userData.role
+      console.log("User role:", role)
 
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       })
+
+      // Force navigation with replace to ensure clean redirect
+      if (role === "recruiter") {
+        window.location.href = "/recruiter"
+      } else if (role === "admin") {
+        window.location.href = "/admin"
+      } else {
+        window.location.href = "/dashboard"
+      }
     } catch (error: any) {
+      console.error("Login error:", error)
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
