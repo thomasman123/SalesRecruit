@@ -12,32 +12,32 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
-import { createJob } from "@/app/actions/jobs"
+import { updateJob } from "@/app/actions/jobs"
 import { Loader2 } from "lucide-react"
 
-export default function NewJobPage() {
+export function EditJobForm({ job }: { job: any }) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    title: "",
-    status: "draft" as "active" | "draft" | "paused" | "closed",
-    industry: "",
-    role: "" as "SDR/Appointment Setter" | "AE/Closer",
-    country: "",
-    price_range: "",
-    lead_source: "",
-    commission_structure: "",
-    team_size: "",
-    remote_compatible: false,
-    company_overview: "",
-    what_you_sell: "",
-    sales_process: "",
-    whats_provided: [] as string[],
-    not_for: "",
-    commission_breakdown: "",
-    ramp_time: "",
-    working_hours: "",
-    video_url: "",
+    title: job.title || "",
+    status: job.status || "draft",
+    industry: job.industry || "",
+    role: job.role || "",
+    country: job.country || "",
+    price_range: job.price_range || "",
+    lead_source: job.lead_source || "",
+    commission_structure: job.commission_structure || "",
+    team_size: job.team_size || "",
+    remote_compatible: job.remote_compatible || false,
+    company_overview: job.company_overview || "",
+    what_you_sell: job.what_you_sell || "",
+    sales_process: job.sales_process || "",
+    whats_provided: job.whats_provided || [],
+    not_for: job.not_for || "",
+    commission_breakdown: job.commission_breakdown || "",
+    ramp_time: job.ramp_time || "",
+    working_hours: job.working_hours || "",
+    video_url: job.video_url || "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,11 +45,11 @@ export default function NewJobPage() {
     setIsSubmitting(true)
 
     try {
-      const result = await createJob(formData)
-      toast.success("Job created successfully!")
-      router.push(`/recruiter/jobs/${result.id}`)
+      await updateJob(job.id, formData)
+      toast.success("Job updated successfully!")
+      router.push(`/recruiter/jobs`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create job")
+      toast.error(error instanceof Error ? error.message : "Failed to update job")
     } finally {
       setIsSubmitting(false)
     }
@@ -65,13 +65,18 @@ export default function NewJobPage() {
     setFormData({ ...formData, whats_provided: [...formData.whats_provided, ""] })
   }
 
+  const removeProvidedItem = (index: number) => {
+    const newProvided = formData.whats_provided.filter((_: string, i: number) => i !== index)
+    setFormData({ ...formData, whats_provided: newProvided })
+  }
+
   return (
     <AccessWrapper>
       <div className="container mx-auto max-w-4xl">
         <FadeIn delay={100}>
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Post New Job</h1>
-            <p className="text-gray-400">Create a new job listing to attract top sales talent</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Edit Job</h1>
+            <p className="text-gray-400">Update your job listing details</p>
           </div>
         </FadeIn>
 
@@ -296,13 +301,22 @@ export default function NewJobPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-white">What's Provided (Optional)</h2>
                 
-                {formData.whats_provided.map((item, index) => (
-                  <Input
-                    key={index}
-                    value={item}
-                    onChange={(e) => handleProvidedChange(e.target.value, index)}
-                    placeholder="e.g., Lead generation tools"
-                  />
+                {formData.whats_provided.map((item: string, index: number) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={item}
+                      onChange={(e) => handleProvidedChange(e.target.value, index)}
+                      placeholder="e.g., Lead generation tools"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeProvidedItem(index)}
+                    >
+                      ×
+                    </Button>
+                  </div>
                 ))}
                 
                 <Button
@@ -342,7 +356,7 @@ export default function NewJobPage() {
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Buttons */}
               <div className="flex justify-end space-x-4">
                 <Button
                   type="button"
@@ -356,10 +370,10 @@ export default function NewJobPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      Updating...
                     </>
                   ) : (
-                    "Create Job"
+                    "Update Job"
                   )}
                 </Button>
               </div>
@@ -369,4 +383,4 @@ export default function NewJobPage() {
       </div>
     </AccessWrapper>
   )
-}
+} 
