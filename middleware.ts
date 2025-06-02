@@ -85,18 +85,22 @@ export async function middleware(request: NextRequest) {
 
     // If user is logged in, get their role from the database
     let userRole: string | undefined
+    let isOnboarded: boolean = false
+    
     if (user) {
       const { data: userData } = await supabase
         .from('users')
-        .select('role')
+        .select('role, onboarded')
         .eq('id', user.id)
         .single()
       
       userRole = userData?.role
+      isOnboarded = userData?.onboarded || false
 
       // Debug logging
       console.log("Middleware - User ID:", user.id)
       console.log("Middleware - User Role:", userRole)
+      console.log("Middleware - Onboarded:", isOnboarded)
       console.log("Middleware - Path:", pathname)
     }
 
@@ -108,15 +112,12 @@ export async function middleware(request: NextRequest) {
         userRole = "sales-professional"
       }
       
-      const redirectPath = userRole === "recruiter" ? "/recruiter" : userRole === "admin" ? "/admin" : "/dashboard"
+      const redirectPath = userRole === "recruiter" ? "/recruiter" : userRole === "admin" ? "/admin" : (isOnboarded ? "/dashboard" : "/onboarding")
       console.log("Redirecting to:", redirectPath)
       return NextResponse.redirect(new URL(redirectPath, request.url))
     }
 
     if (user && userRole) {
-      // Check the user's onboarded status from metadata
-      const onboarded = user.user_metadata?.onboarded as boolean | undefined
-
       // Admin routing
       if (userRole === "admin") {
         // Admins can access everything, but have their own dashboard
@@ -143,19 +144,20 @@ export async function middleware(request: NextRequest) {
       // Enforce onboarding for sales professionals
       if (userRole === "sales-professional") {
         // If not onboarded, force to onboarding page (except if already there)
-        if (!onboarded && !pathname.startsWith("/onboarding") && !pathname.startsWith("/reset-password")) {
+        if (!isOnboarded && !pathname.startsWith("/onboarding") && !pathname.startsWith("/reset-password")) {
+          console.log("User not onboarded, redirecting to /onboarding")
           return NextResponse.redirect(new URL("/onboarding", request.url))
         }
 
         // If onboarded and trying to access onboarding page again, redirect to dashboard
-        if (onboarded && pathname.startsWith("/onboarding")) {
+        if (isOnboarded && pathname.startsWith("/onboarding")) {
           return NextResponse.redirect(new URL("/dashboard", request.url))
         }
       }
 
       // Redirect based on role from root path
       if (pathname === '/') {
-        const redirectPath = userRole === 'recruiter' ? '/recruiter' : userRole === 'admin' ? '/admin' : '/dashboard'
+        const redirectPath = userRole === 'recruiter' ? '/recruiter' : userRole === 'admin' ? '/admin' : (isOnboarded ? '/dashboard' : '/onboarding')
         return NextResponse.redirect(new URL(redirectPath, request.url))
       }
     }

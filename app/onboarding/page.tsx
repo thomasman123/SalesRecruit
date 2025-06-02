@@ -169,8 +169,12 @@ export default function OnboardingPage() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
 
-      // Persist onboarding responses into auth metadata
-      const { error } = await supabase.auth.updateUser({
+      if (!user) {
+        throw new Error("No authenticated user found")
+      }
+
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
           onboarded: true,
           onboarding_in_progress: false, // Mark onboarding as complete
@@ -178,11 +182,33 @@ export default function OnboardingPage() {
           avatar_url: formData.avatarUrl,
         },
       })
-      if (error) throw error
+      if (authError) throw authError
 
-      router.push('/dashboard')
-    } catch (err) {
+      // Also update the database to ensure consistency
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ onboarded: true })
+        .eq('id', user.id)
+
+      if (dbError) {
+        console.error("Failed to update database onboarding status:", dbError)
+        // Don't throw here, the auth metadata update is the important one
+      }
+
+      toast({
+        title: "Welcome to Helios Recruit!",
+        description: "Your profile is complete. Let's find your next opportunity.",
+      })
+
+      // Force a page reload to ensure middleware picks up the new status
+      window.location.href = '/dashboard'
+    } catch (err: any) {
       console.error(err)
+      toast({
+        title: "Failed to complete onboarding",
+        description: err.message || "Please try again",
+        variant: "destructive"
+      })
     } finally {
       setIsSubmitting(false)
     }
