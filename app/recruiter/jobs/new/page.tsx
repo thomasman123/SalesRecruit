@@ -153,13 +153,20 @@ export default function NewJobPage() {
 
                   <div>
                     <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
+                    <Select
                       value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      placeholder="e.g., United States"
+                      onValueChange={(value) => setFormData({ ...formData, country: value })}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country/region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Australia/Asia">Australia/Asia</SelectItem>
+                        <SelectItem value="United States">United States</SelectItem>
+                        <SelectItem value="Europe">Europe</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
