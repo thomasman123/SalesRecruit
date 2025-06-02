@@ -246,11 +246,11 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                   AI Score
                 </Badge>
                 {applicant.score_reasons && applicant.score_reasons.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-400 text-right max-w-[200px]">
+                  <ul className="mt-2 text-xs text-gray-400 text-right max-w-[200px] list-disc list-inside space-y-1 break-all">
                     {applicant.score_reasons.slice(0, 2).map((reason, idx) => (
-                      <div key={idx} className="mb-1">• {reason}</div>
+                      <li key={idx}>{reason}</li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </div>
             ) : (
@@ -325,7 +325,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
           <span className="truncate">{label}</span>
         </div>
         <div className="pl-6">
-          <p className="text-sm text-white break-words whitespace-pre-wrap max-w-full">{value}</p>
+          <p className="text-sm text-white break-all whitespace-pre-wrap max-w-full">{value}</p>
         </div>
       </div>
     )
@@ -426,16 +426,13 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                           </Badge>
                         </div>
                         {selectedApplicant.score_reasons && selectedApplicant.score_reasons.length > 0 && (
-                          <div className="mt-3 space-y-1">
-                            <p className="text-sm font-medium text-gray-400">AI Analysis:</p>
-                            <div className="space-y-1 max-w-full">
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-gray-400 mb-2">AI Analysis:</p>
+                            <ul className="list-disc list-inside space-y-1 max-w-full text-sm text-gray-500 break-all whitespace-pre-wrap">
                               {selectedApplicant.score_reasons.map((reason, idx) => (
-                                <p key={idx} className="text-sm text-gray-500 break-words pl-4 relative">
-                                  <span className="absolute left-0">•</span>
-                                  {reason}
-                                </p>
+                                <li key={idx}>{reason}</li>
                               ))}
-                            </div>
+                            </ul>
                           </div>
                         )}
                       </div>
@@ -536,7 +533,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                           <FileText className="h-4 w-4 flex-shrink-0" />
                           <span>Internal Notes</span>
                         </div>
-                        <p className="text-white whitespace-pre-wrap break-words">
+                        <p className="text-white whitespace-pre-wrap break-all">
                           {selectedApplicant.notes || "No notes have been added for this applicant yet."}
                         </p>
                       </div>
