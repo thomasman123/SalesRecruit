@@ -391,160 +391,153 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
 
       {/* Profile Modal */}
       <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Applicant Profile</DialogTitle>
-          </DialogHeader>
-          
+        <DialogContent className="max-w-4xl">
           {selectedApplicant && (
-            <div className="flex flex-col h-[calc(90vh-120px)]">
-              {/* Header Section */}
-              <div className="flex items-start gap-6 pb-6 border-b border-dark-600">
-                <Avatar className="h-24 w-24 flex-shrink-0">
-                  <AvatarImage src={selectedApplicant.avatar_url} />
-                  <AvatarFallback className="text-2xl">{getInitials(selectedApplicant.name)}</AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold text-white mb-2">{selectedApplicant.name}</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Mail className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{selectedApplicant.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{selectedApplicant.location}</span>
-                    </div>
-                  </div>
+            <div className="flex flex-col">
+              <DialogHeader className="pb-6 border-b border-dark-600">
+                <div className="flex items-start gap-6">
+                  <Avatar className="h-24 w-24 flex-shrink-0">
+                    <AvatarImage src={selectedApplicant.avatar_url} />
+                    <AvatarFallback className="text-2xl">{getInitials(selectedApplicant.name)}</AvatarFallback>
+                  </Avatar>
                   
-                  {/* AI Score */}
-                  {selectedApplicant.score !== null && selectedApplicant.score !== undefined && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`text-3xl font-bold ${getScoreColor(selectedApplicant.score)}`}>
-                          {selectedApplicant.score}%
-                        </div>
-                        <Badge className={`${getScoreBgColor(selectedApplicant.score)}`}>
-                          AI Match Score
-                        </Badge>
+                  <div className="flex-1 min-w-0">
+                    <DialogTitle className="text-2xl font-bold mb-2">{selectedApplicant.name}</DialogTitle>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Mail className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{selectedApplicant.email}</span>
                       </div>
-                      {selectedApplicant.score_reasons && selectedApplicant.score_reasons.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-sm font-medium text-gray-400">AI Analysis:</p>
-                          {selectedApplicant.score_reasons.map((reason, idx) => (
-                            <p key={idx} className="text-sm text-gray-500">• {reason}</p>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{selectedApplicant.location}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Tabs Content */}
-              <Tabs defaultValue="overview" className="flex-1 flex flex-col mt-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="experience">Experience</TabsTrigger>
-                  <TabsTrigger value="skills">Skills & Tools</TabsTrigger>
-                  <TabsTrigger value="notes">Notes</TabsTrigger>
-                </TabsList>
-                
-                <div className="flex-1 overflow-hidden mt-6">
-                  <ScrollArea className="h-full pr-4">
-                    <TabsContent value="overview" className="space-y-6 pb-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <InfoSection
-                          icon={<Target className="h-4 w-4" />}
-                          label="Sales Style"
-                          value={selectedApplicant.sales_style}
-                        />
-                        
-                        <InfoSection
-                          icon={<DollarSign className="h-4 w-4" />}
-                          label="Highest Ticket Sale"
-                          value={selectedApplicant.highest_ticket}
-                        />
-                        
-                        <InfoSection
-                          icon={<Calendar className="h-4 w-4" />}
-                          label="Application Date"
-                          value={`${new Date(selectedApplicant.applied_date).toLocaleDateString()} (${formatDistanceToNow(new Date(selectedApplicant.applied_date), { addSuffix: true })})`}
-                        />
-                        
-                        <InfoSection
-                          icon={<Briefcase className="h-4 w-4" />}
-                          label="Current Status"
-                          value={selectedApplicant.status.charAt(0).toUpperCase() + selectedApplicant.status.slice(1)}
-                        />
-                      </div>
-
-                      {selectedApplicant.hasScheduledInterview && selectedApplicant.scheduledInterview && (
-                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                          <div className="flex items-center gap-2 text-green-400 mb-2">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-medium">Interview Scheduled</span>
-                          </div>
-                          <p className="text-white">
-                            {new Date(selectedApplicant.scheduledInterview.scheduled_date).toLocaleDateString('en-US', { 
-                              weekday: 'long', 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })} at {selectedApplicant.scheduledInterview.scheduled_time}
-                          </p>
-                        </div>
-                      )}
-
-                      {selectedApplicant.video_url && (
-                        <div className="pt-4">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => window.open(selectedApplicant.video_url, '_blank')}
-                            className="w-full"
-                          >
-                            <Video className="h-4 w-4 mr-2" />
-                            Watch Video Introduction
-                          </Button>
-                        </div>
-                      )}
-                    </TabsContent>
                     
-                    <TabsContent value="experience" className="space-y-6 pb-6">
+                    {/* AI Score */}
+                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined && (
+                      <div className="mt-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`text-3xl font-bold ${getScoreColor(selectedApplicant.score)}`}>
+                            {selectedApplicant.score}%
+                          </div>
+                          <Badge className={`${getScoreBgColor(selectedApplicant.score)}`}>
+                            AI Match Score
+                          </Badge>
+                        </div>
+                        {selectedApplicant.score_reasons && selectedApplicant.score_reasons.length > 0 && (
+                          <div className="mt-3 space-y-1">
+                            <p className="text-sm font-medium text-gray-400">AI Analysis:</p>
+                            {selectedApplicant.score_reasons.map((reason, idx) => (
+                              <p key={idx} className="text-sm text-gray-500">• {reason}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="py-6">
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="w-full grid grid-cols-4 mb-6">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="experience">Experience</TabsTrigger>
+                    <TabsTrigger value="skills">Skills & Tools</TabsTrigger>
+                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="overview" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <InfoSection
+                        icon={<Target className="h-4 w-4" />}
+                        label="Sales Style"
+                        value={selectedApplicant.sales_style}
+                      />
+                      
+                      <InfoSection
+                        icon={<DollarSign className="h-4 w-4" />}
+                        label="Highest Ticket Sale"
+                        value={selectedApplicant.highest_ticket}
+                      />
+                      
+                      <InfoSection
+                        icon={<Calendar className="h-4 w-4" />}
+                        label="Application Date"
+                        value={`${new Date(selectedApplicant.applied_date).toLocaleDateString()} (${formatDistanceToNow(new Date(selectedApplicant.applied_date), { addSuffix: true })})`}
+                      />
+                      
                       <InfoSection
                         icon={<Briefcase className="h-4 w-4" />}
-                        label="Professional Experience"
-                        value={selectedApplicant.experience}
-                        className="bg-dark-700 p-4 rounded-lg"
+                        label="Current Status"
+                        value={selectedApplicant.status.charAt(0).toUpperCase() + selectedApplicant.status.slice(1)}
                       />
-                    </TabsContent>
-                    
-                    <TabsContent value="skills" className="space-y-6 pb-6">
-                      <InfoSection
-                        icon={<Wrench className="h-4 w-4" />}
-                        label="Tools & CRM Experience"
-                        value={selectedApplicant.tools}
-                        className="bg-dark-700 p-4 rounded-lg"
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="notes" className="space-y-6 pb-6">
-                      <div className="bg-dark-700 p-4 rounded-lg">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
-                          <FileText className="h-4 w-4" />
-                          <span>Internal Notes</span>
+                    </div>
+
+                    {selectedApplicant.hasScheduledInterview && selectedApplicant.scheduledInterview && (
+                      <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-400 mb-2">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="font-medium">Interview Scheduled</span>
                         </div>
-                        <p className="text-white whitespace-pre-wrap">
-                          {selectedApplicant.notes || "No notes have been added for this applicant yet."}
+                        <p className="text-white">
+                          {new Date(selectedApplicant.scheduledInterview.scheduled_date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })} at {selectedApplicant.scheduledInterview.scheduled_time}
                         </p>
                       </div>
-                    </TabsContent>
-                  </ScrollArea>
-                </div>
-              </Tabs>
+                    )}
 
-              {/* Action Buttons */}
+                    {selectedApplicant.video_url && (
+                      <div className="pt-4">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => window.open(selectedApplicant.video_url, '_blank')}
+                          className="w-full"
+                        >
+                          <Video className="h-4 w-4 mr-2" />
+                          Watch Video Introduction
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="experience" className="space-y-6">
+                    <InfoSection
+                      icon={<Briefcase className="h-4 w-4" />}
+                      label="Professional Experience"
+                      value={selectedApplicant.experience}
+                      className="bg-dark-700 p-4 rounded-lg"
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="skills" className="space-y-6">
+                    <InfoSection
+                      icon={<Wrench className="h-4 w-4" />}
+                      label="Tools & CRM Experience"
+                      value={selectedApplicant.tools}
+                      className="bg-dark-700 p-4 rounded-lg"
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="notes" className="space-y-6">
+                    <div className="bg-dark-700 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
+                        <FileText className="h-4 w-4" />
+                        <span>Internal Notes</span>
+                      </div>
+                      <p className="text-white whitespace-pre-wrap">
+                        {selectedApplicant.notes || "No notes have been added for this applicant yet."}
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
               <div className="flex justify-end gap-3 pt-6 border-t border-dark-600">
                 {!selectedApplicant.invited && !selectedApplicant.hasScheduledInterview && (
                   <Button
