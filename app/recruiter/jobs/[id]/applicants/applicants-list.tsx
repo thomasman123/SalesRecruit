@@ -394,7 +394,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           {selectedApplicant && (
             <div className="flex flex-col">
-              <DialogHeader className="sticky top-0 z-10 bg-background pb-6 border-b border-dark-600">
+              <DialogHeader className="bg-background pb-6 border-b border-dark-600">
                 <div className="flex items-start gap-6">
                   <Avatar className="h-24 w-24 flex-shrink-0">
                     <AvatarImage src={selectedApplicant.avatar_url} />
