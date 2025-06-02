@@ -31,14 +31,30 @@ export async function middleware(request: NextRequest) {
       },
     )
 
-    // Always attempt to refresh the session.
+    // First try to get the session (less likely to throw errors)
     const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser()
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession()
 
-    if (authError) {
-      console.error("Middleware auth error:", authError)
+    // Only try to get user if we have a session
+    let user = null
+    if (session && !sessionError) {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError) {
+        console.error("Middleware auth error:", authError)
+        // If we can't get the user but have a session, try to refresh
+        if (authError.message === "Auth session missing!" && session) {
+          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession()
+          if (refreshedSession) {
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser()
+            user = refreshedUser
+          }
+        }
+      } else {
+        user = authUser
+      }
     }
 
     // Auth-guard and role routing rules ----------------------------------

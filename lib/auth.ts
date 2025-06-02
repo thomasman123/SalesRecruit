@@ -15,10 +15,40 @@ export async function getSession() {
   }
 }
 
+export async function refreshSession() {
+  const supabase = await createServerSupabaseClient()
+
+  try {
+    const {
+      data: { session },
+      error
+    } = await supabase.auth.refreshSession()
+    
+    if (error) {
+      console.error("Error refreshing session:", error)
+      return null
+    }
+    
+    return session
+  } catch (error) {
+    console.error("Error in refreshSession:", error)
+    return null
+  }
+}
+
 export async function getUserDetails() {
   const supabase = await createServerSupabaseClient()
 
   try {
+    // First try to get session
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session) {
+      // Try to refresh if no session
+      const refreshedSession = await refreshSession()
+      if (!refreshedSession) return null
+    }
+    
     const {
       data: { user },
     } = await supabase.auth.getUser()

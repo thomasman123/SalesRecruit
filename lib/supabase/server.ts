@@ -25,10 +25,24 @@ export async function createServerSupabaseClient() {
           return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options })
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // In case of cookie error in server actions
+            console.error(`Failed to set cookie ${name}:`, error)
+          }
         },
         remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options })
+          try {
+            cookieStore.delete(name)
+          } catch (error) {
+            // Fallback to setting empty value if delete fails
+            try {
+              cookieStore.set({ name, value: "", ...options, maxAge: 0 })
+            } catch (fallbackError) {
+              console.error(`Failed to remove cookie ${name}:`, fallbackError)
+            }
+          }
         },
       },
     },
