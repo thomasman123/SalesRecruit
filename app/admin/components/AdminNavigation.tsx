@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   UserCheck,
-  FileText
+  FileText,
+  ShieldCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createSupabaseClient } from "@/lib/supabase/client"
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Activity Logs", href: "/admin/activity", icon: Activity },
   { name: "Users", href: "/admin/users", icon: Users },
+  { name: "Recruiters", href: "/admin/recruiters", icon: ShieldCheck },
   { name: "Jobs", href: "/admin/jobs", icon: Briefcase },
   { name: "Applicants", href: "/admin/applicants", icon: UserCheck },
   { name: "Messages", href: "/admin/messages", icon: MessageSquare },

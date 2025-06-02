@@ -40,9 +40,15 @@ export async function middleware(request: NextRequest) {
   const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/recruiter") || pathname.startsWith("/onboarding") || pathname.startsWith("/messages") || pathname.startsWith("/admin")
   const isAuthPage = pathname === "/login" || pathname === "/signup"
   const isAuthCallback = pathname.startsWith("/auth/callback")
+  const isLandingPage = pathname === "/hire" || pathname === "/rep"
 
   // Allow auth callback to proceed without redirection
   if (isAuthCallback) {
+    return response
+  }
+
+  // Allow landing pages to be accessible without authentication
+  if (isLandingPage && !user) {
     return response
   }
 
@@ -64,8 +70,8 @@ export async function middleware(request: NextRequest) {
     userRole = userData?.role
   }
 
-  // If user is logged in and trying to access auth pages
-  if (user && isAuthPage) {
+  // If user is logged in and trying to access auth pages or landing pages
+  if (user && (isAuthPage || isLandingPage)) {
     const redirectPath = userRole === "recruiter" ? "/recruiter" : userRole === "admin" ? "/admin" : "/dashboard"
     return NextResponse.redirect(new URL(redirectPath, request.url))
   }
