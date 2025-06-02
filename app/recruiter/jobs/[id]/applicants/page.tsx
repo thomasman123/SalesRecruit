@@ -30,16 +30,51 @@ export default async function ApplicantsPage({ params }: { params: { id: string 
     )
   }
 
-  // Fetch applicants
+  // Fetch applicants with AI scores
   const { data: applicants, error: applicantsError } = await supabase
     .from("applicants")
-    .select("*")
+    .select(`
+      *,
+      score,
+      score_reasons
+    `)
     .eq("job_id", jobId)
     .order("created_at", { ascending: false })
 
   if (applicantsError) {
     console.error("Error fetching applicants:", applicantsError)
   }
+
+  // Fetch invitation data from notifications for these applicants
+  const applicantUserIds = applicants?.filter(a => a.user_id).map(a => a.user_id) || []
+  
+  const { data: invitations } = await supabase
+    .from("notifications")
+    .select("user_id, created_at")
+    .like("title", "%Interview Invitation%")
+    .eq("metadata->>jobId", jobId.toString())
+    .in("user_id", applicantUserIds)
+
+  // Fetch scheduled interviews for these applicants
+  const applicantIds = applicants?.map(a => a.id) || []
+  
+  const { data: scheduledInterviews } = await supabase
+    .from("scheduled_interviews")
+    .select("applicant_id, scheduled_date, scheduled_time")
+    .eq("job_id", jobId)
+    .in("applicant_id", applicantIds)
+
+  // Create a map of invitations and scheduled interviews for quick lookup
+  const invitationMap = new Map(invitations?.map(inv => [inv.user_id, inv]) || [])
+  const scheduledMap = new Map(scheduledInterviews?.map(si => [si.applicant_id, si]) || [])
+
+  // Enhance applicants with invitation and interview data
+  const enhancedApplicants = applicants?.map(applicant => ({
+    ...applicant,
+    invited: applicant.user_id ? invitationMap.has(applicant.user_id) : false,
+    hasScheduledInterview: scheduledMap.has(applicant.id),
+    scheduledInterview: scheduledMap.get(applicant.id)
+  })) || []
 
   return (
     <AccessWrapper>
@@ -52,7 +87,7 @@ export default async function ApplicantsPage({ params }: { params: { id: string 
         </FadeIn>
 
         <ApplicantsList 
-          applicants={applicants || []} 
+          applicants={enhancedApplicants} 
           jobId={jobId}
           jobTitle={job.title}
         />

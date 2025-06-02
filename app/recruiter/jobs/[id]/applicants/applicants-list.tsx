@@ -1,19 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { FadeIn } from "@/components/ui/fade-in"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Star, MapPin, Calendar, Search, Filter, ChevronDown, ChevronUp, ExternalLink, MessageSquare } from "lucide-react"
+import { Brain, Star, MapPin, Calendar, SortAsc, SortDesc, MessageSquare, UserPlus, Clock, CheckCircle } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -32,6 +26,15 @@ interface Applicant {
   video_url?: string
   notes?: string
   avatar_url?: string
+  user_id?: string | null
+  score?: number | null
+  score_reasons?: string[] | null
+  invited?: boolean
+  hasScheduledInterview?: boolean
+  scheduledInterview?: {
+    scheduled_date: string
+    scheduled_time: string
+  }
 }
 
 interface ApplicantsListProps {
@@ -40,55 +43,36 @@ interface ApplicantsListProps {
   jobTitle: string
 }
 
-const statusColors = {
-  new: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  reviewing: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  interviewing: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  hired: "bg-green-500/10 text-green-500 border-green-500/20",
-  rejected: "bg-red-500/10 text-red-500 border-red-500/20",
-}
+type SortOption = "score-high" | "score-low" | "date-new" | "date-old"
+type CategoryType = "new" | "invited" | "interviewed"
 
 export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle }: ApplicantsListProps) {
   const router = useRouter()
   const [applicants, setApplicants] = useState(initialApplicants)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [expandedApplicant, setExpandedApplicant] = useState<number | null>(null)
-  const [notes, setNotes] = useState<{ [key: number]: string }>({})
-  const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({})
+  const [sortBy, setSortBy] = useState<SortOption>("date-new")
+  const [isScoring, setIsScoring] = useState<{ [key: number]: boolean }>({})
 
-  const filteredApplicants = applicants.filter(applicant => {
-    const matchesSearch = 
-      applicant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      applicant.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      applicant.location.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || applicant.status === statusFilter
-    
-    return matchesSearch && matchesStatus
-  })
+  // Categorize applicants
+  const categorizedApplicants = {
+    new: applicants.filter(a => !a.invited && !a.hasScheduledInterview && a.status !== "rejected" && a.status !== "hired"),
+    invited: applicants.filter(a => a.invited && !a.hasScheduledInterview && a.status !== "rejected" && a.status !== "hired"),
+    interviewed: applicants.filter(a => a.hasScheduledInterview && a.status !== "rejected" && a.status !== "hired")
+  }
 
-  const updateApplicantStatus = async (applicantId: number, newStatus: string) => {
-    setIsUpdating({ ...isUpdating, [applicantId]: true })
-    
-    try {
-      const response = await fetch(`/api/applicants/${applicantId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (!response.ok) throw new Error("Failed to update status")
-
-      setApplicants(applicants.map(a => 
-        a.id === applicantId ? { ...a, status: newStatus as any } : a
-      ))
-      
-      toast.success("Status updated successfully")
-    } catch (error) {
-      toast.error("Failed to update status")
-    } finally {
-      setIsUpdating({ ...isUpdating, [applicantId]: false })
+  // Sort function
+  const sortApplicants = (applicantsList: Applicant[]) => {
+    const sorted = [...applicantsList]
+    switch (sortBy) {
+      case "score-high":
+        return sorted.sort((a, b) => (b.score || 0) - (a.score || 0))
+      case "score-low":
+        return sorted.sort((a, b) => (a.score || 0) - (b.score || 0))
+      case "date-new":
+        return sorted.sort((a, b) => new Date(b.applied_date).getTime() - new Date(a.applied_date).getTime())
+      case "date-old":
+        return sorted.sort((a, b) => new Date(a.applied_date).getTime() - new Date(b.applied_date).getTime())
+      default:
+        return sorted
     }
   }
 
@@ -110,27 +94,58 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     }
   }
 
-  const saveNotes = async (applicantId: number) => {
-    setIsUpdating({ ...isUpdating, [applicantId]: true })
+  const scoreApplicant = async (applicantId: number) => {
+    setIsScoring({ ...isScoring, [applicantId]: true })
     
     try {
-      const response = await fetch(`/api/applicants/${applicantId}`, {
-        method: "PATCH",
+      const response = await fetch("/api/score-applicant", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: notes[applicantId] || "" }),
+        body: JSON.stringify({ applicantId }),
       })
 
-      if (!response.ok) throw new Error("Failed to save notes")
+      if (!response.ok) throw new Error("Failed to score applicant")
 
+      const { score, reasons } = await response.json()
+      
       setApplicants(applicants.map(a => 
-        a.id === applicantId ? { ...a, notes: notes[applicantId] || "" } : a
+        a.id === applicantId ? { ...a, score, score_reasons: reasons } : a
       ))
       
-      toast.success("Notes saved successfully")
+      toast.success(`AI Score: ${score}/100`)
     } catch (error) {
-      toast.error("Failed to save notes")
+      toast.error("Failed to generate AI score")
     } finally {
-      setIsUpdating({ ...isUpdating, [applicantId]: false })
+      setIsScoring({ ...isScoring, [applicantId]: false })
+    }
+  }
+
+  const inviteApplicant = async (applicant: Applicant) => {
+    if (!applicant.user_id) {
+      toast.error("Cannot invite applicant without a user account")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repId: applicant.user_id,
+          jobId: jobId,
+          jobDetails: { title: jobTitle }
+        }),
+      })
+
+      if (!response.ok) throw new Error("Failed to send invitation")
+
+      setApplicants(applicants.map(a => 
+        a.id === applicant.id ? { ...a, invited: true } : a
+      ))
+      
+      toast.success("Invitation sent successfully")
+    } catch (error) {
+      toast.error("Failed to send invitation")
     }
   }
 
@@ -138,224 +153,211 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     return name.split(" ").map(n => n[0]).join("").toUpperCase()
   }
 
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-500"
+    if (score >= 60) return "text-yellow-500"
+    if (score >= 40) return "text-orange-500"
+    return "text-red-500"
+  }
+
+  const getScoreBgColor = (score: number) => {
+    if (score >= 80) return "bg-green-500/10 border-green-500/20"
+    if (score >= 60) return "bg-yellow-500/10 border-yellow-500/20"
+    if (score >= 40) return "bg-orange-500/10 border-orange-500/20"
+    return "bg-red-500/10 border-red-500/20"
+  }
+
+  const renderApplicant = (applicant: Applicant) => (
+    <AnimatedCard key={applicant.id} variant="hover-glow" className="p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4 flex-1">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={applicant.avatar_url} />
+            <AvatarFallback>{getInitials(applicant.name)}</AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-white">{applicant.name}</h3>
+              <button
+                onClick={() => toggleStar(applicant.id, applicant.starred)}
+                className="text-gray-400 hover:text-yellow-500 transition-colors"
+              >
+                <Star className={`h-4 w-4 ${applicant.starred ? "fill-yellow-500 text-yellow-500" : ""}`} />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-400 mb-2">{applicant.email}</p>
+            
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {applicant.location}
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Applied {formatDistanceToNow(new Date(applicant.applied_date), { addSuffix: true })}
+              </span>
+            </div>
+
+            {/* Scheduled Interview Info */}
+            {applicant.hasScheduledInterview && applicant.scheduledInterview && (
+              <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="flex items-center gap-2 text-green-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    Interview scheduled for {new Date(applicant.scheduledInterview.scheduled_date).toLocaleDateString()} 
+                    at {applicant.scheduledInterview.scheduled_time}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-3">
+          {/* AI Score Display */}
+          <div className="text-right">
+            {applicant.score !== null && applicant.score !== undefined ? (
+              <div>
+                <div className={`text-2xl font-bold ${getScoreColor(applicant.score)}`}>
+                  {applicant.score}%
+                </div>
+                <Badge className={`${getScoreBgColor(applicant.score)} mb-2`}>
+                  AI Score
+                </Badge>
+                {applicant.score_reasons && applicant.score_reasons.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-400 text-right max-w-[200px]">
+                    {applicant.score_reasons.slice(0, 2).map((reason, idx) => (
+                      <div key={idx} className="mb-1">• {reason}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => scoreApplicant(applicant.id)}
+                disabled={isScoring[applicant.id]}
+                className="mb-2"
+              >
+                {isScoring[applicant.id] ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Scoring...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4 mr-2" />
+                    Get AI Score
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {!applicant.invited && !applicant.hasScheduledInterview && (
+              <Button
+                size="sm"
+                onClick={() => inviteApplicant(applicant)}
+                disabled={!applicant.user_id}
+                title={!applicant.user_id ? "Applicant must have a user account to invite" : ""}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                Invite
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => router.push(`/recruiter/messages?applicant=${applicant.id}`)}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </AnimatedCard>
+  )
+
+  const renderCategory = (title: string, icon: React.ReactNode, applicants: Applicant[], color: string) => {
+    const sortedApplicants = sortApplicants(applicants)
+    
+    if (sortedApplicants.length === 0) return null
+
+    return (
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`p-2 rounded-lg ${color}`}>
+            {icon}
+          </div>
+          <h2 className="text-xl font-semibold text-white">{title}</h2>
+          <Badge variant="secondary" className="ml-2">{sortedApplicants.length}</Badge>
+        </div>
+        <div className="space-y-4">
+          {sortedApplicants.map(renderApplicant)}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <FadeIn delay={200}>
       <div className="space-y-6">
-        {/* Filters */}
-        <AnimatedCard variant="hover-glow" className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Search by name, email, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        {/* Sorting Controls */}
+        <AnimatedCard variant="hover-glow" className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-dark-700 border border-dark-600 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="date-new">Newest First</option>
+                <option value="date-old">Oldest First</option>
+                <option value="score-high">Highest AI Score</option>
+                <option value="score-low">Lowest AI Score</option>
+              </select>
             </div>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="reviewing">Reviewing</SelectItem>
-                  <SelectItem value="interviewing">Interviewing</SelectItem>
-                  <SelectItem value="hired">Hired</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Brain className="h-4 w-4" />
+              AI-Powered Scoring
             </div>
           </div>
         </AnimatedCard>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <AnimatedCard variant="hover-glow" className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{applicants.length}</div>
-            <div className="text-sm text-gray-400">Total</div>
-          </AnimatedCard>
-          <AnimatedCard variant="hover-glow" className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500">
-              {applicants.filter(a => a.status === "new").length}
-            </div>
-            <div className="text-sm text-gray-400">New</div>
-          </AnimatedCard>
-          <AnimatedCard variant="hover-glow" className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-500">
-              {applicants.filter(a => a.status === "reviewing").length}
-            </div>
-            <div className="text-sm text-gray-400">Reviewing</div>
-          </AnimatedCard>
-          <AnimatedCard variant="hover-glow" className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-500">
-              {applicants.filter(a => a.status === "interviewing").length}
-            </div>
-            <div className="text-sm text-gray-400">Interviewing</div>
-          </AnimatedCard>
-          <AnimatedCard variant="hover-glow" className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-500">
-              {applicants.filter(a => a.status === "hired").length}
-            </div>
-            <div className="text-sm text-gray-400">Hired</div>
-          </AnimatedCard>
-        </div>
+        {/* Categories */}
+        {renderCategory(
+          "New Applicants",
+          <UserPlus className="h-5 w-5 text-blue-400" />,
+          categorizedApplicants.new,
+          "bg-blue-500/10 border border-blue-500/20"
+        )}
 
-        {/* Applicants List */}
-        <div className="space-y-4">
-          {filteredApplicants.length === 0 ? (
-            <AnimatedCard variant="hover-glow" className="p-12 text-center">
-              <p className="text-gray-400">
-                {searchQuery || statusFilter !== "all" 
-                  ? "No applicants found matching your criteria"
-                  : "No applicants yet for this position"}
-              </p>
-            </AnimatedCard>
-          ) : (
-            filteredApplicants.map((applicant) => (
-              <AnimatedCard key={applicant.id} variant="hover-glow" className="p-6">
-                <div className="space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={applicant.avatar_url} />
-                        <AvatarFallback>{getInitials(applicant.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-white">{applicant.name}</h3>
-                          <button
-                            onClick={() => toggleStar(applicant.id, applicant.starred)}
-                            className="text-gray-400 hover:text-yellow-500 transition-colors"
-                          >
-                            <Star className={`h-4 w-4 ${applicant.starred ? "fill-yellow-500 text-yellow-500" : ""}`} />
-                          </button>
-                        </div>
-                        <p className="text-sm text-gray-400">{applicant.email}</p>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {applicant.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Applied {formatDistanceToNow(new Date(applicant.applied_date), { addSuffix: true })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        value={applicant.status} 
-                        onValueChange={(value) => updateApplicantStatus(applicant.id, value)}
-                        disabled={isUpdating[applicant.id]}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="reviewing">Reviewing</SelectItem>
-                          <SelectItem value="interviewing">Interviewing</SelectItem>
-                          <SelectItem value="hired">Hired</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setExpandedApplicant(
-                          expandedApplicant === applicant.id ? null : applicant.id
-                        )}
-                      >
-                        {expandedApplicant === applicant.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+        {renderCategory(
+          "Invited to Interview",
+          <Clock className="h-5 w-5 text-yellow-400" />,
+          categorizedApplicants.invited,
+          "bg-yellow-500/10 border border-yellow-500/20"
+        )}
 
-                  {/* Quick Info */}
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Experience:</span>{" "}
-                      <span className="text-white">{applicant.experience}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Highest Ticket:</span>{" "}
-                      <span className="text-white">{applicant.highest_ticket}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Sales Style:</span>{" "}
-                      <span className="text-white">{applicant.sales_style}</span>
-                    </div>
-                  </div>
+        {renderCategory(
+          "Interview Scheduled",
+          <CheckCircle className="h-5 w-5 text-green-400" />,
+          categorizedApplicants.interviewed,
+          "bg-green-500/10 border border-green-500/20"
+        )}
 
-                  {/* Expanded Details */}
-                  {expandedApplicant === applicant.id && (
-                    <div className="pt-4 border-t border-dark-600 space-y-4">
-                      <div>
-                        <Label className="text-gray-400">Tools Used</Label>
-                        <p className="text-white mt-1">{applicant.tools}</p>
-                      </div>
-
-                      {applicant.video_url && (
-                        <div>
-                          <Label className="text-gray-400">Video Introduction</Label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-1"
-                            onClick={() => window.open(applicant.video_url, "_blank")}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Watch Video
-                          </Button>
-                        </div>
-                      )}
-
-                      <div>
-                        <Label className="text-gray-400">Notes</Label>
-                        <Textarea
-                          placeholder="Add notes about this applicant..."
-                          value={notes[applicant.id] || applicant.notes || ""}
-                          onChange={(e) => setNotes({ ...notes, [applicant.id]: e.target.value })}
-                          className="mt-1"
-                          rows={3}
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            onClick={() => saveNotes(applicant.id)}
-                            disabled={isUpdating[applicant.id]}
-                          >
-                            Save Notes
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => router.push(`/recruiter/messages?applicant=${applicant.id}`)}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Message
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </AnimatedCard>
-            ))
-          )}
-        </div>
+        {/* Empty State */}
+        {applicants.length === 0 && (
+          <AnimatedCard variant="hover-glow" className="p-12 text-center">
+            <p className="text-gray-400">No applicants yet for this position</p>
+          </AnimatedCard>
+        )}
       </div>
     </FadeIn>
   )
