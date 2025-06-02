@@ -1,7 +1,7 @@
 # Applicants Page Features
 
 ## Overview
-The applicants page has been completely redesigned to provide a cleaner, more organized view of job applicants with AI-powered scoring capabilities.
+The applicants page has been completely redesigned to provide a cleaner, more organized view of job applicants with AI-powered scoring capabilities and detailed profile viewing.
 
 ## Key Features
 
@@ -32,11 +32,18 @@ Users can sort applicants within each category by:
 - Removed complex filters and status dropdowns
 - Focus on essential information: name, email, location, application date
 - AI scores displayed prominently when available
-- Quick actions: Invite, Message, Get AI Score
+- Single action button: Invite to Interview (messaging removed)
+- Clickable cards to view full applicant profiles
 
 ### 5. Interview Status Display
 - For candidates with scheduled interviews, the date and time are clearly displayed
 - Visual indicator (green checkmark) shows interview is confirmed
+
+### 6. Detailed Applicant Profiles
+Click on any applicant card to view their complete profile in a modal with three tabs:
+- **Profile Tab**: Sales style, highest ticket, tools/CRM experience, video introduction
+- **Experience Tab**: Full experience and background information
+- **Notes Tab**: Internal notes about the applicant
 
 ## Backend Integration
 
@@ -61,10 +68,23 @@ Users can sort applicants within each category by:
 The following fields are used:
 - `applicants.score`: AI score (0-100)
 - `applicants.score_reasons`: Array of reasons for the score
+- `applicants.experience`: Sales experience details
+- `applicants.highest_ticket`: Highest value sale
+- `applicants.sales_style`: Selling approach
+- `applicants.tools`: CRM and tools experience
+- `applicants.video_url`: Video introduction link
 - `notifications`: Tracks interview invitations
 - `scheduled_interviews`: Tracks booked interviews
 
 ### Performance
 - All data is fetched server-side for optimal performance
 - Efficient queries using maps for invitation/interview lookups
-- Real-time updates when actions are performed 
+- Real-time updates when actions are performed
+
+## User Interaction Flow
+1. Recruiters see applicants organized into three categories
+2. They can sort by date or AI score
+3. Clicking on an applicant opens their full profile
+4. From the profile or the list, they can invite candidates to interview
+5. Once invited, applicants move to the "Invited" category
+6. When applicants book interviews, they move to "Interview Scheduled" 

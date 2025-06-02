@@ -6,7 +6,10 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Brain, Star, MapPin, Calendar, SortAsc, SortDesc, MessageSquare, UserPlus, Clock, CheckCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Brain, Star, MapPin, Calendar, UserPlus, Clock, CheckCircle, Mail, Phone, Briefcase, DollarSign, Target, Wrench, Video, FileText, User } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -51,6 +54,8 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
   const [applicants, setApplicants] = useState(initialApplicants)
   const [sortBy, setSortBy] = useState<SortOption>("date-new")
   const [isScoring, setIsScoring] = useState<{ [key: number]: boolean }>({})
+  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
 
   // Categorize applicants
   const categorizedApplicants = {
@@ -76,7 +81,8 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     }
   }
 
-  const toggleStar = async (applicantId: number, currentStarred: boolean) => {
+  const toggleStar = async (applicantId: number, currentStarred: boolean, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent opening the profile
     try {
       const response = await fetch(`/api/applicants/${applicantId}`, {
         method: "PATCH",
@@ -94,7 +100,8 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     }
   }
 
-  const scoreApplicant = async (applicantId: number) => {
+  const scoreApplicant = async (applicantId: number, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent opening the profile
     setIsScoring({ ...isScoring, [applicantId]: true })
     
     try {
@@ -120,7 +127,8 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     }
   }
 
-  const inviteApplicant = async (applicant: Applicant) => {
+  const inviteApplicant = async (applicant: Applicant, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent opening the profile
     if (!applicant.user_id) {
       toast.error("Cannot invite applicant without a user account")
       return
@@ -167,8 +175,18 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
     return "bg-red-500/10 border-red-500/20"
   }
 
+  const openProfile = (applicant: Applicant) => {
+    setSelectedApplicant(applicant)
+    setProfileModalOpen(true)
+  }
+
   const renderApplicant = (applicant: Applicant) => (
-    <AnimatedCard key={applicant.id} variant="hover-glow" className="p-6">
+    <AnimatedCard 
+      key={applicant.id} 
+      variant="hover-glow" 
+      className="p-6 cursor-pointer transition-all hover:border-purple-500/50"
+      onClick={() => openProfile(applicant)}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4 flex-1">
           <Avatar className="h-12 w-12">
@@ -180,7 +198,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold text-white">{applicant.name}</h3>
               <button
-                onClick={() => toggleStar(applicant.id, applicant.starred)}
+                onClick={(e) => toggleStar(applicant.id, applicant.starred, e)}
                 className="text-gray-400 hover:text-yellow-500 transition-colors"
               >
                 <Star className={`h-4 w-4 ${applicant.starred ? "fill-yellow-500 text-yellow-500" : ""}`} />
@@ -238,7 +256,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => scoreApplicant(applicant.id)}
+                onClick={(e) => scoreApplicant(applicant.id, e)}
                 disabled={isScoring[applicant.id]}
                 className="mb-2"
               >
@@ -258,26 +276,17 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
-            {!applicant.invited && !applicant.hasScheduledInterview && (
-              <Button
-                size="sm"
-                onClick={() => inviteApplicant(applicant)}
-                disabled={!applicant.user_id}
-                title={!applicant.user_id ? "Applicant must have a user account to invite" : ""}
-              >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Invite
-              </Button>
-            )}
+          {!applicant.invited && !applicant.hasScheduledInterview && (
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => router.push(`/recruiter/messages?applicant=${applicant.id}`)}
+              onClick={(e) => inviteApplicant(applicant, e)}
+              disabled={!applicant.user_id}
+              title={!applicant.user_id ? "Applicant must have a user account to invite" : ""}
             >
-              <MessageSquare className="h-4 w-4" />
+              <UserPlus className="h-4 w-4 mr-1" />
+              Invite
             </Button>
-          </div>
+          )}
         </div>
       </div>
     </AnimatedCard>
@@ -305,60 +314,230 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
   }
 
   return (
-    <FadeIn delay={200}>
-      <div className="space-y-6">
-        {/* Sorting Controls */}
-        <AnimatedCard variant="hover-glow" className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-dark-700 border border-dark-600 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="date-new">Newest First</option>
-                <option value="date-old">Oldest First</option>
-                <option value="score-high">Highest AI Score</option>
-                <option value="score-low">Lowest AI Score</option>
-              </select>
+    <>
+      <FadeIn delay={200}>
+        <div className="space-y-6">
+          {/* Sorting Controls */}
+          <AnimatedCard variant="hover-glow" className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-dark-700 border border-dark-600 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="date-new">Newest First</option>
+                  <option value="date-old">Oldest First</option>
+                  <option value="score-high">Highest AI Score</option>
+                  <option value="score-low">Lowest AI Score</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Brain className="h-4 w-4" />
+                AI-Powered Scoring
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Brain className="h-4 w-4" />
-              AI-Powered Scoring
-            </div>
-          </div>
-        </AnimatedCard>
-
-        {/* Categories */}
-        {renderCategory(
-          "New Applicants",
-          <UserPlus className="h-5 w-5 text-blue-400" />,
-          categorizedApplicants.new,
-          "bg-blue-500/10 border border-blue-500/20"
-        )}
-
-        {renderCategory(
-          "Invited to Interview",
-          <Clock className="h-5 w-5 text-yellow-400" />,
-          categorizedApplicants.invited,
-          "bg-yellow-500/10 border border-yellow-500/20"
-        )}
-
-        {renderCategory(
-          "Interview Scheduled",
-          <CheckCircle className="h-5 w-5 text-green-400" />,
-          categorizedApplicants.interviewed,
-          "bg-green-500/10 border border-green-500/20"
-        )}
-
-        {/* Empty State */}
-        {applicants.length === 0 && (
-          <AnimatedCard variant="hover-glow" className="p-12 text-center">
-            <p className="text-gray-400">No applicants yet for this position</p>
           </AnimatedCard>
-        )}
-      </div>
-    </FadeIn>
+
+          {/* Categories */}
+          {renderCategory(
+            "New Applicants",
+            <UserPlus className="h-5 w-5 text-blue-400" />,
+            categorizedApplicants.new,
+            "bg-blue-500/10 border border-blue-500/20"
+          )}
+
+          {renderCategory(
+            "Invited to Interview",
+            <Clock className="h-5 w-5 text-yellow-400" />,
+            categorizedApplicants.invited,
+            "bg-yellow-500/10 border border-yellow-500/20"
+          )}
+
+          {renderCategory(
+            "Interview Scheduled",
+            <CheckCircle className="h-5 w-5 text-green-400" />,
+            categorizedApplicants.interviewed,
+            "bg-green-500/10 border border-green-500/20"
+          )}
+
+          {/* Empty State */}
+          {applicants.length === 0 && (
+            <AnimatedCard variant="hover-glow" className="p-12 text-center">
+              <p className="text-gray-400">No applicants yet for this position</p>
+            </AnimatedCard>
+          )}
+        </div>
+      </FadeIn>
+
+      {/* Profile Modal */}
+      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Applicant Profile</DialogTitle>
+          </DialogHeader>
+          
+          {selectedApplicant && (
+            <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-start gap-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={selectedApplicant.avatar_url} />
+                    <AvatarFallback className="text-2xl">{getInitials(selectedApplicant.name)}</AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white mb-2">{selectedApplicant.name}</h2>
+                    <div className="flex items-center gap-4 text-gray-400">
+                      <span className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {selectedApplicant.email}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {selectedApplicant.location}
+                      </span>
+                    </div>
+                    
+                    {/* AI Score */}
+                    {selectedApplicant.score !== null && selectedApplicant.score !== undefined && (
+                      <div className="mt-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`text-3xl font-bold ${getScoreColor(selectedApplicant.score)}`}>
+                            {selectedApplicant.score}%
+                          </div>
+                          <Badge className={`${getScoreBgColor(selectedApplicant.score)}`}>
+                            AI Match Score
+                          </Badge>
+                        </div>
+                        {selectedApplicant.score_reasons && selectedApplicant.score_reasons.length > 0 && (
+                          <div className="mt-3 space-y-1">
+                            <p className="text-sm font-medium text-gray-400">AI Analysis:</p>
+                            {selectedApplicant.score_reasons.map((reason, idx) => (
+                              <p key={idx} className="text-sm text-gray-500">• {reason}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <Tabs defaultValue="profile" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="profile">Profile</TabsTrigger>
+                    <TabsTrigger value="experience">Experience</TabsTrigger>
+                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="profile" className="space-y-4 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Target className="h-4 w-4" />
+                          <span className="font-medium">Sales Style</span>
+                        </div>
+                        <p className="text-white">{selectedApplicant.sales_style}</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <DollarSign className="h-4 w-4" />
+                          <span className="font-medium">Highest Ticket</span>
+                        </div>
+                        <p className="text-white">{selectedApplicant.highest_ticket}</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Wrench className="h-4 w-4" />
+                          <span className="font-medium">Tools & CRM Experience</span>
+                        </div>
+                        <p className="text-white">{selectedApplicant.tools}</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Calendar className="h-4 w-4" />
+                          <span className="font-medium">Applied Date</span>
+                        </div>
+                        <p className="text-white">
+                          {new Date(selectedApplicant.applied_date).toLocaleDateString()} 
+                          ({formatDistanceToNow(new Date(selectedApplicant.applied_date), { addSuffix: true })})
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {selectedApplicant.video_url && (
+                      <div className="space-y-2 pt-4">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Video className="h-4 w-4" />
+                          <span className="font-medium">Video Introduction</span>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => window.open(selectedApplicant.video_url, '_blank')}
+                          className="w-full"
+                        >
+                          Watch Video Introduction
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="experience" className="space-y-4 mt-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Briefcase className="h-4 w-4" />
+                        <span className="font-medium">Experience & Background</span>
+                      </div>
+                      <div className="bg-dark-700 p-4 rounded-lg">
+                        <p className="text-white whitespace-pre-wrap">{selectedApplicant.experience}</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="notes" className="space-y-4 mt-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <FileText className="h-4 w-4" />
+                        <span className="font-medium">Internal Notes</span>
+                      </div>
+                      <div className="bg-dark-700 p-4 rounded-lg min-h-[100px]">
+                        <p className="text-white whitespace-pre-wrap">
+                          {selectedApplicant.notes || "No notes added yet."}
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-dark-600">
+                  {!selectedApplicant.invited && !selectedApplicant.hasScheduledInterview && (
+                    <Button
+                      onClick={(e) => {
+                        inviteApplicant(selectedApplicant, e)
+                        setProfileModalOpen(false)
+                      }}
+                      disabled={!selectedApplicant.user_id}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Send Interview Invitation
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setProfileModalOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 } 
