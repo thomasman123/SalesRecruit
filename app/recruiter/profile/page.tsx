@@ -6,12 +6,18 @@ import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { FadeIn } from "@/components/ui/fade-in"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Lock, Calendar, User, Mail, Building } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Lock, Calendar, User, Mail, Building, Edit2, Save, X } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
+import { toast } from "@/components/ui/use-toast"
 
 export default function RecruiterProfilePage() {
   const [userData, setUserData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [editData, setEditData] = useState<any>({})
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -26,12 +32,66 @@ export default function RecruiterProfilePage() {
           .single()
         
         setUserData(data)
+        setEditData({
+          name: data?.name || '',
+          email: data?.email || '',
+          company: data?.company || ''
+        })
       }
       setLoading(false)
     }
 
     fetchUserData()
   }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) throw new Error("No user found")
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: editData.name,
+          company: editData.company
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setUserData((prev: any) => ({
+        ...prev,
+        name: editData.name,
+        company: editData.company
+      }))
+      setEditing(false)
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      })
+    } catch (error: any) {
+      console.error("Error updating profile:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setEditing(false)
+    setEditData({
+      name: userData?.name || '',
+      email: userData?.email || '',
+      company: userData?.company || ''
+    })
+  }
 
   if (loading) {
     return (
@@ -44,37 +104,43 @@ export default function RecruiterProfilePage() {
     )
   }
 
+  const hasFullAccess = userData?.full_access === true
+
   return (
     <div className="container mx-auto max-w-4xl">
-      {/* Access Restricted Banner */}
-      <FadeIn delay={0}>
-        <AnimatedCard variant="hover-glow" className="mb-8 p-4 border-purple-500/20 bg-gradient-to-r from-purple-500/10 to-purple-600/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AnimatedIcon variant="pulse" size="sm" className="text-purple-400">
-                <Lock className="h-5 w-5" />
-              </AnimatedIcon>
-              <div>
-                <h3 className="text-white font-semibold">Limited Access</h3>
-                <p className="text-sm text-gray-300">To unlock full features, schedule a demo with our team</p>
+      {/* Access Restricted Banner - Only show if NO full access */}
+      {!hasFullAccess && (
+        <FadeIn delay={0}>
+          <AnimatedCard variant="hover-glow" className="mb-8 p-4 border-purple-500/20 bg-gradient-to-r from-purple-500/10 to-purple-600/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AnimatedIcon variant="pulse" size="sm" className="text-purple-400">
+                  <Lock className="h-5 w-5" />
+                </AnimatedIcon>
+                <div>
+                  <h3 className="text-white font-semibold">Limited Access</h3>
+                  <p className="text-sm text-gray-300">To unlock full features, schedule a demo with our team</p>
+                </div>
               </div>
+              <AnimatedButton
+                variant="purple"
+                size="sm"
+                icon={<Calendar className="w-4 h-4" />}
+                onClick={() => window.open('https://crm.heliosscale.com/widget/booking/GnOVek2QrDEWUx7vngVh', '_blank')}
+              >
+                Book Demo
+              </AnimatedButton>
             </div>
-            <AnimatedButton
-              variant="purple"
-              size="sm"
-              icon={<Calendar className="w-4 h-4" />}
-              onClick={() => window.open('https://crm.heliosscale.com/widget/booking/GnOVek2QrDEWUx7vngVh', '_blank')}
-            >
-              Book Demo
-            </AnimatedButton>
-          </div>
-        </AnimatedCard>
-      </FadeIn>
+          </AnimatedCard>
+        </FadeIn>
+      )}
 
       <FadeIn delay={100}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">My Profile</h1>
-          <p className="text-gray-400">View your account information</p>
+          <p className="text-gray-400">
+            {hasFullAccess ? "View and manage your account information" : "View your account information"}
+          </p>
         </div>
       </FadeIn>
 
@@ -84,28 +150,93 @@ export default function RecruiterProfilePage() {
             <Avatar className="h-24 w-24 border-2 border-dark-600">
               <AvatarImage src={userData?.avatar_url || "/placeholder.svg"} />
               <AvatarFallback className="bg-purple-500/20 text-purple-400 text-2xl">
-                {userData?.full_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                {userData?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-white mb-2">{userData?.full_name || 'Unknown User'}</h2>
-              <p className="text-gray-400 mb-4">Recruiter Account</p>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Mail className="w-4 h-4 text-purple-400" />
-                  <span>{userData?.email || 'No email'}</span>
+              {editing ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-gray-300">Full Name</Label>
+                    <Input
+                      value={editData.name}
+                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                      className="mt-1"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Email</Label>
+                    <Input
+                      value={editData.email}
+                      disabled
+                      className="mt-1 opacity-60"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Company</Label>
+                    <Input
+                      value={editData.company}
+                      onChange={(e) => setEditData({ ...editData, company: e.target.value })}
+                      className="mt-1"
+                      placeholder="Enter your company name"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <AnimatedButton
+                      variant="purple"
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={saving}
+                      icon={<Save className="w-4 h-4" />}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </AnimatedButton>
+                    <AnimatedButton
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancel}
+                      disabled={saving}
+                      icon={<X className="w-4 h-4" />}
+                    >
+                      Cancel
+                    </AnimatedButton>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <User className="w-4 h-4 text-purple-400" />
-                  <span>Role: {userData?.role || 'Recruiter'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Building className="w-4 h-4 text-purple-400" />
-                  <span>Company: Not specified</span>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-2xl font-bold text-white">{userData?.name || 'Unknown User'}</h2>
+                    {hasFullAccess && (
+                      <AnimatedButton
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditing(true)}
+                        icon={<Edit2 className="w-4 h-4" />}
+                      >
+                        Edit
+                      </AnimatedButton>
+                    )}
+                  </div>
+                  <p className="text-gray-400 mb-4">Recruiter Account</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-gray-300">
+                      <Mail className="w-4 h-4 text-purple-400" />
+                      <span>{userData?.email || 'No email'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-300">
+                      <User className="w-4 h-4 text-purple-400" />
+                      <span>Role: {userData?.role || 'Recruiter'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-300">
+                      <Building className="w-4 h-4 text-purple-400" />
+                      <span>Company: {userData?.company || 'Not specified'}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -114,11 +245,15 @@ export default function RecruiterProfilePage() {
             <div className="bg-dark-700 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-400">Account Type</span>
-                <span className="text-white font-medium">Free Trial</span>
+                <span className="text-white font-medium">
+                  {hasFullAccess ? "Full Access" : "Free Trial"}
+                </span>
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-400">Status</span>
-                <span className="text-yellow-400 font-medium">Pending Activation</span>
+                <span className={`font-medium ${hasFullAccess ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {hasFullAccess ? "Active" : "Pending Activation"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Member Since</span>
@@ -129,18 +264,20 @@ export default function RecruiterProfilePage() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-            <p className="text-sm text-gray-300 text-center">
-              To edit your profile and access all features, please{' '}
-              <button
-                onClick={() => window.open('https://crm.heliosscale.com/widget/booking/GnOVek2QrDEWUx7vngVh', '_blank')}
-                className="text-purple-400 hover:text-purple-300 underline transition-colors"
-              >
-                schedule a demo
-              </button>
-              {' '}with our team.
-            </p>
-          </div>
+          {!hasFullAccess && (
+            <div className="mt-6 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+              <p className="text-sm text-gray-300 text-center">
+                To edit your profile and access all features, please{' '}
+                <button
+                  onClick={() => window.open('https://crm.heliosscale.com/widget/booking/GnOVek2QrDEWUx7vngVh', '_blank')}
+                  className="text-purple-400 hover:text-purple-300 underline transition-colors"
+                >
+                  schedule a demo
+                </button>
+                {' '}with our team.
+              </p>
+            </div>
+          )}
         </AnimatedCard>
       </FadeIn>
     </div>
