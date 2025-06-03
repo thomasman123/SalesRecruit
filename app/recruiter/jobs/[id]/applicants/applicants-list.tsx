@@ -462,7 +462,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                 </div>
               </DialogHeader>
 
-              <div className="py-6 pb-32">
+              <div className="py-6 pb-24">
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList className="w-full grid grid-cols-4 mb-6 sticky top-[calc(theme(spacing.24)+theme(spacing.6))] z-10 bg-background">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
