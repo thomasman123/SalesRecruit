@@ -173,13 +173,13 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
-      title: "Performance Analytics",
-      description: "Track hiring metrics and ROI with detailed analytics and performance insights.",
+      title: "Tracking & KPI Analytics",
+      description: "Monitor performance with real-time KPI dashboards powered by our custom software.",
     },
     {
-      icon: <Award className="h-6 w-6" />,
-      title: "Success-Based Pricing",
-      description: "Only pay when you make a successful hire. No upfront costs or hidden fees.",
+      icon: <Zap className="h-6 w-6" />,
+      title: "Unlimited Rep Placements",
+      description: "Hire as many sales reps as you need—every placement is included and fully supported.",
     },
   ] : [
     {

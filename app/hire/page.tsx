@@ -24,7 +24,7 @@ export default function RecruiterHomePage() {
       <BaseHomepage
         userType="recruiter"
         headline="The Wrong Sales Hire Costs You More Than You Think"
-        subheadline="Our AI matches companies with qualified reps - and reps with the right offers - so no one wastes time, money, or momentum."
+        subheadline="Unlimited Sales Rep Placements plus expert support — training, proven scripts, process resources, CRM setup & optimisation, and KPI tracking through our custom software."
       />
     </>
   )
