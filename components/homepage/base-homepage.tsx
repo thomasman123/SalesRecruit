@@ -70,6 +70,15 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
       if (error) throw error
 
       if (data.user && data.user.id && data.user.email) {
+        // Fire Facebook "SubmitApplication" event for recruiter signups
+        if (signupData.role === 'recruiter' && typeof window !== 'undefined' && (window as any).fbq) {
+          try {
+            (window as any).fbq('track', 'SubmitApplication')
+          } catch (err) {
+            console.error('FBQ SubmitApplication error', err)
+          }
+        }
+
         toast({
           title: "Verification email sent",
           description: "Please check your email to verify your account before logging in.",
@@ -158,7 +167,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
     },
     {
       icon: <Shield className="h-6 w-6" />,
-      title: "Risk-Free Trial",
+      title: "Placement Guarantee",
       description: "30-day guarantee on all placements. If they're not the right fit, we'll find you someone who is.",
     },
     {
@@ -304,7 +313,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                     className="text-lg px-8 py-6"
                     onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Get Started Free
+                    Get Started
                   </AnimatedButton>
                   <Link href={userType === 'recruiter' ? '/rep' : '/hire'}>
                     <AnimatedButton
@@ -315,20 +324,6 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                       I'm a {userType === 'recruiter' ? 'Sales Rep' : 'Recruiter'}
                     </AnimatedButton>
                   </Link>
-                </div>
-              </FadeIn>
-
-              {/* Trust indicators */}
-              <FadeIn delay={600}>
-                <div className="flex items-center gap-8 text-sm text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>No credit card required</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-400" />
-                    <span>30-day free trial</span>
-                  </div>
                 </div>
               </FadeIn>
             </div>
@@ -356,7 +351,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                     <TabsContent value="signup" className="mt-6">
                       <AnimatedCard variant="hover-glow" className="border-dark-600 bg-dark-800/50 backdrop-blur-sm">
                         <CardHeader className="pb-4">
-                          <CardTitle className="text-white text-xl">Start your free trial</CardTitle>
+                          <CardTitle className="text-white text-xl">Create your account</CardTitle>
                           <CardDescription className="text-gray-400">
                             Join as a {userType === 'recruiter' ? 'Recruiter' : 'Sales Professional'}
                           </CardDescription>
@@ -426,7 +421,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                               className="w-full mt-6"
                               disabled={isLoading}
                             >
-                              {isLoading ? "Creating account..." : "Start free trial"}
+                              {isLoading ? "Creating account..." : "Create account"}
                             </AnimatedButton>
                           </form>
                         </CardContent>
@@ -575,78 +570,65 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
         </div>
       </section>
 
-      {/* Plan Section */}
-      <section className="py-24 px-6">
-        <div className="container mx-auto max-w-4xl">
-          <FadeIn delay={0}>
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-white mb-4">
-                One Plan, <span className="text-purple-400">Total Access</span>
-              </h2>
-              <p className="text-gray-400 text-lg">
-                Simple, transparent pricing with no hidden fees
-              </p>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={200}>
-            <AnimatedCard variant="hover-glow" className="p-8 lg:p-12 border-purple-500/20 bg-gradient-to-br from-dark-800 to-dark-800/50">
-              <div className="grid lg:grid-cols-2 gap-8 items-center">
-                <div>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-5xl font-bold text-white">
-                      {userType === 'recruiter' ? '$99' : 'Free'}
-                    </span>
-                    {userType === 'recruiter' && <span className="text-gray-400">/month</span>}
-                  </div>
-                  <p className="text-xl text-gray-300 mb-8">
-                    {userType === 'recruiter' 
-                      ? 'Unlimited job posts, unlimited candidates'
-                      : 'For sales professionals, always free'
-                    }
-                  </p>
-                  <AnimatedButton
-                    variant="purple"
-                    size="lg"
-                    icon={<ArrowRight className="w-5 h-5" />}
-                    className="w-full sm:w-auto"
-                    onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    Get started now
-                  </AnimatedButton>
-                </div>
-
-                <div className="space-y-4">
-                  {(userType === 'recruiter' ? [
-                    "Unlimited job postings",
-                    "AI-powered candidate matching",
-                    "Direct messaging with candidates",
-                    "Advanced analytics dashboard",
-                    "Calendar integration",
-                    "30-day placement guarantee",
-                    "Priority support",
-                    "Team collaboration tools",
-                  ] : [
-                    "Apply to unlimited positions",
-                    "See all compensation details",
-                    "Direct recruiter messaging",
-                    "Interview scheduling tools",
-                    "Profile analytics",
-                    "Job match notifications",
-                    "Career coaching resources",
-                    "Salary negotiation tools",
-                  ]).map((feature, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                      <span className="text-gray-300">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+      {/* Plan Section removed for recruiters */}
+      {userType === 'sales-professional' && (
+        <section className="py-24 px-6">
+          <div className="container mx-auto max-w-4xl">
+            <FadeIn delay={0}>
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  One Plan, <span className="text-purple-400">Total Access</span>
+                </h2>
+                <p className="text-gray-400 text-lg">
+                  Simple, transparent pricing with no hidden fees
+                </p>
               </div>
-            </AnimatedCard>
-          </FadeIn>
-        </div>
-      </section>
+            </FadeIn>
+
+            <FadeIn delay={200}>
+              <AnimatedCard variant="hover-glow" className="p-8 lg:p-12 border-purple-500/20 bg-gradient-to-br from-dark-800 to-dark-800/50">
+                <div className="grid lg:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-5xl font-bold text-white">
+                        Free
+                      </span>
+                    </div>
+                    <p className="text-xl text-gray-300 mb-8">
+                      For sales professionals, always free
+                    </p>
+                    <AnimatedButton
+                      variant="purple"
+                      size="lg"
+                      icon={<ArrowRight className="w-5 h-5" />}
+                      className="w-full sm:w-auto"
+                      onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    >
+                      Get started now
+                    </AnimatedButton>
+                  </div>
+
+                  <div className="space-y-4">
+                    {["Apply to unlimited positions",
+                      "See all compensation details",
+                      "Direct recruiter messaging",
+                      "Interview scheduling tools",
+                      "Profile analytics",
+                      "Job match notifications",
+                      "Career coaching resources",
+                      "Salary negotiation tools",].map((feature, index) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                          <span className="text-gray-300">{feature}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </AnimatedCard>
+            </FadeIn>
+          </div>
+        </section>
+      )}
 
       {/* FAQ Section */}
       <section className="py-24 px-6">
@@ -714,7 +696,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
               className="text-lg px-8 py-6"
               onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Get Started Free
+              Get Started
             </AnimatedButton>
           </FadeIn>
         </div>
