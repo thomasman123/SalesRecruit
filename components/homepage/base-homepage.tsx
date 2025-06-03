@@ -22,6 +22,7 @@ import { AnimatedButton } from "@/components/ui/animated-button"
 import { AnimatedInput } from "@/components/ui/animated-input"
 import { AnimatedIcon } from "@/components/ui/animated-icon"
 import { FadeIn } from "@/components/ui/fade-in"
+import { InteractiveDashboard } from "@/components/ui/interactive-dashboard"
 
 interface BaseHomepageProps {
   userType: 'recruiter' | 'sales-professional'
@@ -565,54 +566,55 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-6 relative">
-        <div className="container mx-auto">
-          <FadeIn delay={0}>
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-white mb-4">
-                The Smart, Fair, and{" "}
-                <span className="text-purple-400 bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent">
-                  Superior Way
-                </span>{" "}
-                to {userType === 'recruiter' ? 'Hire' : 'Get Hired'}
-              </h2>
-              <p className="text-gray-400 text-lg max-w-3xl mx-auto">
-                {userType === 'recruiter' 
-                  ? "Everything you need to build a world-class sales team, powered by AI and designed for results."
-                  : "Take control of your career with transparency, multiple opportunities, and a process that respects your time."
-                }
-              </p>
-            </div>
-          </FadeIn>
+      {userType === 'recruiter' ? (
+        <InteractiveDashboard />
+      ) : (
+        <section className="py-24 px-6 relative">
+          <div className="container mx-auto">
+            <FadeIn delay={0}>
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  The Smart, Fair, and{" "}
+                  <span className="text-purple-400 bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent">
+                    Superior Way
+                  </span>{" "}
+                  to Get Hired
+                </h2>
+                <p className="text-gray-400 text-lg max-w-3xl mx-auto">
+                  Take control of your career with transparency, multiple opportunities, and a process that respects your time.
+                </p>
+              </div>
+            </FadeIn>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <FadeIn key={feature.title} delay={100 * (index + 1)}>
-                <AnimatedCard 
-                  variant="interactive" 
-                  className="p-8 h-full group border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500/20 transition-all duration-300 group-hover:scale-110">
-                      <AnimatedIcon variant="scale" size="md" className="text-purple-400">
-                        {feature.icon}
-                      </AnimatedIcon>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <FadeIn key={feature.title} delay={100 * (index + 1)}>
+                  <AnimatedCard 
+                    variant="interactive" 
+                    className="p-8 h-full group border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500/20 transition-all duration-300 group-hover:scale-110">
+                        <AnimatedIcon variant="scale" size="md" className="text-purple-400">
+                          {feature.icon}
+                        </AnimatedIcon>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors duration-300">
+                          {feature.title}
+                        </h3>
+                        <p className="text-gray-400 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors duration-300">
-                        {feature.title}
-                      </h3>
-                      <p className="text-gray-400 leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                </AnimatedCard>
-              </FadeIn>
-            ))}
+                  </AnimatedCard>
+                </FadeIn>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section className="py-24 px-6 bg-gradient-to-b from-dark-800/50 to-transparent relative">
