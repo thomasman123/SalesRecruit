@@ -34,6 +34,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     password: "",
     role: userType,
   })
@@ -62,6 +63,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
             first_name: signupData.firstName,
             last_name: signupData.lastName,
             role: signupData.role,
+            phone: signupData.phone,
             full_name: `${signupData.firstName} ${signupData.lastName}`,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -89,6 +91,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
           firstName: "",
           lastName: "",
           email: "",
+          phone: "",
           password: "",
           role: userType,
         })
@@ -397,6 +400,20 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                                 placeholder="john@company.com"
                                 value={signupData.email}
                                 onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                                variant="glow"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-phone" className="text-gray-300 text-sm">
+                                Phone number
+                              </Label>
+                              <AnimatedInput
+                                id="signup-phone"
+                                type="tel"
+                                placeholder="(555) 123-4567"
+                                value={signupData.phone}
+                                onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                                 variant="glow"
                                 required
                               />
