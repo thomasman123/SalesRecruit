@@ -34,6 +34,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
     firstName: "",
     lastName: "",
     email: "",
+    countryCode: "+61",
     phone: "",
     password: "",
     role: userType,
@@ -63,7 +64,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
             first_name: signupData.firstName,
             last_name: signupData.lastName,
             role: signupData.role,
-            phone: signupData.phone,
+            phone: `${signupData.countryCode}${signupData.phone}`,
             full_name: `${signupData.firstName} ${signupData.lastName}`,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -91,6 +92,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
           firstName: "",
           lastName: "",
           email: "",
+          countryCode: "+61",
           phone: "",
           password: "",
           role: userType,
@@ -408,15 +410,42 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                               <Label htmlFor="signup-phone" className="text-gray-300 text-sm">
                                 Phone number
                               </Label>
-                              <AnimatedInput
-                                id="signup-phone"
-                                type="tel"
-                                placeholder="(555) 123-4567"
-                                value={signupData.phone}
-                                onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
-                                variant="glow"
-                                required
-                              />
+                              <div className="flex gap-2">
+                                <Select
+                                  value={signupData.countryCode}
+                                  onValueChange={(value) => setSignupData({ ...signupData, countryCode: value })}
+                                >
+                                  <SelectTrigger className="w-28 bg-dark-700 border-dark-600 text-gray-300">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-dark-800 border-dark-600">
+                                    {[
+                                      { code: "+1", label: "US / CA" },
+                                      { code: "+44", label: "UK" },
+                                      { code: "+61", label: "AU" },
+                                      { code: "+64", label: "NZ" },
+                                      { code: "+91", label: "IN" },
+                                      { code: "+65", label: "SG" },
+                                      { code: "+27", label: "ZA" },
+                                    ].map((c) => (
+                                      <SelectItem key={c.code} value={c.code} className="cursor-pointer">
+                                        {c.label} ({c.code})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+
+                                <AnimatedInput
+                                  id="signup-phone"
+                                  type="tel"
+                                  placeholder="5551234567"
+                                  value={signupData.phone}
+                                  onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                                  variant="glow"
+                                  className="flex-1"
+                                  required
+                                />
+                              </div>
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="signup-password" className="text-gray-300 text-sm">
