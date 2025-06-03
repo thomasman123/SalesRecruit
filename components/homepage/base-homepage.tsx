@@ -12,6 +12,7 @@ import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
 import Script from 'next/script'
+import { z } from "zod"
 
 // Design system components
 import { PageContainer } from "@/components/layout/page-container"
@@ -26,6 +27,25 @@ interface BaseHomepageProps {
   userType: 'recruiter' | 'sales-professional'
   headline: string
   subheadline?: string
+}
+
+// Helper to sanitize and validate phone numbers
+const sanitizePhone = (countryCode: string, input: string) => {
+  let digits = input.replace(/\D/g, "") // keep numbers only
+
+  // Country-specific rules
+  switch (countryCode) {
+    case "+61": // AU – 9 digits, may start with 0
+      if (digits.startsWith("0")) digits = digits.slice(1)
+      return { valid: digits.length === 9, digits }
+    case "+1": // US / CA – 10 digits
+      return { valid: digits.length === 10, digits }
+    case "+44": // UK – 10 digits without leading 0
+      if (digits.startsWith("0")) digits = digits.slice(1)
+      return { valid: digits.length === 10, digits }
+    default:
+      return { valid: digits.length >= 6, digits } // basic fallback
+  }
 }
 
 export function BaseHomepage({ userType, headline, subheadline }: BaseHomepageProps) {
@@ -53,6 +73,18 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
     e.preventDefault()
     setIsLoading(true)
 
+    // Validate phone number before proceeding
+    const { valid, digits } = sanitizePhone(signupData.countryCode, signupData.phone)
+    if (!valid) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number for the selected country.",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+      return
+    }
+
     try {
       const supabase = getSupabaseClient()
 
@@ -64,7 +96,7 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
             first_name: signupData.firstName,
             last_name: signupData.lastName,
             role: signupData.role,
-            phone: `${signupData.countryCode}${signupData.phone}`,
+            phone: `${signupData.countryCode}${digits}`,
             full_name: `${signupData.firstName} ${signupData.lastName}`,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
