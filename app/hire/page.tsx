@@ -1,4 +1,6 @@
 import { BaseHomepage } from '@/components/homepage/base-homepage'
+import { SalesAnalyticsCard } from '@/components/ui/sales-analytics-card'
+import { FadeIn } from '@/components/ui/fade-in'
 import Script from 'next/script'
 
 export default function RecruiterHomePage() {
@@ -21,11 +23,20 @@ export default function RecruiterHomePage() {
         __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1028760061894244&ev=PageView&noscript=1" />`,
       }} />
 
-      <BaseHomepage
-        userType="recruiter"
-        headline="The Wrong Sales Hire Costs You More Than You Think"
-        subheadline="Unlimited Sales Rep Placements plus expert support — training, proven scripts, process resources, CRM setup & optimisation, and KPI tracking through our custom software."
-      />
+      <div className="relative">
+        <BaseHomepage
+          userType="recruiter"
+          headline="The Wrong Sales Hire Costs You More Than You Think"
+          subheadline="Unlimited Sales Rep Placements plus expert support — training, proven scripts, process resources, CRM setup & optimisation, and KPI tracking through our custom software."
+        />
+        
+        {/* Analytics Card Overlay */}
+        <div className="absolute top-[20%] right-8 hidden xl:block z-20">
+          <FadeIn delay={800}>
+            <SalesAnalyticsCard />
+          </FadeIn>
+        </div>
+      </div>
     </>
   )
 } 
