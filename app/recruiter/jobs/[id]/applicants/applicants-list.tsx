@@ -55,6 +55,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
   const [applicants, setApplicants] = useState(initialApplicants)
   const [sortBy, setSortBy] = useState<SortOption>("date-new")
   const [isScoring, setIsScoring] = useState<{ [key: number]: boolean }>({})
+  const [isInviting, setIsInviting] = useState<{ [key: number]: boolean }>({})
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
 
@@ -130,10 +131,14 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
 
   const inviteApplicant = async (applicant: Applicant, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent opening the profile
+    if (isInviting[applicant.id]) return
+
     if (!applicant.user_id) {
       toast.error("Cannot invite applicant without a user account")
       return
     }
+
+    setIsInviting(prev => ({ ...prev, [applicant.id]: true }))
 
     try {
       const response = await fetch("/api/invite", {
@@ -152,9 +157,16 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
         a.id === applicant.id ? { ...a, invited: true } : a
       ))
       
+      setIsInviting(prev => {
+        const updated = { ...prev }
+        delete updated[applicant.id]
+        return updated
+      })
+      
       toast.success("Invitation sent successfully")
     } catch (error) {
       toast.error("Failed to send invitation")
+      setIsInviting(prev => ({ ...prev, [applicant.id]: false }))
     }
   }
 
@@ -281,11 +293,20 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
             <Button
               size="sm"
               onClick={(e) => inviteApplicant(applicant, e)}
-              disabled={!applicant.user_id}
+              disabled={!applicant.user_id || isInviting[applicant.id]}
               title={!applicant.user_id ? "Applicant must have a user account to invite" : ""}
             >
-              <UserPlus className="h-4 w-4 mr-1" />
-              Invite
+              {isInviting[applicant.id] ? (
+                <>
+                  <Clock className="h-4 w-4 mr-1 animate-spin" />
+                  Inviting...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Invite
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -441,7 +462,7 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                 </div>
               </DialogHeader>
 
-              <div className="py-6">
+              <div className="py-6 pb-32">
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList className="w-full grid grid-cols-4 mb-6 sticky top-[calc(theme(spacing.24)+theme(spacing.6))] z-10 bg-background">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -549,10 +570,19 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
                       inviteApplicant(selectedApplicant, e)
                       setProfileModalOpen(false)
                     }}
-                    disabled={!selectedApplicant.user_id}
+                    disabled={!selectedApplicant.user_id || isInviting[selectedApplicant.id]}
                   >
-                    <UserPlus className="h-4 w-4 mr-2 flex-shrink-0" />
-                    Send Interview Invitation
+                    {isInviting[selectedApplicant.id] ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin flex-shrink-0" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2 flex-shrink-0" />
+                        Send Interview Invitation
+                      </>
+                    )}
                   </Button>
                 )}
                 <Button variant="outline" onClick={() => setProfileModalOpen(false)}>
