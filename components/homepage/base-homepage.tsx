@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
+import Script from 'next/script'
 
 // Design system components
 import { PageContainer } from "@/components/layout/page-container"
@@ -570,7 +571,32 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
         </div>
       </section>
 
-      {/* Plan Section removed for recruiters */}
+      {/* Testimonials Section */}
+      <section className="py-24 px-6">
+        <div className="container mx-auto">
+          <FadeIn delay={0}>
+            <h2 className="text-4xl font-bold text-white text-center mb-12">
+              What our customers say
+            </h2>
+          </FadeIn>
+
+          {/* Senja testimonial embed */}
+          <Script
+            id="senja-platform"
+            src="https://widget.senja.io/widget/b808f4dd-2f33-4512-9f9e-5594f09670c5/platform.js"
+            strategy="lazyOnload"
+          />
+          <div
+            className="senja-embed mx-auto"
+            data-id="b808f4dd-2f33-4512-9f9e-5594f09670c5"
+            data-mode="shadow"
+            data-lazyload="false"
+            style={{ width: '100%' }}
+          />
+        </div>
+      </section>
+
+      {/* Plan Section (sales professionals only) */}
       {userType === 'sales-professional' && (
         <section className="py-24 px-6">
           <div className="container mx-auto max-w-4xl">
@@ -617,11 +643,11 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
                       "Job match notifications",
                       "Career coaching resources",
                       "Salary negotiation tools",].map((feature, index) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                          <span className="text-gray-300">{feature}</span>
-                        </div>
-                      ))}
+                      <div key={index} className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                        <span className="text-gray-300">{feature}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </AnimatedCard>
