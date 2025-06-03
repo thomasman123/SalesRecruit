@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import {
   Dialog,
@@ -14,20 +14,23 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Mail,
   MapPin,
   Brain,
-  DollarSign,
-  Target,
-  Calendar,
-  Briefcase,
-  Video,
-  CheckCircle,
+  ChevronDown,
+  ChevronRight,
   UserPlus,
   Clock,
+  Video,
+  Briefcase,
+  Target,
   Wrench,
-  FileText,
+  Heart,
+  CheckCircle,
+  Loader2,
 } from "lucide-react"
 
 // ---- Types ----
@@ -54,6 +57,13 @@ export interface ApplicantProfile {
     scheduled_date: string
     scheduled_time: string
   }
+  // Onboarding answers from user_metadata
+  role?: string | null
+  highestTicket?: string | null
+  salesProcess?: string | null
+  crmExperience?: string | null
+  whySales?: string | null
+  videoUrl?: string | null
 }
 
 interface ApplicantDialogProps {
@@ -79,19 +89,53 @@ const scoreBg = (score: number) => {
   return "bg-red-500/10 border-red-500/20"
 }
 
-// Small subtitle text row with icon
-const InfoRow = ({
+// Profile answer section with collapsible content
+const ProfileSection = ({
+  title,
   icon,
-  children,
+  answer,
+  isOpen,
+  onToggle,
+  isLoading,
 }: {
+  title: string
   icon: React.ReactNode
-  children: React.ReactNode
-}) => (
-  <div className="flex items-center gap-2 text-sm text-gray-400 break-words">
-    {icon}
-    {children}
-  </div>
-)
+  answer?: string | null
+  isOpen: boolean
+  onToggle: () => void
+  isLoading?: boolean
+}) => {
+  if (isLoading) {
+    return <Skeleton className="h-14 w-full" />
+  }
+
+  if (!answer) return null
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between p-4 rounded-lg bg-dark-700/50 hover:bg-dark-700 transition-colors border border-dark-600 hover:border-purple-500/50">
+          <div className="flex items-center gap-3">
+            {icon}
+            <span className="font-medium text-white">{title}</span>
+          </div>
+          {isOpen ? (
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+          )}
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 p-4 rounded-lg bg-dark-800/50 border border-dark-600">
+          <p className="text-sm text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
+            {answer}
+          </p>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 export function ApplicantDialog({
   applicant,
@@ -100,6 +144,9 @@ export function ApplicantDialog({
   onInvite,
   isInviting = false,
 }: ApplicantDialogProps) {
+  const [extendedData, setExtendedData] = useState<ApplicantProfile | null>(null)
+  const [loading, setLoading] = useState(false)
+
   const initials = useMemo(
     () =>
       applicant.name
@@ -110,74 +157,216 @@ export function ApplicantDialog({
     [applicant.name]
   )
 
+  // State for managing which sections are open
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    role: false,
+    highest: false,
+    process: false,
+    crm: false,
+    motivation: false,
+  })
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  // Fetch extended data when dialog opens
+  useEffect(() => {
+    if (open && applicant.user_id) {
+      setLoading(true)
+      fetch(`/api/applicants/${applicant.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setExtendedData(data)
+        })
+        .catch(error => {
+          console.error('Failed to fetch extended applicant data:', error)
+          setExtendedData(applicant) // Fallback to basic data
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    } else if (open) {
+      setExtendedData(applicant)
+    }
+  }, [open, applicant])
+
+  // Helper function to format role display
+  const formatRole = (role?: string | null) => {
+    if (!role) return null
+    switch (role) {
+      case 'sdr':
+        return 'SDR/Appointment Setter'
+      case 'ae':
+        return 'AE/Closer'
+      default:
+        return role
+    }
+  }
+
+  const currentData = extendedData || applicant
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl p-0 overflow-hidden bg-background/95 backdrop-blur">
-        {/* ---- Two-panel layout ---- */}
-        <div className="flex flex-col md:flex-row h-[80vh]">
-          {/* Left panel – summary */}
-          <aside className="w-full shrink-0 md:w-80 bg-dark-800/60 p-8 space-y-8 flex flex-col">
-            {/* Avatar & name */}
-            <div className="flex flex-col items-center text-center gap-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={applicant.avatar_url || undefined} />
-                <AvatarFallback className="text-2xl">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <DialogTitle className="text-2xl font-bold break-words">
-                {applicant.name}
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background/95 backdrop-blur">
+        {/* ---- Header with basic info ---- */}
+        <div className="p-6 border-b border-border">
+          <div className="flex items-start gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={currentData.avatar_url || undefined} />
+              <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-xl font-bold break-words mb-2">
+                {currentData.name}
               </DialogTitle>
-            </div>
-
-            {/* Contact & location */}
-            <div className="space-y-2">
-              <InfoRow icon={<Mail className="h-4 w-4" />}>{applicant.email}</InfoRow>
-              <InfoRow icon={<MapPin className="h-4 w-4" />}>{applicant.location}</InfoRow>
-            </div>
-
-            <Separator />
-
-            {/* AI SCORE */}
-            {applicant.score !== null && applicant.score !== undefined && (
-              <section className="space-y-4">
-                <h3 className="flex items-center gap-2 font-semibold text-lg">
-                  <Brain className="h-5 w-5" /> AI Match
-                </h3>
-                <div>
-                  <div
-                    className={`text-4xl font-extrabold ${scoreColor(
-                      applicant.score
-                    )}`}
-                  >
-                    {applicant.score}%
-                  </div>
-                  <Badge className={`${scoreBg(applicant.score)} mt-2`}>AI Score</Badge>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span className="truncate">{currentData.email}</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span className="truncate">{currentData.location}</span>
+                </div>
+              </div>
+              
+              <div className="mt-2 text-sm text-gray-500">
+                Applied {formatDistanceToNow(new Date(currentData.applied_date), { addSuffix: true })}
+              </div>
 
-                {applicant.score_reasons && applicant.score_reasons.length > 0 && (
-                  <ScrollArea className="max-h-40 pr-2">
-                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-400">
-                      {applicant.score_reasons.map((reason, idx) => (
-                        <li
-                          key={idx}
-                          className="break-words whitespace-pre-wrap"
-                        >
-                          {reason}
-                        </li>
-                      ))}
-                    </ul>
-                  </ScrollArea>
-                )}
+              {/* Interview scheduled info */}
+              {currentData.hasScheduledInterview && currentData.scheduledInterview && (
+                <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-400">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      Interview scheduled for {new Date(currentData.scheduledInterview.scheduled_date).toLocaleDateString()} 
+                      at {currentData.scheduledInterview.scheduled_time}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AI Score */}
+            {currentData.score !== null && currentData.score !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-extrabold ${scoreColor(currentData.score)}`}>
+                  {currentData.score}%
+                </div>
+                <Badge className={`${scoreBg(currentData.score)} mt-1`}>AI Score</Badge>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ---- Scrollable content area ---- */}
+        <ScrollArea className="max-h-[60vh] p-6">
+          <div className="space-y-6">
+            {/* Loading indicator */}
+            {loading && (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+                <span className="ml-2 text-gray-400">Loading profile details...</span>
+              </div>
+            )}
+
+            {/* AI Score Reasoning */}
+            {currentData.score !== null && currentData.score !== undefined && currentData.score_reasons && currentData.score_reasons.length > 0 && (
+              <section>
+                <h3 className="flex items-center gap-2 font-semibold text-lg mb-3">
+                  <Brain className="h-5 w-5" /> AI Match Reasoning
+                </h3>
+                <div className="bg-dark-700/50 border border-dark-600 rounded-lg p-4">
+                  <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
+                    {currentData.score_reasons.map((reason, idx) => (
+                      <li key={idx} className="break-words whitespace-pre-wrap">
+                        {reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </section>
             )}
 
-            {/* Invite button for not-invited reps */}
-            {!applicant.invited && !applicant.hasScheduledInterview && (
+            {/* Profile Questions */}
+            <section>
+              <h3 className="font-semibold text-lg mb-4 text-white">Profile Information</h3>
+              <div className="space-y-3">
+                <ProfileSection
+                  title="Sales Role"
+                  icon={<Briefcase className="h-4 w-4 text-blue-400" />}
+                  answer={formatRole(currentData.role)}
+                  isOpen={openSections.role}
+                  onToggle={() => toggleSection('role')}
+                  isLoading={loading}
+                />
+
+                <ProfileSection
+                  title="Highest-Ticket Sale"
+                  icon={<Target className="h-4 w-4 text-green-400" />}
+                  answer={currentData.highestTicket}
+                  isOpen={openSections.highest}
+                  onToggle={() => toggleSection('highest')}
+                  isLoading={loading}
+                />
+
+                <ProfileSection
+                  title="Sales Process"
+                  icon={<Target className="h-4 w-4 text-purple-400" />}
+                  answer={currentData.salesProcess}
+                  isOpen={openSections.process}
+                  onToggle={() => toggleSection('process')}
+                  isLoading={loading}
+                />
+
+                <ProfileSection
+                  title="CRM Experience"
+                  icon={<Wrench className="h-4 w-4 text-orange-400" />}
+                  answer={currentData.crmExperience}
+                  isOpen={openSections.crm}
+                  onToggle={() => toggleSection('crm')}
+                  isLoading={loading}
+                />
+
+                <ProfileSection
+                  title="Why Sales?"
+                  icon={<Heart className="h-4 w-4 text-red-400" />}
+                  answer={currentData.whySales}
+                  isOpen={openSections.motivation}
+                  onToggle={() => toggleSection('motivation')}
+                  isLoading={loading}
+                />
+              </div>
+            </section>
+
+            {/* Video Introduction */}
+            {(currentData.videoUrl || currentData.video_url) && (
+              <section>
+                <h3 className="font-semibold text-lg mb-3 text-white">Video Introduction</h3>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open((currentData.videoUrl || currentData.video_url)!, "_blank")}
+                  className="w-full"
+                >
+                  <Video className="h-4 w-4 mr-2" /> Watch Introduction Video
+                </Button>
+              </section>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Footer with actions */}
+        <div className="p-6 border-t border-border">
+          <div className="flex justify-between items-center">
+            {/* Invite Button */}
+            {!currentData.invited && !currentData.hasScheduledInterview && (
               <Button
-                onClick={() => onInvite(applicant)}
-                disabled={!applicant.user_id || isInviting}
-                className="mt-auto"
+                onClick={() => onInvite(currentData)}
+                disabled={!currentData.user_id || isInviting}
               >
                 {isInviting ? (
                   <>
@@ -185,151 +374,21 @@ export function ApplicantDialog({
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4 mr-2" /> Invite to Interview
+                    <UserPlus className="h-4 w-4 mr-2" /> Send Interview Invitation
                   </>
                 )}
               </Button>
             )}
-          </aside>
 
-          {/* Right panel – detailed info */}
-          <main className="flex-1 h-full overflow-hidden">
-            <ScrollArea className="h-full p-8 pr-6">
-              <div className="space-y-8">
-                {/* OVERVIEW */}
-                <section>
-                  <SectionTitle icon={<Briefcase className="h-5 w-5" />}>Overview</SectionTitle>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <OverviewRow
-                      label="Sales Style"
-                      icon={<Target className="h-4 w-4" />}
-                      value={applicant.sales_style}
-                    />
-                    <OverviewRow
-                      label="Highest Ticket Sale"
-                      icon={<DollarSign className="h-4 w-4" />}
-                      value={applicant.highest_ticket}
-                    />
-                    <OverviewRow
-                      label="Applied"
-                      icon={<Calendar className="h-4 w-4" />}
-                      value={`${new Date(
-                        applicant.applied_date
-                      ).toLocaleDateString()} • ${formatDistanceToNow(
-                        new Date(applicant.applied_date),
-                        { addSuffix: true }
-                      )}`}
-                    />
-                    <OverviewRow
-                      label="Current Status"
-                      icon={<Briefcase className="h-4 w-4" />}
-                      value={
-                        applicant.status.charAt(0).toUpperCase() +
-                        applicant.status.slice(1)
-                      }
-                    />
-                  </div>
-
-                  {/* Interview scheduled */}
-                  {applicant.hasScheduledInterview && applicant.scheduledInterview && (
-                    <div className="mt-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-3 text-sm text-green-400">
-                      <CheckCircle className="h-4 w-4" />
-                      Interview scheduled for {new Date(
-                        applicant.scheduledInterview.scheduled_date
-                      ).toLocaleDateString()} at {" "}
-                      {applicant.scheduledInterview.scheduled_time}
-                    </div>
-                  )}
-                </section>
-
-                {/* EXPERIENCE */}
-                {applicant.experience && (
-                  <section>
-                    <SectionTitle icon={<Briefcase className="h-5 w-5" />}>Experience</SectionTitle>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed bg-dark-700 p-4 rounded-lg">
-                      {applicant.experience}
-                    </p>
-                  </section>
-                )}
-
-                {/* TOOLS */}
-                {applicant.tools && (
-                  <section>
-                    <SectionTitle icon={<Wrench className="h-5 w-5" />}>Tools & CRM</SectionTitle>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed bg-dark-700 p-4 rounded-lg">
-                      {applicant.tools}
-                    </p>
-                  </section>
-                )}
-
-                {/* NOTES */}
-                {applicant.notes && (
-                  <section>
-                    <SectionTitle icon={<FileText className="h-5 w-5" />}>Notes</SectionTitle>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed bg-dark-700 p-4 rounded-lg">
-                      {applicant.notes}
-                    </p>
-                  </section>
-                )}
-
-                {/* VIDEO */}
-                {applicant.video_url && (
-                  <section>
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(applicant.video_url!, "_blank")}
-                    >
-                      <Video className="h-4 w-4 mr-2" /> Watch Introduction Video
-                    </Button>
-                  </section>
-                )}
-              </div>
-            </ScrollArea>
-          </main>
+            {/* Close button */}
+            <DialogClose asChild>
+              <Button variant="outline" className="ml-auto">
+                Close
+              </Button>
+            </DialogClose>
+          </div>
         </div>
-
-        {/* Close button in footer (always) */}
-        <DialogFooter className="p-4 border-t border-border bg-background/80">
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
-}
-
-// ---- Helper Components ----
-interface OverviewRowProps {
-  label: string
-  icon: React.ReactNode
-  value?: string | null
-}
-
-const OverviewRow = ({ label, icon, value }: OverviewRowProps) => {
-  if (!value) return null
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2 text-gray-400 text-xs font-medium">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <p className="pl-6 break-words whitespace-pre-wrap text-sm text-white">
-        {value}
-      </p>
-    </div>
-  )
-}
-
-const SectionTitle = ({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode
-  children: React.ReactNode
-}) => (
-  <h3 className="flex items-center gap-2 text-lg font-semibold mb-3">
-    {icon}
-    {children}
-  </h3>
-) 
+} 
