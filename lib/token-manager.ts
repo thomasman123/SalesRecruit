@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { refreshAccessToken, createAuthorizedClient } from './google-calendar'
 import { OAuth2Client } from 'google-auth-library'
 
@@ -23,7 +23,7 @@ export interface TokenData {
 
 // Get tokens for a user with automatic refresh
 export const getUserTokens = async (userId: string): Promise<TokenData | null> => {
-  const supabase = await createServerSupabaseClient()
+  const supabase = getSupabaseAdmin()
   
   try {
     const { data: connection } = await (supabase as any)
@@ -104,7 +104,7 @@ export const refreshTokenForUser = async (
 
 // Save user tokens securely
 export const saveUserTokens = async (userId: string, tokens: TokenData): Promise<void> => {
-  const supabase = await createServerSupabaseClient()
+  const supabase = getSupabaseAdmin()
   
   // Encrypt tokens before saving
   const encryptedAccessToken = encryptToken(tokens.accessToken)

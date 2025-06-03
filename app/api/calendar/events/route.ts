@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createCalendarEvent, CalendarEventData } from '@/lib/google-calendar'
 import { withFreshTokens } from '@/lib/token-manager'
 
@@ -31,20 +32,24 @@ export async function POST(request: NextRequest) {
     const userIds = [recruiterId, salesRepId].filter(Boolean)
     
     // First, check if ALL users have calendar connections AND get their timezones
+    const admin = getSupabaseAdmin()
+
     const connectionAndTimezoneChecks = await Promise.all(
       userIds.map(async (userId) => {
         const [connectionResult, userResult] = await Promise.all([
-          (supabase as any)
+          (admin as any)
             .from('calendar_connections')
             .select('id, user_id')
             .eq('user_id', userId)
             .eq('provider', 'google')
+            .limit(1)
             .single(),
-          supabase
+          (admin as any)
             .from('users')
             .select('timezone')
             .eq('id', userId)
-            .single()
+            .limit(1)
+            .single(),
         ])
         
         return {

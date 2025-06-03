@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { batchRefreshTokens } from '@/lib/token-manager'
 
 // This endpoint should be called by a cron job every hour
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = getSupabaseAdmin()
     
     // Get all calendar connections that might need refresh
     const { data: connections, error } = await (supabase as any)
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = getSupabaseAdmin()
     
     // Get statistics about token expiration
     const { data: connections } = await (supabase as any)

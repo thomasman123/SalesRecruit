@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,22 +17,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
-    // Check calendar connections for all users
+    // Use the service-role client so we can safely read other users' rows while still
+    // respecting any policies that prevent front-end users from doing so.
+    const admin = getSupabaseAdmin()
+
     const connectionChecks = await Promise.all(
       userIds.map(async (userId) => {
-        const { data: connection } = await (supabase as any)
+        const { data: connection } = await admin
           .from('calendar_connections')
           .select('id, user_id, connected_at')
           .eq('user_id', userId)
           .eq('provider', 'google')
+          .limit(1)
           .single()
-        
+
         return {
           userId,
           hasConnection: !!connection,
-          connectedAt: connection?.connected_at
+          connectedAt: connection?.connected_at ?? null,
         }
-      })
+      }),
     )
     
     const allConnected = connectionChecks.every(check => check.hasConnection)
