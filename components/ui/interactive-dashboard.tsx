@@ -25,7 +25,7 @@ export function InteractiveDashboard() {
     return (
       <AnimatedCard 
         variant="interactive" 
-        className="p-6 h-full border-gray-700 bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300"
+        className="p-6 h-full border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
         onMouseEnter={() => setHoveredCard('analytics')}
         onMouseLeave={() => setHoveredCard(null)}
       >
@@ -36,10 +36,10 @@ export function InteractiveDashboard() {
         
         <div className="relative">
           {/* Background card */}
-          <div className="absolute left-4 top-4 w-48 h-16 bg-gray-700/30 rounded-xl opacity-60"></div>
+          <div className="absolute left-4 top-4 w-48 h-16 bg-dark-700/40 rounded-xl opacity-60"></div>
           
           {/* Foreground card */}
-          <div className="relative flex items-center w-48 h-16 bg-gray-800 rounded-xl border border-gray-700 p-4">
+          <div className="relative flex items-center w-48 h-16 bg-dark-800/60 rounded-xl border border-dark-700 p-4">
             {/* Circular progress */}
             <div className="relative mr-4">
               <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 88 88">
@@ -65,7 +65,7 @@ export function InteractiveDashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">👤</span>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export function InteractiveDashboard() {
     return (
       <AnimatedCard 
         variant="interactive" 
-        className="p-6 h-full border-gray-700 bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300"
+        className="p-6 h-full border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
         onMouseEnter={() => setHoveredCard('reports')}
         onMouseLeave={() => setHoveredCard(null)}
       >
@@ -97,7 +97,7 @@ export function InteractiveDashboard() {
           Generate placement summaries instantly—no manual work needed.
         </p>
         
-        <div className="relative h-24 bg-gray-800 rounded-xl border border-gray-700 p-4 overflow-hidden">
+        <div className="relative h-24 bg-dark-800/60 rounded-xl border border-dark-700 p-4 overflow-hidden">
           {/* Animated line chart */}
           <svg className="w-full h-full" viewBox="0 0 200 60">
             <defs>
@@ -149,7 +149,7 @@ export function InteractiveDashboard() {
     return (
       <AnimatedCard 
         variant="interactive" 
-        className="p-6 h-full border-gray-700 bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300"
+        className="p-6 h-full border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
         onMouseEnter={() => setHoveredCard('pipeline')}
         onMouseLeave={() => setHoveredCard(null)}
       >
@@ -158,7 +158,7 @@ export function InteractiveDashboard() {
           Plan and adjust with AI-powered candidate recommendations.
         </p>
         
-        <div className="relative h-24 bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center justify-center gap-4">
+        <div className="relative h-24 bg-dark-800/60 rounded-xl border border-dark-700 p-4 flex items-center justify-center gap-4">
           {/* Donut charts */}
           <div className="relative">
             <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 40 40">
@@ -207,7 +207,7 @@ export function InteractiveDashboard() {
     return (
       <AnimatedCard 
         variant="interactive" 
-        className="p-6 h-full border-gray-700 bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300"
+        className="p-6 h-full border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
         onMouseEnter={() => setHoveredCard('matching')}
         onMouseLeave={() => setHoveredCard(null)}
       >
@@ -216,7 +216,7 @@ export function InteractiveDashboard() {
           Link candidates safely with real-time data syncing.
         </p>
         
-        <div className="relative h-24 bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center justify-center">
+        <div className="relative h-24 bg-dark-800/60 rounded-xl border border-dark-700 p-4 flex items-center justify-center">
           {/* Animated loading bars */}
           <div className="space-y-2 w-full max-w-32">
             {[0.8, 0.6, 0.9, 0.4, 0.7].map((width, index) => (
@@ -244,7 +244,7 @@ export function InteractiveDashboard() {
     return (
       <AnimatedCard 
         variant="interactive" 
-        className="p-6 h-full border-gray-700 bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300"
+        className="p-6 h-full border-dark-600 bg-dark-800/30 hover:bg-dark-800/50 transition-all duration-300"
         onMouseEnter={() => setHoveredCard('growth')}
         onMouseLeave={() => setHoveredCard(null)}
       >
@@ -253,7 +253,7 @@ export function InteractiveDashboard() {
           View key metrics and team trends at a glance.
         </p>
         
-        <div className="relative h-24 bg-gray-800 rounded-xl border border-gray-700 p-4 flex items-center justify-end">
+        <div className="relative h-24 bg-dark-800/60 rounded-xl border border-dark-700 p-4 flex items-center justify-end">
           {/* Large score number with animation */}
           <div className="relative">
             <div 
