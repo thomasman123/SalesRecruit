@@ -62,15 +62,21 @@ export function RecruiterJobsContent() {
     if (!error && data) {
       // Get applicant counts
       const jobIds = data.map(job => job.id)
-      const { data: applicantCounts } = await supabase
-        .from('applicants')
-        .select('job_id')
-        .in('job_id', jobIds)
 
-      const countsMap = applicantCounts?.reduce((acc, app) => {
-        acc[app.job_id] = (acc[app.job_id] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
+      let countsMap: Record<string, number> = {}
+      if (jobIds.length > 0) {
+        const { data: applicantCounts, error: applicantError } = await supabase
+          .from('applicants')
+          .select('job_id')
+          .in('job_id', jobIds)
+
+        if (!applicantError && applicantCounts) {
+          countsMap = applicantCounts.reduce((acc, app) => {
+            acc[app.job_id] = (acc[app.job_id] || 0) + 1
+            return acc
+          }, {} as Record<string, number>)
+        }
+      }
 
       const jobsWithCounts = data.map(job => ({
         ...job,
