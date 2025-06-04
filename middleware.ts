@@ -37,23 +37,27 @@ export async function middleware(request: NextRequest) {
       error: sessionError
     } = await supabase.auth.getSession()
 
-    // Only try to get user if we have a session
-    let user = null
-    if (session && !sessionError) {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-      
-      if (authError) {
-        console.error("Middleware auth error:", authError)
-        // If we can't get the user but have a session, try to refresh
-        if (authError.message === "Auth session missing!" && session) {
-          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession()
-          if (refreshedSession) {
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser()
-            user = refreshedUser
+    // Prefer the user that comes in the session object (avoids the extra network round-trip).
+    let user = session?.user ?? null
+
+    // Fallback: if session exists but user is somehow missing, call getUser()
+    if (!user && session && !sessionError) {
+      try {
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+        if (!authError) {
+          user = authUser
+        } else {
+          console.error("Middleware auth error:", authError)
+          if (authError.message === "Auth session missing!" && session) {
+            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession()
+            if (refreshedSession) {
+              user = refreshedSession.user
+            }
           }
         }
-      } else {
-        user = authUser
+      } catch (err) {
+        console.error("middleware getUser() failure", err)
       }
     }
 
