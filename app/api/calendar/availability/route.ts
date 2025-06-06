@@ -27,31 +27,44 @@ export async function POST(request: NextRequest) {
     const recruiterTimezone = recruiterUser.data?.timezone || 'America/New_York'
     const salesRepTimezone = salesRepUser.data?.timezone || 'America/New_York'
 
-    const dayOfWeek = new Date(date).getDay()
+    // Helper to get day-of-week (0-6) in a specific timezone for the given date string (YYYY-MM-DD)
+    const getDayOfWeekInTimezone = (dateStr: string, tz: string): number => {
+      try {
+        // Use noon UTC to avoid DST edge cases
+        const baseDate = new Date(dateStr + 'T12:00:00Z')
+        const weekdayStr = baseDate.toLocaleString('en-US', { weekday: 'short', timeZone: tz })
+        const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+        return map[weekdayStr] ?? baseDate.getUTCDay()
+      } catch (err) {
+        return new Date(dateStr).getUTCDay()
+      }
+    }
 
-    // Fetch both users' availability in parallel
+    const recruiterDayOfWeek = getDayOfWeekInTimezone(date, recruiterTimezone)
+    const salesRepDayOfWeek = getDayOfWeekInTimezone(date, salesRepTimezone)
+
+    // Fetch both users' availability in parallel (allow multiple rows per user)
     const [recruiterResult, salesRepResult] = await Promise.all([
       supabase
         .from('calendar_availability')
         .select('*')
         .eq('user_id', recruiterId)
-        .eq('day_of_week', dayOfWeek)
-        .eq('is_available', true)
-        .single(),
+        .eq('day_of_week', recruiterDayOfWeek)
+        .eq('is_available', true),
       supabase
         .from('calendar_availability')
         .select('*')
         .eq('user_id', salesRepId)
-        .eq('day_of_week', dayOfWeek)
+        .eq('day_of_week', salesRepDayOfWeek)
         .eq('is_available', true)
-        .single()
     ])
 
-    const recruiterAvailability = recruiterResult.data
-    const salesRepAvailability = salesRepResult.data
+    const recruiterAvailability = recruiterResult.data as any[] | null
+    const salesRepAvailability = salesRepResult.data as any[] | null
 
     // If either user is not available on this day, return empty slots
-    if (!recruiterAvailability || !salesRepAvailability) {
+    if (!recruiterAvailability || recruiterAvailability.length === 0 ||
+        !salesRepAvailability || salesRepAvailability.length === 0) {
       return NextResponse.json({ 
         availableSlots: [],
         message: !recruiterAvailability ? 'Recruiter not available on this day' : 
@@ -60,6 +73,14 @@ export async function POST(request: NextRequest) {
         salesRepTimezone
       })
     }
+
+    // We'll merge multiple availability windows into one continuous set for each user
+    // by taking earliest start and latest end. For more granular control, we could iterate.
+    const minStart = (arr: any[]) => arr.reduce((min, a) => a.start_time < min ? a.start_time : min, arr[0].start_time)
+    const maxEnd = (arr: any[]) => arr.reduce((max, a) => a.end_time > max ? a.end_time : max, arr[0].end_time)
+
+    const recruiterAvail = { start_time: minStart(recruiterAvailability), end_time: maxEnd(recruiterAvailability) }
+    const salesRepAvail = { start_time: minStart(salesRepAvailability), end_time: maxEnd(salesRepAvailability) }
 
     // Get existing interviews for both users on this date
     const { data: existingInterviews } = await supabase
@@ -74,10 +95,10 @@ export async function POST(request: NextRequest) {
     // In production, you'd want to handle cases where users are in very different timezones
     
     // Calculate overlapping availability in UTC minutes
-    const recruiterStart = parseTime(recruiterAvailability.start_time)
-    const recruiterEnd = parseTime(recruiterAvailability.end_time)
-    const salesRepStart = parseTime(salesRepAvailability.start_time)
-    const salesRepEnd = parseTime(salesRepAvailability.end_time)
+    const recruiterStart = parseTime(recruiterAvail.start_time)
+    const recruiterEnd = parseTime(recruiterAvail.end_time)
+    const salesRepStart = parseTime(salesRepAvail.start_time)
+    const salesRepEnd = parseTime(salesRepAvail.end_time)
 
     // If timezones are different, we need to convert one user's availability to the other's timezone
     // For now, we'll work in the sales rep's timezone (the person booking)
