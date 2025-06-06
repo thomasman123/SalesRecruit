@@ -106,15 +106,6 @@ export function BaseHomepage({ userType, headline, subheadline }: BaseHomepagePr
       if (error) throw error
 
       if (data.user && data.user.id && data.user.email) {
-        // Fire Facebook "SubmitApplication" event for recruiter signups
-        if (signupData.role === 'recruiter' && typeof window !== 'undefined' && (window as any).fbq) {
-          try {
-            (window as any).fbq('track', 'SubmitApplication')
-          } catch (err) {
-            console.error('FBQ SubmitApplication error', err)
-          }
-        }
-
         toast({
           title: "Verification email sent",
           description: "Please check your email to verify your account before logging in.",

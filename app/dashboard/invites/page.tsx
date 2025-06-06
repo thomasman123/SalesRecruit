@@ -187,12 +187,23 @@ export default function InvitesPage() {
         })
       })
 
+      // Handle non-200 responses explicitly
+      if (!checkResponse.ok) {
+        const errorBody = await checkResponse.json().catch(() => ({})) as { error?: string; details?: string }
+        toast({
+          title: 'Connection check failed',
+          description: errorBody?.error || errorBody?.details || 'Unable to verify Google Calendar connections. Please try again later.',
+          variant: 'destructive'
+        })
+        return
+      }
+
       const checkResult = await checkResponse.json()
 
       if (!checkResult.allConnected) {
         // Determine which user needs to connect
-        const currentUserNeedsConnection = checkResult.usersWithoutConnection.includes(user.id)
-        const recruiterNeedsConnection = checkResult.usersWithoutConnection.includes(invite.recruiterId)
+        const currentUserNeedsConnection = checkResult.usersWithoutConnection?.includes(user.id)
+        const recruiterNeedsConnection = checkResult.usersWithoutConnection?.includes(invite.recruiterId)
 
         let message = ''
         if (currentUserNeedsConnection && recruiterNeedsConnection) {

@@ -158,6 +158,8 @@ export function ApplicantsList({ applicants: initialApplicants, jobId, jobTitle 
       })
       
       toast.success("Invitation sent successfully")
+      // Automatically close the profile modal after sending the invite
+      setProfileModalOpen(false)
     } catch (error) {
       toast.error("Failed to send invitation")
       setIsInviting(prev => ({ ...prev, [applicant.id]: false }))
