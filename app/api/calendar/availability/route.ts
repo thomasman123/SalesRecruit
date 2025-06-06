@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { withFreshTokens } from '@/lib/token-manager'
+import { getAvailability as gCalBusy } from '@/lib/google-calendar'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,62 +47,39 @@ export async function POST(request: NextRequest) {
     const recruiterDayOfWeek = getDayOfWeekInTimezone(date, recruiterTimezone)
     const salesRepDayOfWeek = getDayOfWeekInTimezone(date, salesRepTimezone)
 
-    // Fetch both users' availability in parallel (allow multiple rows per user)
-    const [recruiterResult, salesRepResult] = await Promise.all([
-      admin
-        .from('calendar_availability')
-        .select('*')
-        .eq('user_id', recruiterId)
-        .eq('day_of_week', recruiterDayOfWeek)
-        .eq('is_available', true),
-      admin
-        .from('calendar_availability')
-        .select('*')
-        .eq('user_id', salesRepId)
-        .eq('day_of_week', salesRepDayOfWeek)
-        .eq('is_available', true)
+    // Default working window 08:00 - 18:00 sales rep timezone
+    const WORK_START = '08:00'
+    const WORK_END = '18:00'
+
+    const recruiterAvail = { start_time: WORK_START, end_time: WORK_END }
+    const salesRepAvail = { start_time: WORK_START, end_time: WORK_END }
+
+    // Pull busy blocks directly from Google Calendar
+    const dayStartISO = new Date(`${date}T00:00:00${salesRepTimezone.startsWith('Etc/') ? 'Z' : ''}`).toISOString()
+    const dayEndISO = new Date(`${date}T23:59:59${salesRepTimezone.startsWith('Etc/') ? 'Z' : ''}`).toISOString()
+
+    const [recruiterBusy, salesRepBusy] = await Promise.all([
+      withFreshTokens(recruiterId, async (client)=>{
+        return await gCalBusy(client, dayStartISO, dayEndISO)
+      }),
+      withFreshTokens(salesRepId, async (client)=>{
+        return await gCalBusy(client, dayStartISO, dayEndISO)
+      })
     ])
 
-    const recruiterAvailability = recruiterResult.data as any[] | null
-    const salesRepAvailability = salesRepResult.data as any[] | null
+    const busyToBlocks = (busy:any[])=> busy.map((b:any)=>({ start: new Date(b.start).toISOString(), end: new Date(b.end).toISOString() }))
 
-    // If either user is not available on this day, return empty slots
-    if (!recruiterAvailability || recruiterAvailability.length === 0 ||
-        !salesRepAvailability || salesRepAvailability.length === 0) {
-      return NextResponse.json({ 
-        availableSlots: [],
-        message: !recruiterAvailability ? 'Recruiter not available on this day' : 
-                 'Sales rep not available on this day',
-        recruiterTimezone,
-        salesRepTimezone
-      })
-    }
+    const existingBusy: any[] = [...busyToBlocks(recruiterBusy||[]), ...busyToBlocks(salesRepBusy||[])]
 
-    // We'll merge multiple availability windows into one continuous set for each user
-    // by taking earliest start and latest end. For more granular control, we could iterate.
-    const minStart = (arr: any[]) => arr.reduce((min, a) => a.start_time < min ? a.start_time : min, arr[0].start_time)
-    const maxEnd = (arr: any[]) => arr.reduce((max, a) => a.end_time > max ? a.end_time : max, arr[0].end_time)
-
-    const recruiterAvail = { start_time: minStart(recruiterAvailability), end_time: maxEnd(recruiterAvailability) }
-    const salesRepAvail = { start_time: minStart(salesRepAvailability), end_time: maxEnd(salesRepAvailability) }
-
-    // Get existing interviews for both users on this date
-    const { data: existingInterviews } = await admin
-      .from('scheduled_interviews')
-      .select('scheduled_time, duration_minutes')
-      .eq('scheduled_date', date)
-      .or(`recruiter_id.eq.${recruiterId},sales_rep_id.eq.${salesRepId}`)
-      .eq('status', 'scheduled')
-
-    // Convert times to minutes since midnight in each user's timezone
+    // Convert times to minutes since midnight in salesrep TZ 
     // For simplicity, we'll work with the date as if both users are in the same day
     // In production, you'd want to handle cases where users are in very different timezones
-    
+
     // Calculate overlapping availability in UTC minutes
-    const recruiterStart = parseTime(String(recruiterAvail.start_time))
-    const recruiterEnd = parseTime(String(recruiterAvail.end_time))
-    const salesRepStart = parseTime(String(salesRepAvail.start_time))
-    const salesRepEnd = parseTime(String(salesRepAvail.end_time))
+    const recruiterStart = parseTime(recruiterAvail.start_time)
+    const recruiterEnd = parseTime(recruiterAvail.end_time)
+    const salesRepStart = parseTime(salesRepAvail.start_time)
+    const salesRepEnd = parseTime(salesRepAvail.end_time)
 
     // If timezones are different, we need to convert one user's availability to the other's timezone
     // For now, we'll work in the sales rep's timezone (the person booking)
@@ -146,14 +125,14 @@ export async function POST(request: NextRequest) {
     for (let time = overlapStart; time + slotDuration <= overlapEnd; time += slotDuration) {
       const slotTime = formatTime(time % (24 * 60)) // Handle times that go past midnight
       
-      // Check if this slot conflicts with any existing interview
-      const isConflict = existingInterviews?.some(interview => {
-        const interviewStart = parseTime(String((interview as any).scheduled_time))
-        const interviewEnd = interviewStart + Number((interview as any).duration_minutes ?? 30)
+      // Check if slot conflicts with busy periods
+      const isConflict = existingBusy.some(b=>{
+        const busyStart = new Date(b.start)
+        const busyMinutes = busyStart.getHours()*60+busyStart.getMinutes()
+        const busyEnd = new Date(b.end)
+        const busyEndMin = busyEnd.getHours()*60+busyEnd.getMinutes()
         const slotEnd = time + slotDuration
-        
-        // Check for overlap
-        return (time < interviewEnd && slotEnd > interviewStart)
+        return (time < busyEndMin && slotEnd > busyMinutes)
       })
 
       if (!isConflict) {
