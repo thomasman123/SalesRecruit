@@ -564,6 +564,14 @@ export default function InvitesPage() {
               </div>
             ) as any,
           })
+
+          // Mark applicant as scheduled for recruiter lists
+          if (selectedInvite.applicantId) {
+            await supabase
+              .from('applicants')
+              .update({ hasScheduledInterview: true, invited: true })
+              .eq('id', parseInt(selectedInvite.applicantId as string))
+          }
         } catch (calendarError) {
           console.error("Error creating calendar events:", calendarError)
           

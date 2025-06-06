@@ -101,79 +101,51 @@ export async function POST(request: NextRequest) {
     const startUtc = toUtc(scheduledDate, scheduledTime, salesRepTz)
     const endUtc = new Date(startUtc.getTime() + durationMinutes * 60 * 1000)
 
-    // Create calendar events for each connected user
+    // Create calendar event only on recruiter calendar (as the authoritative source)
     const results = []
     let hasAnyError = false
-    
-    for (const userId of userIds) {
-      try {
-        // Get user's timezone
-        const userTimezone = userTimezones[userId]
-        
-        // Preserve local times by building plain date-time strings; Google will interpret with the provided timeZone
-        const startDateTimeStr = formatForTz(startUtc, userTimezone)
-        const endDateTimeStr = formatForTz(endUtc, userTimezone)
 
-        const eventData: CalendarEventData = {
-          summary: `heliosrecruit.com interview with ${applicantName} and ${recruiterName}`,
-          description: `Interview for ${jobTitle} position at ${company}.\n\nAttendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative\n\nMeeting Link: Google Meet will be automatically generated`,
-          startDateTime: startDateTimeStr,
-          endDateTime: endDateTimeStr,
-          timeZone: userTimezone, // Use the user's timezone
-          attendees: [
-            { email: recruiterEmail, displayName: recruiterName },
-            { email: salesRepEmail, displayName: 'Sales Representative' },
-          ],
-          conferenceData: {
-            createRequest: {
-              requestId: `${Date.now()}-${Math.random().toString(36).substring(7)}`,
-              conferenceSolutionKey: {
-                type: 'hangoutsMeet'
-              }
-            }
-          }
-        }
+    const ownerId = recruiterId || userIds[0]
+    try {
+      const userTimezone = userTimezones[ownerId]
 
-        // Use withFreshTokens to handle automatic token refresh
-        const event = await withFreshTokens(userId, async (oauth2Client) => {
-          return await createCalendarEvent(oauth2Client, eventData)
-        })
+      const startDateTimeStr = formatForTz(startUtc, userTimezone)
+      const endDateTimeStr = formatForTz(endUtc, userTimezone)
 
-        if (event) {
-          results.push({
-            userId,
-            eventId: event.id,
-            meetingLink: event.hangoutLink,
-            status: 'success',
-          })
-        } else {
-          // This shouldn't happen since we checked connections above, but handle it
-          hasAnyError = true
-          results.push({
-            userId,
-            status: 'error',
-            error: 'Failed to create calendar event',
-          })
-        }
+      const eventData: CalendarEventData = {
+        summary: `heliosrecruit.com interview with ${applicantName} and ${recruiterName}`,
+        description: `Interview for ${jobTitle} position at ${company}.
 
-      } catch (error) {
-        console.error(`Error creating calendar event for user ${userId}:`, error)
-        hasAnyError = true
-        results.push({
-          userId,
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        })
+Attendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative\n\nMeeting Link: Google Meet will be automatically generated`,
+        startDateTime: startDateTimeStr,
+        endDateTime: endDateTimeStr,
+        timeZone: userTimezone,
+        attendees: [
+          { email: recruiterEmail, displayName: recruiterName },
+          { email: salesRepEmail, displayName: 'Sales Representative' },
+        ],
+        conferenceData: {
+          createRequest: {
+            requestId: `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
       }
-    }
 
-    // If any calendar creation failed, return error
-    if (hasAnyError) {
-      return NextResponse.json({
-        error: 'Failed to create calendar events',
-        details: 'Unable to create calendar events for all participants. Please ensure all users have properly connected their Google Calendar.',
-        results
-      }, { status: 500 })
+      const event = await withFreshTokens(ownerId, async (client) => {
+        return await createCalendarEvent(client, eventData)
+      })
+
+      if (event) {
+        results.push({ userId: ownerId, eventId: event.id, meetingLink: event.hangoutLink, status: 'success' })
+      } else {
+        hasAnyError = true
+        results.push({ userId: ownerId, status: 'error', error: 'Failed to create calendar event' })
+      }
+    } catch (error) {
+      console.error(`Error creating calendar event:`, error)
+      hasAnyError = true
+      results.push({ userId: ownerId, status: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
     }
 
     // Update scheduled interview with meeting link
