@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         // Query without filtering by provider to prevent 400 errors when the column is missing.
         const { data: connection, error: connError } = await admin
           .from('calendar_connections')
-          .select('id, user_id, connected_at')
+          .select('id, user_id, created_at')
           .eq('user_id', userId)
           .limit(1)
           .single()
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         return {
           userId,
           hasConnection: !!connection,
-          connectedAt: connection?.connected_at ?? null,
+          connectedAt: connection?.created_at ?? null,
         }
       }),
     )
