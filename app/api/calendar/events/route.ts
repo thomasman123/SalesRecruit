@@ -88,16 +88,20 @@ export async function POST(request: NextRequest) {
         // Get user's timezone
         const userTimezone = userTimezones[userId]
         
-        // Prepare event data with timezone-aware dates
-        const startDateTime = new Date(`${scheduledDate} ${scheduledTime}`)
-        const endDateTime = new Date(startDateTime)
-        endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes)
+        // Preserve local times by building plain date-time strings; Google will interpret with the provided timeZone
+        const pad = (n:number)=> n.toString().padStart(2,'0')
+        const [hh, mm] = scheduledTime.split(':').map(Number)
+        const startDateTimeStr = `${scheduledDate}T${pad(hh)}:${pad(mm)}:00`
+        const endMinutes = hh*60+mm + durationMinutes
+        const endH = Math.floor(endMinutes/60) % 24
+        const endM = endMinutes % 60
+        const endDateTimeStr = `${scheduledDate}T${pad(endH)}:${pad(endM)}:00`
 
         const eventData: CalendarEventData = {
           summary: `heliosrecruit.com interview with ${applicantName} and ${recruiterName}`,
           description: `Interview for ${jobTitle} position at ${company}.\n\nAttendees:\n- ${applicantName} (Candidate)\n- ${recruiterName} (Recruiter)\n- Sales Representative\n\nMeeting Link: Google Meet will be automatically generated`,
-          startDateTime: startDateTime.toISOString(),
-          endDateTime: endDateTime.toISOString(),
+          startDateTime: startDateTimeStr,
+          endDateTime: endDateTimeStr,
           timeZone: userTimezone, // Use the user's timezone
           attendees: [
             { email: recruiterEmail, displayName: recruiterName },

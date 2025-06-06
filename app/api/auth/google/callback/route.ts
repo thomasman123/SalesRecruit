@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { getTokensFromCode } from '@/lib/google-calendar'
+import { getTokensFromCode, createAuthorizedClient } from '@/lib/google-calendar'
 import { parseOAuthState } from '@/lib/oauth-config'
 import { saveUserTokens, TokenData } from '@/lib/token-manager'
+import { google } from 'googleapis'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -84,6 +85,23 @@ export async function GET(request: NextRequest) {
 
     // Log successful connection for monitoring
     console.log(`Calendar connected for user ${userId} using config ${configName}`)
+
+    // ------- Fetch user's Google Calendar primary timezone -------
+    try {
+      const oauthClient = createAuthorizedClient(tokens.access_token, tokens.refresh_token, clientId)
+      const calendar = google.calendar({ version: 'v3', auth: oauthClient })
+      const tzRes = await calendar.settings.get({ setting: 'timezone' })
+      const googleTz = tzRes.data?.value as string | undefined
+
+      if (googleTz) {
+        await (supabase as any)
+          .from('users')
+          .update({ timezone: googleTz })
+          .eq('id', userId)
+      }
+    } catch (tzErr) {
+      console.error('Failed to fetch/store Google timezone:', tzErr)
+    }
 
     // Redirect back to calendar settings with success
     return NextResponse.redirect(new URL('/dashboard/calendar?success=connected', request.url))
