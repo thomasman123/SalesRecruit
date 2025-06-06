@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient()
+    const admin = getSupabaseAdmin()
     const { recruiterId, salesRepId, date } = await request.json()
     
     if (!recruiterId || !salesRepId || !date) {
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
     const salesRepAvail = { start_time: minStart(salesRepAvailability), end_time: maxEnd(salesRepAvailability) }
 
     // Get existing interviews for both users on this date
-    const { data: existingInterviews } = await supabase
+    const { data: existingInterviews } = await admin
       .from('scheduled_interviews')
       .select('scheduled_time, duration_minutes')
       .eq('scheduled_date', date)
@@ -95,10 +97,10 @@ export async function POST(request: NextRequest) {
     // In production, you'd want to handle cases where users are in very different timezones
     
     // Calculate overlapping availability in UTC minutes
-    const recruiterStart = parseTime(recruiterAvail.start_time)
-    const recruiterEnd = parseTime(recruiterAvail.end_time)
-    const salesRepStart = parseTime(salesRepAvail.start_time)
-    const salesRepEnd = parseTime(salesRepAvail.end_time)
+    const recruiterStart = parseTime(String(recruiterAvail.start_time))
+    const recruiterEnd = parseTime(String(recruiterAvail.end_time))
+    const salesRepStart = parseTime(String(salesRepAvail.start_time))
+    const salesRepEnd = parseTime(String(salesRepAvail.end_time))
 
     // If timezones are different, we need to convert one user's availability to the other's timezone
     // For now, we'll work in the sales rep's timezone (the person booking)
@@ -146,8 +148,8 @@ export async function POST(request: NextRequest) {
       
       // Check if this slot conflicts with any existing interview
       const isConflict = existingInterviews?.some(interview => {
-        const interviewStart = parseTime(interview.scheduled_time)
-        const interviewEnd = interviewStart + (interview.duration_minutes || 30)
+        const interviewStart = parseTime(String((interview as any).scheduled_time))
+        const interviewEnd = interviewStart + Number((interview as any).duration_minutes ?? 30)
         const slotEnd = time + slotDuration
         
         // Check for overlap
