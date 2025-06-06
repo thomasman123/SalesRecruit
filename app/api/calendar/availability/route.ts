@@ -47,13 +47,13 @@ export async function POST(request: NextRequest) {
 
     // Fetch both users' availability in parallel (allow multiple rows per user)
     const [recruiterResult, salesRepResult] = await Promise.all([
-      supabase
+      admin
         .from('calendar_availability')
         .select('*')
         .eq('user_id', recruiterId)
         .eq('day_of_week', recruiterDayOfWeek)
         .eq('is_available', true),
-      supabase
+      admin
         .from('calendar_availability')
         .select('*')
         .eq('user_id', salesRepId)
