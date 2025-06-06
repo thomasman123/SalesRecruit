@@ -748,26 +748,7 @@ export default function InvitesPage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {timezoneInfo.recruiterTimezone && timezoneInfo.salesRepTimezone && 
-             timezoneInfo.recruiterTimezone !== timezoneInfo.salesRepTimezone && (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-blue-400" />
-                    <span className="text-gray-300">Your time ({timezoneInfo.salesRepTimezone}):</span>
-                    <span className="text-white font-mono">
-                      {formatTimeInTimezone(currentTime, timezoneInfo.salesRepTimezone || 'Australia/Sydney')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-300">Recruiter time ({timezoneInfo.recruiterTimezone}):</span>
-                    <span className="text-white font-mono">
-                      {formatTimeInTimezone(currentTime, timezoneInfo.recruiterTimezone || 'Australia/Sydney')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Timezone comparison banner removed as timezone info is deprecated */}
             
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -788,19 +769,6 @@ export default function InvitesPage() {
 
               <div>
                 <Label className="text-gray-300 mb-2">Available Times</Label>
-                {timezoneInfo.recruiterTimezone && timezoneInfo.recruiterTimezone !== timezoneInfo.salesRepTimezone && (
-                  <div className="mb-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-blue-400" />
-                      <span className="text-blue-300">
-                        Recruiter timezone: {timezoneInfo.recruiterTimezone}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Times are shown in your timezone ({timezoneInfo.salesRepTimezone})
-                    </p>
-                  </div>
-                )}
                 <ScrollArea className="h-[300px] border border-dark-600 rounded-lg p-2">
                   <div className="space-y-2">
                     {loadingSlots ? (
