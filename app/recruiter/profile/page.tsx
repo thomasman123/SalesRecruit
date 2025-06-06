@@ -8,9 +8,23 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Lock, Calendar, User, Mail, Building, Edit2, Save, X } from "lucide-react"
+import { Lock, Calendar, User, Mail, Building, Edit2, Save, X, Globe } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "@/components/ui/use-toast"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+
+// Timezone options (reuse from dashboard profile)
+const TIMEZONES = [
+  { value: "Australia/Sydney", label: "Australian Eastern Time (Sydney)" },
+  { value: "America/New_York", label: "Eastern Time (New York)" },
+  { value: "America/Chicago", label: "Central Time (Chicago)" },
+  { value: "America/Denver", label: "Mountain Time (Denver)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
+  { value: "Europe/London", label: "GMT (London)" },
+  { value: "Europe/Paris", label: "Central European Time (Paris)" },
+  { value: "Asia/Tokyo", label: "Japan Time (Tokyo)" },
+  { value: "Asia/Singapore", label: "Singapore Time" },
+]
 
 export default function RecruiterProfilePage() {
   const [userData, setUserData] = useState<any>(null)
@@ -35,7 +49,8 @@ export default function RecruiterProfilePage() {
         setEditData({
           name: data?.name || '',
           email: data?.email || '',
-          company: data?.company || ''
+          company: data?.company || '',
+          timezone: data?.timezone || 'Australia/Sydney'
         })
       }
       setLoading(false)
@@ -56,7 +71,8 @@ export default function RecruiterProfilePage() {
         .from('users')
         .update({
           name: editData.name,
-          company: editData.company
+          company: editData.company,
+          timezone: editData.timezone
         })
         .eq('id', user.id)
 
@@ -65,7 +81,8 @@ export default function RecruiterProfilePage() {
       setUserData((prev: any) => ({
         ...prev,
         name: editData.name,
-        company: editData.company
+        company: editData.company,
+        timezone: editData.timezone
       }))
       setEditing(false)
       toast({
@@ -89,7 +106,8 @@ export default function RecruiterProfilePage() {
     setEditData({
       name: userData?.name || '',
       email: userData?.email || '',
-      company: userData?.company || ''
+      company: userData?.company || '',
+      timezone: userData?.timezone || 'Australia/Sydney'
     })
   }
 
@@ -183,6 +201,22 @@ export default function RecruiterProfilePage() {
                       placeholder="Enter your company name"
                     />
                   </div>
+                  <div>
+                    <Label className="text-gray-300">Timezone</Label>
+                    <Select value={editData.timezone} onValueChange={(v)=>setEditData({...editData, timezone: v})}>
+                      <SelectTrigger className="w-full bg-dark-700 border-dark-600 text-white">
+                        <Globe className="h-4 w-4 mr-2 text-purple-400" />
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-dark-700 border-dark-600">
+                        {TIMEZONES.map(tz=> (
+                          <SelectItem key={tz.value} value={tz.value} className="text-gray-300 hover:bg-dark-600 hover:text-white">
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-2">
                     <AnimatedButton
                       variant="purple"
@@ -233,6 +267,10 @@ export default function RecruiterProfilePage() {
                     <div className="flex items-center gap-3 text-gray-300">
                       <Building className="w-4 h-4 text-purple-400" />
                       <span>Company: {userData?.company || 'Not specified'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-300">
+                      <Globe className="w-4 h-4 text-purple-400" />
+                      <span>Timezone: {userData?.timezone || 'Not set'}</span>
                     </div>
                   </div>
                 </>
