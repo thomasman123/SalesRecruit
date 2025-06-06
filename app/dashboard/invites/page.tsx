@@ -105,7 +105,7 @@ export default function InvitesPage() {
               id: notif.id,
               jobId: metadata.jobId || 0,
               jobTitle,
-              company: metadata.company || "Unknown Company",
+              company: metadata.company || jobTitle,
               priceRange: metadata.priceRange || "Not specified",
               industry: metadata.industry || "Not specified",
               remote: metadata.remote || false,
@@ -123,7 +123,7 @@ export default function InvitesPage() {
           // Otherwise, parse the body for all notifications to get job details (older notifications)
           const lines = body.split('\n').map((line: string) => line.trim())
           
-          let company = "Unknown Company"
+          let company = jobTitle
           let priceRange = "Not specified"
           let industry = "Not specified"
           let remote = false
