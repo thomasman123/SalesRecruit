@@ -23,13 +23,18 @@ export async function POST(request: NextRequest) {
 
     const connectionChecks = await Promise.all(
       userIds.map(async (userId) => {
-        const { data: connection } = await admin
+        // Some workspaces might not have the `provider` column yet (legacy schema).
+        // Query without filtering by provider to prevent 400 errors when the column is missing.
+        const { data: connection, error: connError } = await admin
           .from('calendar_connections')
           .select('id, user_id, connected_at')
           .eq('user_id', userId)
-          .eq('provider', 'google')
           .limit(1)
           .single()
+
+        if (connError) {
+          console.error('Error querying calendar_connections for', userId, connError.message)
+        }
 
         return {
           userId,
