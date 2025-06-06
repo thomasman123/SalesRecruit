@@ -4,6 +4,23 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createCalendarEvent, CalendarEventData } from '@/lib/google-calendar'
 import { withFreshTokens } from '@/lib/token-manager'
 
+// Utility to convert sales rep local date/time to UTC Date using timezone string
+const toUtc = (dateStr: string, timeStr: string, tz: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const [hour, minute] = timeStr.split(':').map(Number)
+  // Create date assuming it's in the target timezone, then find equivalent UTC
+  const asLocal = new Date(Date.UTC(year, month - 1, day, hour, minute))
+  const localInTarget = new Date(asLocal.toLocaleString('en-US', { timeZone: tz }))
+  const offset = asLocal.getTime() - localInTarget.getTime()
+  return new Date(asLocal.getTime() + offset)
+}
+
+const formatForTz = (utc: Date, tz: string): string => {
+  const zoned = new Date(utc.toLocaleString('en-US', { timeZone: tz }))
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${zoned.getFullYear()}-${pad(zoned.getMonth() + 1)}-${pad(zoned.getDate())}T${pad(zoned.getHours())}:${pad(zoned.getMinutes())}:00`
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient()
@@ -79,6 +96,11 @@ export async function POST(request: NextRequest) {
       return acc
     }, {} as Record<string, string>)
     
+    // Use sales rep's timezone as anchor instant
+    const salesRepTz = userTimezones[salesRepId]
+    const startUtc = toUtc(scheduledDate, scheduledTime, salesRepTz)
+    const endUtc = new Date(startUtc.getTime() + durationMinutes * 60 * 1000)
+
     // Create calendar events for each connected user
     const results = []
     let hasAnyError = false
@@ -89,13 +111,8 @@ export async function POST(request: NextRequest) {
         const userTimezone = userTimezones[userId]
         
         // Preserve local times by building plain date-time strings; Google will interpret with the provided timeZone
-        const pad = (n:number)=> n.toString().padStart(2,'0')
-        const [hh, mm] = scheduledTime.split(':').map(Number)
-        const startDateTimeStr = `${scheduledDate}T${pad(hh)}:${pad(mm)}:00`
-        const endMinutes = hh*60+mm + durationMinutes
-        const endH = Math.floor(endMinutes/60) % 24
-        const endM = endMinutes % 60
-        const endDateTimeStr = `${scheduledDate}T${pad(endH)}:${pad(endM)}:00`
+        const startDateTimeStr = formatForTz(startUtc, userTimezone)
+        const endDateTimeStr = formatForTz(endUtc, userTimezone)
 
         const eventData: CalendarEventData = {
           summary: `heliosrecruit.com interview with ${applicantName} and ${recruiterName}`,
