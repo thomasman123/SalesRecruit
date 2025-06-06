@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         return {
           userId,
           hasConnection: !!connectionResult.data,
-          timezone: userResult.data?.timezone || 'America/New_York'
+          timezone: userResult.data?.timezone || 'Australia/Sydney'
         }
       })
     )

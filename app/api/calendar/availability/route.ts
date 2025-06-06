@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
         .single()
     ])
 
-    const recruiterTimezone = recruiterUser.data?.timezone || 'America/New_York'
-    const salesRepTimezone = salesRepUser.data?.timezone || 'America/New_York'
+    const recruiterTimezone = recruiterUser.data?.timezone || 'Australia/Sydney'
+    const salesRepTimezone = salesRepUser.data?.timezone || 'Australia/Sydney'
 
     // Helper to get day-of-week (0-6) in a specific timezone for the given date string (YYYY-MM-DD)
     const getDayOfWeekInTimezone = (dateStr: string, tz: string): number => {

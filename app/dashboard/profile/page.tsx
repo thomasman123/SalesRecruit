@@ -45,7 +45,7 @@ export default function ProfilePage() {
     email: "",
     phone: "",
     location: "",
-    timezone: "America/New_York",
+    timezone: "Australia/Sydney",
     bio: "",
     avatarUrl: "",
 
@@ -104,7 +104,7 @@ export default function ProfilePage() {
             email: user.email || "",
             phone: user.user_metadata?.phone || "",
             location: user.user_metadata?.location || "",
-            timezone: userData?.timezone || user.user_metadata?.timezone || "America/New_York",
+            timezone: userData?.timezone || user.user_metadata?.timezone || "Australia/Sydney",
             bio: user.user_metadata?.bio || "",
             avatarUrl: user.user_metadata?.avatar_url || "",
             // keep existing extended fields if previously saved

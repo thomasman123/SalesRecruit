@@ -118,7 +118,7 @@ export const createCalendarEvent = async (
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
   // Use provided timezone or default to user's timezone
-  const timeZone = eventData.timeZone || 'America/New_York'
+  const timeZone = eventData.timeZone || 'Australia/Sydney'
 
   const event = {
     summary: eventData.summary,

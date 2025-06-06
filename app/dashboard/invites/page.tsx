@@ -756,13 +756,13 @@ export default function InvitesPage() {
                     <Clock className="w-4 h-4 text-blue-400" />
                     <span className="text-gray-300">Your time ({timezoneInfo.salesRepTimezone}):</span>
                     <span className="text-white font-mono">
-                      {formatTimeInTimezone(currentTime, timezoneInfo.salesRepTimezone || 'America/New_York')}
+                      {formatTimeInTimezone(currentTime, timezoneInfo.salesRepTimezone || 'Australia/Sydney')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-300">Recruiter time ({timezoneInfo.recruiterTimezone}):</span>
                     <span className="text-white font-mono">
-                      {formatTimeInTimezone(currentTime, timezoneInfo.recruiterTimezone || 'America/New_York')}
+                      {formatTimeInTimezone(currentTime, timezoneInfo.recruiterTimezone || 'Australia/Sydney')}
                     </span>
                   </div>
                 </div>

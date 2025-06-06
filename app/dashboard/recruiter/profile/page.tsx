@@ -73,7 +73,7 @@ export default function RecruiterProfilePage() {
             phone: user.user_metadata?.phone || "",
             company: user.user_metadata?.company || "",
             title: user.user_metadata?.title || "",
-            timezone: userData?.timezone || user.user_metadata?.timezone || "America/New_York",
+            timezone: userData?.timezone || user.user_metadata?.timezone || "Australia/Sydney",
             bio: user.user_metadata?.bio || "",
             avatarUrl: user.user_metadata?.avatar_url || "",
           }))
