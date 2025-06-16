@@ -4,6 +4,7 @@ import { AnimatedCard } from "@/components/ui/animated-card"
 import { FadeIn } from "@/components/ui/fade-in"
 import { ApplicantsList } from "./applicants-list"
 import { TopMatchesPanel } from "@/components/recruiter/top-matches-panel"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default async function ApplicantsPage({ params }: { params: { id: string } }) {
   const jobId = parseInt(params.id)
@@ -85,14 +86,23 @@ export default async function ApplicantsPage({ params }: { params: { id: string 
             <h1 className="text-3xl font-bold text-white mb-2">Applicants for {job.title}</h1>
             <p className="text-gray-400">Manage applicants who have applied to this position</p>
           </div>
-          <TopMatchesPanel jobId={jobId} jobTitle={job.title} />
+          <Tabs defaultValue="applicants" className="mt-6">
+            <TabsList className="mb-4">
+              <TabsTrigger value="applicants">Applicants ({enhancedApplicants.length})</TabsTrigger>
+              <TabsTrigger value="matches">Top Matches</TabsTrigger>
+            </TabsList>
+            <TabsContent value="applicants">
+              <ApplicantsList 
+                applicants={enhancedApplicants} 
+                jobId={jobId}
+                jobTitle={job.title}
+              />
+            </TabsContent>
+            <TabsContent value="matches">
+              <TopMatchesPanel jobId={jobId} jobTitle={job.title} />
+            </TabsContent>
+          </Tabs>
         </FadeIn>
-
-        <ApplicantsList 
-          applicants={enhancedApplicants} 
-          jobId={jobId}
-          jobTitle={job.title}
-        />
       </div>
     </AccessWrapper>
   )
