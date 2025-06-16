@@ -73,7 +73,7 @@ export default async function ApplicantsPage({ params }: { params: { id: string 
   // Enhance applicants with invitation and interview data
   const enhancedApplicants = applicants?.map(applicant => ({
     ...applicant,
-    invited: applicant.user_id ? invitationMap.has(applicant.user_id) : false,
+    invited: applicant.invited || (applicant.user_id ? invitationMap.has(applicant.user_id) : false),
     hasScheduledInterview: scheduledMap.has(applicant.id),
     scheduledInterview: scheduledMap.get(applicant.id)
   })) || []
