@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { sendInvitationEmail } from "@/lib/email/resend"
+import { createClient } from "@supabase/supabase-js"
 
 export async function POST(request: Request) {
   try {
@@ -119,15 +120,23 @@ Click here to schedule your interview at a time that works for you.
     })
 
     // Update the applicant record so the invitation state persists
-    const { error: applicantUpdateError } = await supabase
-      .from("applicants")
-      .update({ invited: true })
-      .eq("id", applicant.id)
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const adminSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
 
-    if (applicantUpdateError) {
-      console.error("Error updating applicant invited status:", applicantUpdateError)
-      // Not throwing here so that the invitation flow continues, 
-      // but logging the error allows for troubleshooting if RLS prevents the update.
+      const { error: applicantUpdateError } = await adminSupabase
+        .from("applicants")
+        .update({ invited: true })
+        .eq("id", applicant.id)
+
+      if (applicantUpdateError) {
+        console.error("Admin error updating applicant invited status:", applicantUpdateError)
+      }
+    } else {
+      console.warn("SUPABASE_SERVICE_ROLE_KEY not set — unable to update applicant.invited via admin client")
     }
 
     return NextResponse.json({ 
