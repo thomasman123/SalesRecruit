@@ -76,6 +76,7 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
       icon: <MessageSquare className="h-5 w-5" />,
       current: pathname === "/recruiter/messages" || pathname.startsWith("/recruiter/messages/"),
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
+      show: false,
     },
     {
       name: "Calendar",
@@ -102,7 +103,7 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
           </button>
         </div>
         <div className="p-6 space-y-4">
-          {navigation.map((item) => (
+          {navigation.filter(i=> i.show !== false).map((item) => (
             <Link
               key={item.name}
               href={item.href}
@@ -151,7 +152,7 @@ export default function RecruiterLayout({ children }: RecruiterLayoutProps) {
         </div>
 
         <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-          {navigation.map((item) => (
+          {navigation.filter(i=> i.show !== false).map((item) => (
             <Link
               key={item.name}
               href={item.href}

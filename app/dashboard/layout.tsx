@@ -90,6 +90,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <MessageSquare className="h-5 w-5" />,
       current: pathname === "/dashboard/messages",
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
+      show: false,
     },
     {
       name: "Calendar",
