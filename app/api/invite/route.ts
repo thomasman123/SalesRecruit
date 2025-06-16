@@ -118,6 +118,18 @@ Click here to schedule your interview at a time that works for you.
       href: `/recruiter/jobs/${jobId}/applicants`,
     })
 
+    // Update the applicant record so the invitation state persists
+    const { error: applicantUpdateError } = await supabase
+      .from("applicants")
+      .update({ invited: true })
+      .eq("id", applicant.id)
+
+    if (applicantUpdateError) {
+      console.error("Error updating applicant invited status:", applicantUpdateError)
+      // Not throwing here so that the invitation flow continues, 
+      // but logging the error allows for troubleshooting if RLS prevents the update.
+    }
+
     return NextResponse.json({ 
       success: true, 
       message: "Invitation sent successfully" 
