@@ -3,6 +3,7 @@ import { AccessWrapper } from "@/components/recruiter/access-wrapper"
 import { AnimatedCard } from "@/components/ui/animated-card"
 import { FadeIn } from "@/components/ui/fade-in"
 import { ApplicantsList } from "./applicants-list"
+import { TopMatchesPanel } from "@/components/recruiter/top-matches-panel"
 
 export default async function ApplicantsPage({ params }: { params: { id: string } }) {
   const jobId = parseInt(params.id)
@@ -84,6 +85,7 @@ export default async function ApplicantsPage({ params }: { params: { id: string 
             <h1 className="text-3xl font-bold text-white mb-2">Applicants for {job.title}</h1>
             <p className="text-gray-400">Manage applicants who have applied to this position</p>
           </div>
+          <TopMatchesPanel jobId={jobId} jobTitle={job.title} />
         </FadeIn>
 
         <ApplicantsList 
